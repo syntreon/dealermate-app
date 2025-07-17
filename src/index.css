@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 
 @tailwind base;
 @tailwind components;
@@ -7,7 +7,7 @@
 
 @layer base {
   :root {
-    /* New modern color scheme with teal as primary color */
+    /* Updated color scheme aligned with branding and improved contrast ratios */
     --background: 210 20% 98%; /* Light background Hex: #F5F8FA */
     --foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
     
@@ -17,36 +17,70 @@
     --popover: 0 0% 100%; /* White popover background Hex: #FFFFFF */
     --popover-foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
     
-    --primary: 174 75% 39%; /* Teal Hex: #14B8A6 */
+    /* Updated primary to match branding's purple with better contrast */
+    --primary: 252 86% 67%; /* Purple Hex: #6366F1 (from branding) */
     --primary-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
     
     --secondary: 210 20% 96%; /* Light gray Hex: #F1F5F9 */
     --secondary-foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
     
     --muted: 210 20% 96%; /* Light gray Hex: #F1F5F9 */
-    --muted-foreground: 215 20% 65%; /* Medium gray Hex: #94A3B8 */
+    --muted-foreground: 215 25% 45%; /* Darkened medium gray Hex: #6B7A90 for 4.5:1 contrast */
     
-    --accent: 174 75% 39%; /* Teal Hex: #14B8A6 */
+    /* Updated accent to match primary */
+    --accent: 252 86% 67%; /* Purple Hex: #6366F1 */
     --accent-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
     
-    --destructive: 0 84% 60%; /* Red Hex: #EF4444 */
+    /* Darkened destructive for better contrast */
+    --destructive: 0 75% 50%; /* Darkened Red Hex: #D42F2F for 4.5:1 contrast */
     --destructive-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
     
     --border: 214 32% 91%; /* Light border Hex: #E2E8F0 */
     --input: 214 32% 91%; /* Light input border Hex: #E2E8F0 */
-    --ring: 174 75% 39%; /* Teal ring Hex: #14B8A6 */
+    --ring: 252 86% 67%; /* Purple ring Hex: #6366F1 */
     
     --radius: 0.75rem;
+  }
+
+  /* Dark mode theme variables with proper contrast */
+  [data-theme="dark"] {
+    --background: 215 28% 17%; /* Dark background Hex: #1F2937 */
+    --foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    
+    --card: 215 25% 27%; /* Dark card background Hex: #374151 */
+    --card-foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    
+    --popover: 215 25% 27%; /* Dark popover background Hex: #374151 */
+    --popover-foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    
+    --primary: 250 93% 85%; /* Lighter Purple Hex: #8B5CF6 for dark mode */
+    --primary-foreground: 215 28% 17%; /* Dark text Hex: #1F2937 */
+    
+    --secondary: 215 25% 27%; /* Dark secondary Hex: #374151 */
+    --secondary-foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    
+    --muted: 215 25% 27%; /* Dark muted background Hex: #374151 */
+    --muted-foreground: 217 19% 80%; /* Light muted text Hex: #D1D5DB */
+    
+    --accent: 250 93% 85%; /* Lighter Purple Hex: #8B5CF6 */
+    --accent-foreground: 215 28% 17%; /* Dark text Hex: #1F2937 */
+    
+    --destructive: 0 84% 80%; /* Lighter Red Hex: #F87171 */
+    --destructive-foreground: 215 28% 17%; /* Dark text Hex: #1F2937 */
+    
+    --border: 215 25% 27%; /* Dark border Hex: #374151 */
+    --input: 215 25% 27%; /* Dark input border Hex: #374151 */
+    --ring: 250 93% 85%; /* Lighter Purple Hex: #8B5CF6 */
   }
 }
 
 @layer base {
   * {
-    @apply border-border selection:bg-purple/10 selection:text-purple;
+    @apply border-border selection:bg-primary/10 selection:text-primary;
   }
   
   body {
-    @apply bg-zinc-950 text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
 
@@ -70,7 +104,7 @@
   }
   
   .text-gradient-primary {
-    @apply bg-gradient-to-br from-purple via-purple/80 to-purple-light bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-primary via-primary/80 to-primary-light bg-clip-text text-transparent;
   }
 
   .animate-in {

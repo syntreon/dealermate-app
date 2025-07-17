@@ -23,7 +23,9 @@ module.exports = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "#6366F1",
+          light: "#8B5CF6",
+          dark: "#4F46E5",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -31,7 +33,7 @@ module.exports = {
           foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
+          DEFAULT: "#EF4444",
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
@@ -50,39 +52,50 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Custom colors for our new theme
-        teal: {
-          DEFAULT: "#14B8A6",
-          light: "#2DD4BF",
-          dark: "#0F766E",
+        success: "#10B981",
+        warning: "#F59E0B",
+        info: "#3B82F6",
+        gray: {
+          50: "#F9FAFB",
+          100: "#F3F4F6",
+          200: "#E5E7EB",
+          300: "#D1D5DB",
+          400: "#9CA3AF",
+          500: "#6B7280",
+          600: "#4B5563",
+          700: "#374151",
+          800: "#1F2937",
+          900: "#111827",
         },
-        // Add purple color that's used in CSS
-        purple: {
-          light: "#9d8cff",
-          DEFAULT: "#8a70ff",
-          dark: "#7a5cff"
-        },
-        // Add zinc color scale
-        zinc: {
-          50: "#fafafa",
-          100: "#f4f4f5",
-          200: "#e4e4e7",
-          300: "#d4d4d8",
-          400: "#a1a1aa",
-          500: "#71717a",
-          600: "#52525b",
-          700: "#3f3f46",
-          800: "#27272a",
-          900: "#18181b",
-          950: "#09090b"
-        },
-        // Add more spacing between elements
-        spacing: {
-          '4.5': '1.125rem',
-          '7.5': '1.875rem',
-          '13': '3.25rem',
-          '15': '3.75rem',
-        },
+        'main-background': '#F9FAFB',
+        'card-background': '#FFFFFF',
+        'selected-background': '#F0FDF4',
+        'hover-background': '#F8FAFC',
+        dark: {
+          primary: "#8B5CF6",
+          'primary-light': "#A78BFA",
+          'primary-dark': "#7C3AED",
+          success: "#34D399",
+          warning: "#FBBF24",
+          error: "#F87171",
+          info: "#60A5FA",
+          gray: {
+            50: "#1F2937",
+            100: "#374151",
+            200: "#4B5563",
+            300: "#6B7280",
+            400: "#9CA3AF",
+            500: "#D1D5DB",
+            600: "#E5E7EB",
+            700: "#F3F4F6",
+            800: "#F9FAFB",
+            900: "#FFFFFF",
+          },
+          'main-background': '#1F2937',
+          'card-background': '#374151',
+          'selected-background': '#064E3B',
+          'hover-background': '#4B5563',
+        }
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -110,6 +123,24 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      fontFamily: {
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
+        mono: ["'SF Mono'", "Monaco", "Consolas", "'Liberation Mono'", "'Courier New'", "monospace"],
+      },
+      fontSize: {
+        xs: ['0.75rem', { lineHeight: '1rem' }],
+        sm: ['0.875rem', { lineHeight: '1.25rem' }],
+        base: ['1rem', { lineHeight: '1.5rem' }],
+        lg: ['1.125rem', { lineHeight: '1.75rem' }],
+        xl: ['1.25rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],
+        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+      },
+      lineHeight: {
+        tight: '1.25',
+        normal: '1.5',
+        relaxed: '1.75',
       },
     },
   },
