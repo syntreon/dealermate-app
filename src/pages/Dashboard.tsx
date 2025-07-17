@@ -10,25 +10,21 @@ import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import { useNavigate } from 'react-router-dom';
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart';
 import { useIsMobile } from '@/hooks/use-mobile';
+import MetricsSummaryCards from '@/components/dashboard/MetricsSummaryCards';
+import useDashboardMetrics from '@/hooks/useDashboardMetrics';
 
 const Dashboard = () => {
   const { calls, stats } = useCalls();
-  const { networkErrorDetected } = useAuth();
+  const { networkErrorDetected, user } = useAuth();
   const navigate = useNavigate();
   const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const isMobile = useIsMobile();
   
-  // Mock data based on the image
-  const mockStats = {
-    totalCalls: 156,
-    totalCost: 327.6,
-    avgCostPerCall: 2.1,
-    totalDuration: '2h 22m',
-    callsGrowth: 12,
-    costGrowth: 8,
-    avgCostReduction: -3,
-    durationGrowth: 15,
-  };
+  // Get client ID from user if available
+  const clientId = user?.client_id || undefined;
+  
+  // Use our custom hook to fetch dashboard metrics
+  const { metrics, isLoading, error } = useDashboardMetrics(clientId);
 
   // Mock data for the area chart
   const areaChartData = [
@@ -138,94 +134,20 @@ const Dashboard = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Calls Card */}
-        <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[#6B7280] text-sm">Total Calls</span>
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Phone className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold mb-2">
-              {mockStats.totalCalls}
-            </h3>
-            <div className="flex items-center">
-              <span className={`text-xs ${mockStats.callsGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {mockStats.callsGrowth >= 0 ? '↑' : '↓'} {Math.abs(mockStats.callsGrowth)}% 
-              </span>
-              <span className="text-xs text-[#6B7280] ml-1">vs last month</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Cost Card */}
-        <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[#6B7280] text-sm">Total Cost</span>
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <DollarSign className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold mb-2">
-              ${mockStats.totalCost.toFixed(2)}
-            </h3>
-            <div className="flex items-center">
-              <span className={`text-xs ${mockStats.costGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {mockStats.costGrowth >= 0 ? '↑' : '↓'} {Math.abs(mockStats.costGrowth)}% 
-              </span>
-              <span className="text-xs text-[#6B7280] ml-1">vs last month</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Avg. Cost/Call Card */}
-        <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[#6B7280] text-sm">Avg. Cost/Call</span>
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                  <path d="M3 3v18h18"></path>
-                  <path d="m19 9-5 5-4-4-3 3"></path>
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold mb-2">
-              ${mockStats.avgCostPerCall.toFixed(2)}
-            </h3>
-            <div className="flex items-center">
-              <span className={`text-xs ${mockStats.avgCostReduction < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {mockStats.avgCostReduction < 0 ? '↓' : '↑'} {Math.abs(mockStats.avgCostReduction)}% 
-              </span>
-              <span className="text-xs text-[#6B7280] ml-1">vs last month</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Total Duration Card */}
-        <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[#6B7280] text-sm">Total Duration</span>
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Clock2 className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold mb-2">
-              {mockStats.totalDuration}
-            </h3>
-            <div className="flex items-center">
-              <span className={`text-xs ${mockStats.durationGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {mockStats.durationGrowth >= 0 ? '↑' : '↓'} {Math.abs(mockStats.durationGrowth)}% 
-              </span>
-              <span className="text-xs text-[#6B7280] ml-1">vs last month</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Metrics Summary Cards */}
+      <MetricsSummaryCards 
+        metrics={metrics || {
+          totalCalls: 156,
+          averageHandleTime: '2h 22m',
+          callsTransferred: 23,
+          totalLeads: 42,
+          callsGrowth: 12,
+          timeGrowth: 15,
+          transferGrowth: 8,
+          leadsGrowth: 15
+        }}
+        isLoading={isLoading}
+      />
       
       {/* Call Analytics section */}
       <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
