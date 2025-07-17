@@ -3,9 +3,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import LeadAnalytics from '@/components/analytics/LeadAnalytics';
+import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
+import { useDateRange } from '@/hooks/useDateRange';
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('leads');
+  const { dateRange, setDateRange, startDate, endDate } = useDateRange();
 
   return (
     <div className="space-y-8 pb-8">
@@ -16,6 +19,12 @@ const Analytics = () => {
           </div>
           <p className="text-[#6B7280]">Detailed analytics and insights for your call system.</p>
         </div>
+        <DateRangeFilter 
+          className="mt-4 sm:mt-0"
+          onRangeChange={(start, end) => {
+            // This will be passed to child components
+          }}
+        />
       </div>
 
       <Tabs defaultValue="leads" className="w-full" onValueChange={setActiveTab}>

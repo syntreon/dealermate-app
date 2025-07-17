@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FunnelChart, Funnel, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLeads } from '@/context/LeadContext';
 import { useCalls } from '@/context/CallsContext';
+import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
+import { useDateRange } from '@/hooks/useDateRange';
 
 // Colors for status chart
 const COLORS = ['#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95'];
@@ -23,14 +25,14 @@ interface LeadAnalyticsProps {
 }
 
 const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ clientId }) => {
-  const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const isMobile = useIsMobile();
   const { leads, stats } = useLeads();
   const { calls } = useCalls();
+  const { dateRange, setDateRange, startDate, endDate } = useDateRange();
   
   // Prepare data for lead conversion funnel
   const leadFunnelData = useMemo(() => {
-    // For a real implementation, we would filter by date range based on chartPeriod
+    // For a real implementation, we would filter by date range based on startDate and endDate
     return [
       { value: calls.length, name: 'Total Calls', fill: '#a78bfa' },
       { value: leads.length, name: 'Total Leads', fill: '#8b5cf6' },
@@ -38,7 +40,7 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ clientId }) => {
       { value: leads.filter(lead => lead.status === 'proposal').length, name: 'Proposals', fill: '#6d28d9' },
       { value: leads.filter(lead => lead.status === 'closed_won').length, name: 'Conversions', fill: '#5b21b6' },
     ];
-  }, [calls.length, leads, chartPeriod]);
+  }, [calls.length, leads, startDate, endDate]);
   
   // Prepare data for lead sources
   const leadSourceData = useMemo(() => {
@@ -70,32 +72,11 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ clientId }) => {
         </CardHeader>
         <CardContent className="px-4 pt-0 pb-6">
           <div className="flex items-center mb-6 mt-2">
-            <div className="bg-gray-100 p-1 rounded-lg flex space-x-2">
-              <Button 
-                size="sm" 
-                variant={chartPeriod === 'daily' ? 'default' : 'outline'}
-                className={`px-4 py-1 rounded-md ${chartPeriod === 'daily' ? 'bg-primary hover:bg-primary/80' : 'text-[#6B7280] hover:bg-zinc-800'}`}
-                onClick={() => setChartPeriod('daily')}
-              >
-                Daily
-              </Button>
-              <Button 
-                size="sm" 
-                variant={chartPeriod === 'weekly' ? 'default' : 'outline'}
-                className={`px-4 py-1 rounded-md ${chartPeriod === 'weekly' ? 'bg-primary hover:bg-primary/80' : 'text-gray-600 hover:bg-zinc-800'}`}
-                onClick={() => setChartPeriod('weekly')}
-              >
-                Weekly
-              </Button>
-              <Button 
-                size="sm" 
-                variant={chartPeriod === 'monthly' ? 'default' : 'outline'}
-                className={`px-4 py-1 rounded-md ${chartPeriod === 'monthly' ? 'bg-primary hover:bg-primary/80' : 'text-gray-600 hover:bg-zinc-800'}`}
-                onClick={() => setChartPeriod('monthly')}
-              >
-                Monthly
-              </Button>
-            </div>
+            <DateRangeFilter 
+              onRangeChange={(start, end) => {
+                // The useDateRange hook already handles the state
+              }}
+            />
           </div>
           
           <div className="h-[300px] w-full">

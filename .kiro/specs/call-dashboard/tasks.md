@@ -25,20 +25,25 @@
     - _Requirements: 8.1, 8.2_
 
 - [x] 2. Implement dashboard overview page
-  - [-] 2.1 Create metrics summary cards
+  - [x] 2.1 Create metrics summary cards
+
+
 
     - Implement cards for total calls, average handle time, calls transferred, and total leads
     - Add loading and empty states
     - _Requirements: 1.1, 1.2, 1.6_
 
   - [x] 2.2 Implement call activity timeline chart
+
+
+
     - Create graph component showing most active call times
     - Add date range selector
     - Implement empty and loading states
     - _Requirements: 1.3, 1.5_
 
   - [x] 2.3 Add agent status and system messages
-    - Create status indicator component
+    - Create status indicator component in the topbar
     - Implement system messages display
     - _Requirements: 1.4_
 

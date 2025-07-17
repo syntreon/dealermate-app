@@ -1,23 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useCalls, Call } from '@/context/CallsContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-// Custom date formatting function instead of date-fns
-import { Phone, Clock, Calendar, MessageSquare, CheckCircle, XCircle, SendHorizontal, RefreshCw, DollarSign, Clock2 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { Phone, Clock, Calendar, MessageSquare, CheckCircle, XCircle, SendHorizontal, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import { useNavigate } from 'react-router-dom';
-import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MetricsSummaryCards from '@/components/dashboard/MetricsSummaryCards';
 import useDashboardMetrics from '@/hooks/useDashboardMetrics';
+import { CallActivityTimeline } from '@/components/dashboard/CallActivityTimeline';
 
 const Dashboard = () => {
   const { calls, stats } = useCalls();
   const { networkErrorDetected, user } = useAuth();
   const navigate = useNavigate();
-  const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const isMobile = useIsMobile();
   
   // Get client ID from user if available
@@ -25,17 +23,6 @@ const Dashboard = () => {
   
   // Use our custom hook to fetch dashboard metrics
   const { metrics, isLoading, error } = useDashboardMetrics(clientId);
-
-  // Mock data for the area chart
-  const areaChartData = [
-    { name: 'Mon', calls: 4, cost: 8 },
-    { name: 'Tue', calls: 6, cost: 12 },
-    { name: 'Wed', calls: 8, cost: 16 },
-    { name: 'Thu', calls: 10, cost: 20 },
-    { name: 'Fri', calls: 8, cost: 16 },
-    { name: 'Sat', calls: 3, cost: 6 },
-    { name: 'Sun', calls: 2, cost: 4 },
-  ];
   
   const chartData = [
     { name: 'Sent', value: stats.sent, color: '#a78bfa' }, // Lighter purple for better contrast
@@ -149,93 +136,8 @@ const Dashboard = () => {
         isLoading={isLoading}
       />
       
-      {/* Call Analytics section */}
-      <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-semibold">Call Analytics</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pt-0 pb-6">
-          <div className="flex items-center mb-6 mt-2">
-            <div className="bg-gray-100 p-1 rounded-lg flex space-x-2">
-              <Button 
-                size="sm" 
-                variant={chartPeriod === 'daily' ? 'default' : 'outline'}
-                className={`px-4 py-1 rounded-md ${chartPeriod === 'daily' ? 'bg-primary hover:bg-primary/80' : 'text-[#6B7280] hover:bg-zinc-800'}`}
-                onClick={() => setChartPeriod('daily')}
-              >
-                Daily
-              </Button>
-              <Button 
-                size="sm" 
-                variant={chartPeriod === 'weekly' ? 'default' : 'outline'}
-                className={`px-4 py-1 rounded-md ${chartPeriod === 'weekly' ? 'bg-primary hover:bg-primary/80' : 'text-gray-600 hover:bg-zinc-800'}`}
-                onClick={() => setChartPeriod('weekly')}
-              >
-                Weekly
-              </Button>
-              <Button 
-                size="sm" 
-                variant={chartPeriod === 'monthly' ? 'default' : 'outline'}
-                className={`px-4 py-1 rounded-md ${chartPeriod === 'monthly' ? 'bg-primary hover:bg-primary/80' : 'text-gray-600 hover:bg-zinc-800'}`}
-                onClick={() => setChartPeriod('monthly')}
-              >
-                Monthly
-              </Button>
-            </div>
-          </div>
-          
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={areaChartData}
-                margin={isMobile ? { top: 10, right: 10, left: -30, bottom: 0 } : { top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.1}/>
-                  </linearGradient>
-                  <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" stroke="#4b5563" /> {/* Darker color for better contrast on light background */}
-                <YAxis stroke="#4b5563" /> {/* Darker color for better contrast on light background */}
-                <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" /> {/* Lighter gray for grid lines on light background */}
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-md">
-                          <p className="text-gray-700">{`${payload[0].payload.name}`}</p>
-                          <p className="text-primary">{`Calls: ${payload[0].value}`}</p>
-                          <p className="text-[#7E69AB]">{`Cost: $${payload[1].value}`}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="calls" 
-                  stroke="#a78bfa" 
-                  fillOpacity={1} 
-                  fill="url(#colorCalls)" 
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="cost" 
-                  stroke="#8b5cf6" 
-                  fillOpacity={1} 
-                  fill="url(#colorCost)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Call Activity Timeline */}
+      <CallActivityTimeline />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
