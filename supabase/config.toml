@@ -20,4 +20,3 @@ max_frequency = "1m0s"             # Updated to match linked project
 otp_length = 6
 otp_expiry = 3600
 
-site_url = "http://localhost:3000"

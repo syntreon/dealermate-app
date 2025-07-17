@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Phone, Settings, LogOut, FileText } from 'lucide-react';
+import { Home, Phone, Settings, LogOut, FileText, BarChart, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
 import { useAuth } from '@/context/AuthContext';
@@ -15,18 +15,21 @@ import {
   SidebarMenuItem,
   useSidebar
 } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
 // This array is used for both sidebar and mobile bottom nav
 const navItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: Phone, label: 'Call', path: '/call' },
   { icon: FileText, label: 'Logs', path: '/logs' },
+  { icon: BarChart, label: 'Analytics', path: '/analytics' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
 // Desktop sidebar component
 const DesktopSidebar = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { isMobile } = useSidebar();
   const location = useLocation();
 
@@ -71,6 +74,7 @@ const DesktopSidebar = () => {
       </SidebarContent>
 
       <SidebarFooter className="p-5 mt-auto border-t border-border">
+        {/* Logout Button - Only show on desktop */}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton

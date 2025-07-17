@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import AppSidebar from './AppSidebar';
+import TopBar from './TopBar';
 import { Toaster } from '@/components/ui/sonner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Wifi, WifiOff, RefreshCw, Menu } from 'lucide-react';
@@ -10,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarTrigger, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { ThemeProvider } from 'next-themes';
 
 const AppLayout = () => {
   const {
@@ -87,38 +89,51 @@ const AppLayout = () => {
 
   // If we have a user but it's a temporary one due to network issues
   const isTemporaryUser = user?.name === "Temporary User" || networkErrorDetected;
-  return <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen bg-zinc-950 text-white flex w-full">
-        <AppSidebar />
-        
-        <SidebarInset className={cn("flex-1 p-6 overflow-auto", isMobile && "pb-24" // Add bottom padding on mobile to prevent content being hidden behind navbar
-      )}>
-          {/* Removed the sidebar trigger for mobile since we're using bottom navigation */}
+  return (
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <SidebarProvider defaultOpen={!isMobile}>
+        <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
+          {/* Top Bar - Only show on desktop */}
+          {!isMobile && <TopBar />}
           
-          {isTemporaryUser && <Alert variant="destructive" className="mb-4">
-              <WifiOff className="h-4 w-4" />
-              <AlertTitle>Network Connection Issue</AlertTitle>
-              <AlertDescription className="flex flex-col gap-2">
-                <p>There was a problem connecting to the server. Some features may be limited.
-                You're currently using the app in a limited mode.</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="self-start" onClick={handleForceRefresh}>
-                    <RefreshCw className="h-3 w-3 mr-2" /> Refresh Page
-                  </Button>
-                  <Button variant="outline" size="sm" className="self-start" onClick={handleRefreshData}>
-                    <RefreshCw className="h-3 w-3 mr-2" /> Refresh Data
-                  </Button>
-                </div>
-              </AlertDescription>
-            </Alert>}
-          
-          <div className="container mx-auto max-w-7xl animate-in px-0">
-            <Outlet />
+          <div className="flex flex-1">
+            <AppSidebar />
+            
+            <SidebarInset className={cn(
+              "flex-1 overflow-auto", 
+              isMobile ? "p-4 pb-24" : "p-6" // Add bottom padding on mobile to prevent content being hidden behind navbar
+            )}>
+              {isTemporaryUser && (
+                <Alert variant="destructive" className="mb-4">
+                  <WifiOff className="h-4 w-4" />
+                  <AlertTitle>Network Connection Issue</AlertTitle>
+                  <AlertDescription className="flex flex-col gap-2">
+                    <p>
+                      There was a problem connecting to the server. Some features may be limited.
+                      You're currently using the app in a limited mode.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="self-start" onClick={handleForceRefresh}>
+                        <RefreshCw className="h-3 w-3 mr-2" /> Refresh Page
+                      </Button>
+                      <Button variant="outline" size="sm" className="self-start" onClick={handleRefreshData}>
+                        <RefreshCw className="h-3 w-3 mr-2" /> Refresh Data
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="container mx-auto max-w-7xl animate-in px-0">
+                <Outlet />
+              </div>
+            </SidebarInset>
           </div>
-        </SidebarInset>
-        
-        <Toaster position="top-right" />
-      </div>
-    </SidebarProvider>;
+          
+          <Toaster position="top-right" />
+        </div>
+      </SidebarProvider>
+    </ThemeProvider>
+  );
 };
 export default AppLayout;
