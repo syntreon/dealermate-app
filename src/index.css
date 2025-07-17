@@ -1,0 +1,83 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* New modern color scheme with teal as primary color */
+    --background: 210 20% 98%; /* Light background Hex: #F5F8FA */
+    --foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
+    
+    --card: 0 0% 100%; /* White card background Hex: #FFFFFF */
+    --card-foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
+    
+    --popover: 0 0% 100%; /* White popover background Hex: #FFFFFF */
+    --popover-foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
+    
+    --primary: 174 75% 39%; /* Teal Hex: #14B8A6 */
+    --primary-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
+    
+    --secondary: 210 20% 96%; /* Light gray Hex: #F1F5F9 */
+    --secondary-foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
+    
+    --muted: 210 20% 96%; /* Light gray Hex: #F1F5F9 */
+    --muted-foreground: 215 20% 65%; /* Medium gray Hex: #94A3B8 */
+    
+    --accent: 174 75% 39%; /* Teal Hex: #14B8A6 */
+    --accent-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
+    
+    --destructive: 0 84% 60%; /* Red Hex: #EF4444 */
+    --destructive-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
+    
+    --border: 214 32% 91%; /* Light border Hex: #E2E8F0 */
+    --input: 214 32% 91%; /* Light input border Hex: #E2E8F0 */
+    --ring: 174 75% 39%; /* Teal ring Hex: #14B8A6 */
+    
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border selection:bg-purple/10 selection:text-purple;
+  }
+  
+  body {
+    @apply bg-zinc-950 text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+
+  html {
+    @apply scroll-smooth;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass-morphism {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+  }
+  
+  .neo-blur {
+    @apply backdrop-blur-2xl bg-black/40 border border-white/10;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-primary {
+    @apply bg-gradient-to-br from-purple via-purple/80 to-purple-light bg-clip-text text-transparent;
+  }
+
+  .animate-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.4s ease-out;
+  }
+}
