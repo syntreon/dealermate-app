@@ -22,26 +22,26 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
   
   return (
     <div className="space-y-6">
-      <Card className="glass-morphism">
+      <Card className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
         <CardContent className="space-y-6 pt-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Account Settings</h3>
+            <h3 className="text-sm font-medium text-gray-800">Account Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button variant="outline" className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800">
+              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
                 Change Password
               </Button>
-              <Button variant="outline" className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800">
+              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
                 Two-Factor Authentication
               </Button>
-              <Button variant="outline" className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800">
+              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
                 Notification Settings
               </Button>
-              <Button variant="outline" className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800">
+              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
                 Privacy Settings
               </Button>
               <Button 
                 variant="outline" 
-                className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-red-400 hover:text-red-300" 
+                className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-red-500 hover:text-red-600" 
                 onClick={logout}
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -53,15 +53,15 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
       </Card>
 
       {isAdmin && (
-        <Card className="glass-morphism">
+        <Card className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
           <CardContent className="space-y-6 pt-6">
             <div className="space-y-4">
-              <h3 className="text-sm font-medium">Admin Settings</h3>
+              <h3 className="text-sm font-medium text-gray-800">Admin Settings</h3>
               {/* Admin settings buttons - visible on all screen sizes */}
               <div className="grid grid-cols-1 gap-4">
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800" 
+                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
                   onClick={() => navigate('/admin/settings')}
                 >
                   <Settings className="h-4 w-4 mr-2" />
@@ -73,21 +73,21 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800" 
+                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
                   onClick={onOpenWebhookDialog}
                 >
                   Webhook Configuration
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800" 
+                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
                   onClick={onOpenAddUserDialog}
                 >
                   Add New User
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800" 
+                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
                   onClick={() => navigate('/manage-users')}
                 >
                   <Users className="h-4 w-4 mr-2" />
