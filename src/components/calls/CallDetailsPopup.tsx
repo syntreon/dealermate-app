@@ -7,6 +7,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useAuth } from '@/context/AuthContext';
+import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +52,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { user } = useAuth();
   const [isMinimized, setIsMinimized] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -323,10 +326,13 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                           <Separator />
                           
                           <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Client ID</span>
-                              <span className="text-sm font-medium">{call.client_id || 'N/A'}</span>
-                            </div>
+                            {/* Only show client ID to admins */}
+                            {canViewSensitiveInfo(user) && (
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Client ID</span>
+                                <span className="text-sm font-medium">{call.client_id || 'N/A'}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-sm text-muted-foreground">To Phone Number</span>
                               <span className="text-sm font-medium">{call.to_phone_number || 'N/A'}</span>
@@ -398,19 +404,28 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                           <Separator />
                           
                           <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Total Call Cost</span>
-                              <span className="text-sm font-medium">
-                                ${call.total_call_cost_usd?.toFixed(2) || '0.00'} USD
-                              </span>
-                            </div>
-                            
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Total Cost (CAD)</span>
-                              <span className="text-sm font-medium">
-                                ${call.total_cost_cad?.toFixed(2) || '0.00'} CAD
-                              </span>
-                            </div>
+                            {/* Only show cost information to admins */}
+                            {canViewSensitiveInfo(user) ? (
+                              <>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">Total Call Cost</span>
+                                  <span className="text-sm font-medium">
+                                    ${call.total_call_cost_usd?.toFixed(2) || '0.00'} USD
+                                  </span>
+                                </div>
+                                
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">Total Cost (CAD)</span>
+                                  <span className="text-sm font-medium">
+                                    ${call.total_cost_cad?.toFixed(2) || '0.00'} CAD
+                                  </span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-sm text-muted-foreground italic">
+                                Cost information is only visible to administrators
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>

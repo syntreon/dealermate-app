@@ -94,7 +94,8 @@
     - Add minimize and close functionality
     - _Requirements: 3.2, 3.3, 3.4, 3.5_
 
-- [x] 5. Implement leads management module
+- [-] 5. Implement leads management module
+
 
 
   - [ ] 5.1 Create leads list component
@@ -102,9 +103,10 @@
     - Add sorting and pagination
 
 
+
     - _Requirements: 4.1, 8.3_
 
-  - [ ] 5.2 Develop lead details view
+  - [x] 5.2 Develop lead details view
     - Create component to display contact information, call source, and status
     - Implement status update functionality
     - Add notes management

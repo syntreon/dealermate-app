@@ -584,7 +584,7 @@ interface AppError {
 - Cypress for end-to-end testing
 - Mock Service Worker for API mocking
 
-## Security Considerations
+## Security & Privacy Considerations
 
 1. **Authentication and Authorization**
    - JWT-based authentication
@@ -598,10 +598,20 @@ interface AppError {
    - Input validation and sanitization
    - Protection against common web vulnerabilities (XSS, CSRF)
 
-3. **Audit and Compliance**
+3. **Client Data Isolation (CRITICAL)**
+   - Strict multi-tenant data segregation
+   - Database queries filtered by client_id for non-admin users
+   - UI components hide sensitive information (client IDs, costs)
+   - Client data isolation utilities for consistent implementation
+   - Admin-only views for cross-client data
+
+4. **Audit and Compliance**
    - Activity logging for sensitive operations
    - User action audit trails
    - Compliance with data protection regulations
+   - Client-specific dashboards for non-admin users
+   - Filtered call logs based on user's client association
+   - Lead management respecting client boundaries
 
 ## Performance Considerations
 

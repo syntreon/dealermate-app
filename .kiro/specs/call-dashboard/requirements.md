@@ -104,3 +104,18 @@ This feature involves building a comprehensive call facilitation dashboard syste
 2. WHEN loading dashboard pages THEN the system SHALL display content within 2 seconds under normal conditions
 3. WHEN viewing large datasets THEN the system SHALL implement pagination or virtual scrolling
 4. WHEN the system is under load THEN the system SHALL maintain acceptable performance levels
+### Requir
+ement 9
+
+**User Story:** As a business client, I want to ensure my data is isolated from other clients, so that my sensitive information remains private and secure.
+
+#### Acceptance Criteria
+
+1. WHEN a non-admin user logs in THEN the system SHALL only show data related to their client ID
+2. WHEN viewing call logs THEN the system SHALL hide client IDs from non-admin users
+3. WHEN viewing call details THEN the system SHALL hide cost information from non-admin users
+4. WHEN viewing lead details THEN the system SHALL hide client ID from non-admin users
+5. WHEN fetching data from the API THEN the system SHALL filter by client ID at the database query level
+6. WHEN an admin user logs in THEN the system SHALL allow viewing data across all clients
+7. WHEN displaying client names to admins THEN the system SHALL show client names instead of just IDs
+8. WHEN implementing new features THEN the system SHALL enforce client data isolation by default

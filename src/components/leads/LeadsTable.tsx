@@ -8,6 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useAuth } from '@/context/AuthContext';
+import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -55,6 +57,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   onStatusChange,
   onExportLeads,
 }) => {
+  const { user } = useAuth();
   const [sortField, setSortField] = useState<keyof Lead>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');

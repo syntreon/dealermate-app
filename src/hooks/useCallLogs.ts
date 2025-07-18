@@ -1,9 +1,13 @@
 /**
  * Custom hook for interacting with call logs data
  * Provides loading state, error handling, and data fetching capabilities
+ * 
+ * CRITICAL: This hook enforces client data isolation for compliance and privacy
  */
 import { useState, useEffect, useCallback } from 'react';
 import { callLogsService, CallLog, CallLogFilters } from '@/integrations/supabase/call-logs-service';
+import { useAuth } from '@/context/AuthContext';
+import { getClientIdFilter } from '@/utils/clientDataIsolation';
 
 interface UseCallLogsReturn {
   callLogs: CallLog[];
@@ -35,6 +39,7 @@ export function useCallLogs(
   autoLoad = true,
   initialFilters?: CallLogFilters
 ): UseCallLogsReturn {
+  const { user } = useAuth();
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<Error | null>(null);
@@ -52,7 +57,16 @@ export function useCallLogs(
         setFilters(newFilters);
       }
       
-      const filtersToUse = newFilters || filters;
+      // Get client ID filter based on user role
+      const clientIdFilter = getClientIdFilter(user);
+      
+      // Merge filters with client ID filter for data isolation
+      const filtersToUse: CallLogFilters = {
+        ...(newFilters || filters || {}),
+        // Only add clientId if it's not already specified and we have a filter to apply
+        ...(clientIdFilter && !(newFilters?.clientId || filters?.clientId) ? { clientId: clientIdFilter } : {})
+      };
+      
       const data = await callLogsService.getCallLogs(filtersToUse, forceRefresh);
       
       setCallLogs(data);
@@ -63,7 +77,7 @@ export function useCallLogs(
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, user]);
 
   // Force refresh function that bypasses cache
   const forceRefresh = useCallback(() => {

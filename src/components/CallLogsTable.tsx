@@ -243,11 +243,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                         <div className="text-sm font-medium text-foreground">
                           {log.caller_full_name || 'Unknown'}
                         </div>
-                        {log.client_id && (
-                          <div className="text-xs text-foreground/60 mt-0.5">
-                            Client ID: {log.client_id}
-                          </div>
-                        )}
+                        {/* Client ID is hidden for privacy and compliance reasons */}
                       </div>
                     </div>
                   </td>
