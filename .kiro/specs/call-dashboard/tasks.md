@@ -74,7 +74,7 @@
     - Add lead source and status distribution charts
     - _Requirements: 1.5_
 
-- [x] 4. Build calls management module
+- [x] 4. Build calls management module (logs)
   - [x] 4.1 Implement calls list component
     - Create table with call information (time, duration, outcome, caller details)
     - Add lead indicator to call items
