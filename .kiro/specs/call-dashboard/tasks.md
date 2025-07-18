@@ -125,35 +125,64 @@
     - Add admin message for non-admin users
     - _Requirements: 5.4_
 
-- [x] 7. Develop admin panel
-  - [ ] 7.1 Create client management interface
-    - Implement client list with management options
-    - Add client creation and editing forms
-    - Create client activation/deactivation functionality
-    - _Requirements: 6.1, 6.2, 6.5_
+- [x] 7. Develop admin panel - Phase 1: Architecture & Layout
+  - [x] 7.1 Create admin layout and navigation structure
+    - Implement dedicated AdminLayout component with separate routing
+    - Create AdminSidebar with admin-specific navigation items
+    - Add role-based access control for admin routes
+    - Implement "Back to Main App" navigation
+    - Add admin panel access from main app sidebar for admin users
+    - _Requirements: 6.1, 6.7_
 
-  - [x] 7.2 Build user management system
-    - Create user list with filtering
-    - Implement user creation and editing forms
-    - Add role assignment functionality
-    - _Requirements: 6.3_
-
-  - [ ] 7.3 Implement client details view
-    - Create interface showing account status, metrics, and settings
-    - Add client impersonation feature
-    - _Requirements: 6.4, 6.6_
-
-  - [ ] 7.4 Add system health monitoring
-    - Create dashboard for platform-wide analytics
-    - Implement performance metrics visualization
+  - [x] 7.2 Build admin dashboard overview
+    - Create AdminDashboard with multi-client metrics overview
+    - Implement ClientSelector component for filtering data by client
+    - Add system status indicators and recent activity displays
+    - Create placeholder cards for key admin metrics
     - _Requirements: 6.7_
 
-  - [ ] 7.5 Create system status management interface
-    - Implement admin page for managing agent status and system messages
-    - Create agent status control panel with status updates
-    - Build system message manager with CRUD operations
-    - Add database tables for system_messages and agent_status
-    - Implement real-time updates using Supabase subscriptions
+  - [x] 7.3 Create admin page structure and placeholders
+    - Implement ClientManagement page with placeholder content
+    - Create UserManagement page with placeholder content
+    - Build AdminSettings page with placeholder content
+    - Integrate existing AdminSystemStatus page into admin layout
+    - Set up complete admin routing structure
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
+
+  - [ ] 7.4 Implement client management interface (Phase 2)
+    - Create client list table with filtering and search
+    - Add client creation and editing forms with validation
+    - Implement client activation/deactivation functionality
+    - Add client metrics and billing information display
+    - Create client configuration management interface
+    - _Requirements: 6.1, 6.2, 6.5_
+
+  - [ ] 7.5 Build user management system (Phase 2)
+    - Create user list with client association and role filtering
+    - Implement user creation and editing forms
+    - Add role assignment and client association functionality
+    - Create bulk user operations (invite, activate, deactivate)
+    - Implement user impersonation feature for troubleshooting
+    - _Requirements: 6.3, 6.6_
+
+  - [ ] 7.6 Implement client details view (Phase 2)
+    - Create detailed client profile with account status and metrics
+    - Add client-specific settings and configuration management
+    - Implement client data filtering across all admin views
+    - Create client activity timeline and audit logs
+    - _Requirements: 6.4, 6.6_
+
+  - [ ] 7.7 Add system health monitoring (Phase 2)
+    - Create comprehensive system health dashboard
+    - Implement platform-wide analytics and performance metrics
+    - Add real-time monitoring and alerting system
+    - Create system maintenance and configuration tools
+    - _Requirements: 6.7_
+
+  - [x] 7.8 Integrate existing system status management
+    - Move existing AdminSystemStatus page into admin layout
+    - Ensure agent status control and system message management work within admin panel
+    - Maintain existing real-time updates functionality
     - _Requirements: 1.4, 6.7_
 
 - [x] 8. Implement data services and API integration

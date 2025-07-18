@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Phone, Settings, LogOut, FileText, BarChart, User } from 'lucide-react';
+import { Home, Phone, Settings, LogOut, FileText, BarChart, User, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
 import { useAuth } from '@/context/AuthContext';
@@ -32,6 +32,9 @@ const DesktopSidebar = () => {
   const { user, logout } = useAuth();
   const { isMobile } = useSidebar();
   const location = useLocation();
+
+  // Check if user has admin privileges
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.is_admin;
 
   return (
     <Sidebar className="border-r border-border bg-card shadow-sm">
@@ -70,6 +73,36 @@ const DesktopSidebar = () => {
               </SidebarMenuItem>
             );
           })}
+
+          {/* Admin Panel Access - Only show for admin users */}
+          {isAdmin && (
+            <>
+              <Separator className="my-4" />
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Admin Panel"
+                  className="text-base"
+                >
+                  <NavLink
+                    to="/admin/dashboard"
+                    className={cn(
+                      "flex items-center gap-5 px-6 py-4 font-medium rounded-lg transition-all duration-200",
+                      location.pathname.startsWith('/admin')
+                        ? "bg-orange-500/10 text-orange-600 border-l-4 border-orange-500"
+                        : "text-foreground/70 hover:text-foreground hover:bg-secondary active:scale-98 border-l-4 border-transparent"
+                    )}
+                  >
+                    <Shield className={cn(
+                      "h-5 w-5 transition-colors",
+                      location.pathname.startsWith('/admin') ? "text-orange-600" : "text-foreground/60 group-hover:text-foreground"
+                    )} />
+                    <span>Admin Panel</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+          )}
         </SidebarMenu>
       </SidebarContent>
 

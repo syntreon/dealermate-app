@@ -16,6 +16,12 @@ import NotFound from "./pages/NotFound";
 import Logs from "./pages/Logs";
 import Analytics from "./pages/Analytics";
 import AppLayout from "./components/AppLayout";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminSystemStatus from "./pages/AdminSystemStatus";
+import ClientManagement from "./pages/admin/ClientManagement";
+import UserManagement from "./pages/admin/UserManagement";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +43,16 @@ const App = () => (
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/manage-users" element={<ManageUsers />} />
+                </Route>
+
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="clients" element={<ClientManagement />} />
+                  <Route path="users" element={<UserManagement />} />
+                  <Route path="system-status" element={<AdminSystemStatus />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route index element={<AdminDashboard />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />

@@ -92,10 +92,12 @@ graph TD
    - Profile management
 
 8. **Admin Panel**
-   - Client management interface
-   - User management interface
-   - System health monitoring
-   - Configuration controls
+   - Dedicated admin layout with separate navigation
+   - Client management interface with CRUD operations
+   - User management interface with role assignment
+   - System health monitoring and status control
+   - Configuration controls and settings management
+   - Multi-client data filtering and overview
 
 ### Component Hierarchy
 
@@ -104,15 +106,26 @@ graph TD
     App --> AuthGuard
     AuthGuard --> Login
     AuthGuard --> MainLayout
-    MainLayout --> Sidebar
-    MainLayout --> Header
-    MainLayout --> Content
-    Content --> Overview
-    Content --> Analytics
-    Content --> CallsModule
-    Content --> LeadsModule
-    Content --> SettingsModule
-    Content --> AdminPanel
+    AuthGuard --> AdminLayout
+    
+    MainLayout --> AppSidebar
+    MainLayout --> TopBar
+    MainLayout --> MainContent
+    MainContent --> Dashboard
+    MainContent --> Analytics
+    MainContent --> CallsModule
+    MainContent --> LeadsModule
+    MainContent --> SettingsModule
+    
+    AdminLayout --> AdminSidebar
+    AdminLayout --> AdminTopBar
+    AdminLayout --> AdminContent
+    AdminContent --> AdminDashboard
+    AdminContent --> ClientManagement
+    AdminContent --> UserManagement
+    AdminContent --> SystemStatus
+    AdminContent --> AdminSettings
+    
     CallsModule --> CallList
     CallsModule --> CallDetail
     CallsModule --> CallFilters
@@ -122,9 +135,16 @@ graph TD
     SettingsModule --> UserSettings
     SettingsModule --> ClientSettings
     SettingsModule --> NotificationSettings
-    AdminPanel --> ClientManagement
-    AdminPanel --> UserManagement
-    AdminPanel --> SystemHealth
+    
+    AdminDashboard --> ClientSelector
+    AdminDashboard --> MetricsCards
+    AdminDashboard --> SystemOverview
+    ClientManagement --> ClientTable
+    ClientManagement --> ClientForm
+    UserManagement --> UserTable
+    UserManagement --> UserForm
+    SystemStatus --> AgentStatusControl
+    SystemStatus --> SystemMessageManager
 ```
 
 ## Data Models
@@ -630,6 +650,83 @@ interface AppError {
    - User analytics and behavior tracking
    - Health checks and status pages
 
+## Admin Panel Architecture
+
+### Multi-Tenant Admin System
+
+The admin panel is designed as a separate application layer with its own routing, layout, and navigation system. This approach provides:
+
+1. **Separation of Concerns**
+   - Dedicated admin interface isolated from client-facing features
+   - Independent routing structure (`/admin/*`)
+   - Role-based access control at the layout level
+
+2. **Admin Layout Structure**
+   ```typescript
+   AdminLayout
+   ├── AdminSidebar (admin-specific navigation)
+   ├── TopBar (shared with main app)
+   └── AdminContent
+       ├── AdminDashboard (multi-client overview)
+       ├── ClientManagement (CRUD operations)
+       ├── UserManagement (user-client associations)
+       ├── SystemStatus (agent status & messages)
+       └── AdminSettings (system configuration)
+   ```
+
+3. **Client Data Filtering**
+   - ClientSelector component for filtering data by specific client or "All Clients"
+   - Persistent client selection across admin pages
+   - Role-based data access (admins see all, client_admins see only their client)
+
+4. **Navigation Flow**
+   - Main app sidebar includes "Admin Panel" link for admin users
+   - Admin panel includes "Back to Main App" navigation
+   - Seamless transition between client and admin interfaces
+
+### Admin Panel Components
+
+1. **AdminLayout**
+   - Role-based access control (admin/owner only)
+   - Consistent theming with main application
+   - Error handling for unauthorized access
+
+2. **AdminSidebar**
+   - Admin-specific navigation items
+   - Visual indicators for admin context
+   - User role display in footer
+
+3. **ClientSelector**
+   - Dropdown with all clients and "All Clients" option
+   - Client status indicators (active/inactive/pending)
+   - Client type and metadata display
+
+4. **AdminDashboard**
+   - Multi-client metrics overview
+   - System status monitoring
+   - Recent activity across all clients
+   - Quick access to common admin tasks
+
+### Phase Implementation Strategy
+
+**Phase 1: Architecture & Layout (Completed)**
+- ✅ Admin layout and routing structure
+- ✅ Role-based access control
+- ✅ Basic admin dashboard with placeholders
+- ✅ Integration with existing system status management
+
+**Phase 2: Core Functionality (Next)**
+- Client management with CRUD operations
+- User management with role assignments
+- Advanced filtering and search capabilities
+- Bulk operations and data export
+
+**Phase 3: Advanced Features (Future)**
+- Client impersonation for troubleshooting
+- Advanced analytics and reporting
+- System health monitoring and alerting
+- Audit logs and compliance features
+
 ## Future Considerations
 
 1. **Scalability**
@@ -647,3 +744,9 @@ interface AppError {
    - Predictive lead scoring
    - Advanced voice analytics
    - Multi-language support
+
+4. **Admin Panel Enhancements**
+   - Advanced client onboarding workflows
+   - Automated billing and invoicing integration
+   - Custom client branding and white-labeling
+   - Advanced user permission management
