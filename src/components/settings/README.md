@@ -1,77 +1,90 @@
 # Settings Module
 
-This module implements the user settings functionality for the DealerMate application, allowing users to manage their profile information, notification preferences, view business settings, and agent configuration.
+This module implements the user settings functionality for the DealerMate application, allowing users to manage their profile information, notification preferences, and view client settings.
 
 ## Components
 
 ### 1. UserSettingsForm
-Allows users to view their personal information:
+Allows users to edit their personal information including:
 - Full name
 - Phone number
 - Email (read-only)
 
 Features:
-- Read-only display of user info
-- Real-time updates if profile changes elsewhere
+- Form validation using Zod schema
+- Error handling and feedback
+- Real-time updates to user profile
 
-### 2. NotificationSettings
-Enables users to configure their notification preferences:
+### 2. NotificationPreferences
+Enables users to configure their notification settings:
 - Email notifications toggle
 - Lead alerts toggle
 - System alerts toggle
 - Management of notification recipient emails
 
-Features:
-- Form validation and error handling
-- Preferences saved to the database
-- Real-time updates to user context
+### 3. ClientSettings (BusinessSettings)
+Provides a read-only view of client-level settings for regular users:
+- Client information display
+- Subscription plan details
+- Client configuration
+- Admin message for non-admin users
 
-### 3. BusinessSettings
-Displays business/client information:
-- Business name
-- Address
-- Main contact person
-- Main contact phone and email
+### 4. SettingsOptions
+Contains account-related actions and admin-specific options:
+- Account settings buttons
+- Admin settings panel access (for admin users only)
+- Webhook configuration
+- User management
 
-Features:
-- All users with client ID can view business settings
-- Editing is restricted to admins via the admin panel
+## Database Schema
 
-### 4. AgentSettings
-Shows agent configuration and status:
-- Agent status (pulled from top bar)
-- Lead capture required fields
-- Conversation quality config (persona, speech style, business context, call objectives, identity/personality)
+The user preferences are stored in the `preferences` JSONB column in the `users` table with the following structure:
 
-Data Source:
-- Pulled from `config_json` JSONB column in the `clients` table:
-  ```json
-  {
-    "lead_capture_config": {
-      "required_fields": "name, phone, trade_in, payment plan, vehicle_details"
-    },
-    "conversation_quality_config": {
-      "client_name": "Premier Chevrolet Buick GMC",
-      "persona_name": "Jordan",
-      "persona_speech_style": "Uses natural, conversational, short sentences, and asks one question at a time. Favors phrases like ''Yeah, for sure!'', ''Totally!'', and ''Right on!''. Avoids formal language like ''Certainly'' or ''May I inquire''.",
-      "client_business_context": "Sells new GM vehicles (Chevrolet, Buick, GMC) and used vehicles of any make. Redirects non-GM new vehicle requests to GM options or used inventory.",
-      "primary_call_objectives": "Welcome callers enthusiastically, answer questions about vehicles/services, capture lead information (name, phone, callback timing, trade-in, purchase method), and make callers feel good about calling.",
-      "persona_identity_and_personality": "Jordan is a 28-year-old female with a Canadian accent. She is optimistic, warm, approachable, genuinely enthusiastic, patient, and curious about caller needs."
-    }
+```json
+{
+  "notifications": {
+    "email": boolean,
+    "leadAlerts": boolean,
+    "systemAlerts": boolean,
+    "notificationEmails": string[]
+  },
+  "displaySettings": {
+    "theme": "light" | "dark" | "system",
+    "dashboardLayout": "compact" | "detailed"
   }
-  ```
+}
+```
 
+## Example User Preferences JSONB
+
+```json
+{
+  "notifications": {
+    "email": true,
+    "leadAlerts": false,
+    "systemAlerts": true,
+    "notificationEmails": []
+  },
+  "displaySettings": {
+    "theme": "dark",
+    "dashboardLayout": "compact"
+  },
+  "language": "en",
+  "timezone": "America/Toronto"
+}
+```
+notificationEmails": ["user@example.com", "manager@example.com"]
 ## Usage
 
 The settings module is integrated into the main Settings page with a tabbed interface:
-1. User - Personal information (read-only)
-2. Notifications - Notification preferences
-3. Business - Business/client information (viewable for all users, editable by admins via admin panel)
-4. Agent - Agent status and configuration (from client config JSONB)
+1. Profile - Personal information and settings
+2. Account - Account management options
+3. Notifications - Notification preferences
+4. Client - Client-level settings (if applicable)
 
 ## Implementation Notes
 
-- All forms include proper validation and error handling where applicable
+- All forms include proper validation and error handling
 - Changes are saved to the Supabase database
 - The user context is updated in real-time when settings are changed
-- Admin-specific editing is handled via the admin panel, not the main settings page
+- Admin-specific options are conditionally rendered based on user role
