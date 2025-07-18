@@ -10,10 +10,11 @@ import { useAuth } from '@/context/AuthContext';
 
 interface UserProfileCardProps {
   user: {
-    name: string;
-    email: string;
-    phone: string;
+    name?: string;
+    email?: string;
+    phone?: string;
     is_admin?: boolean;
+    full_name?: string;
   };
 }
 
@@ -27,7 +28,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
             <User className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-gray-800">{user.name}</CardTitle>
+            <CardTitle className="text-gray-800">{user.full_name || user.name || 'User'}</CardTitle>
             <CardDescription className="flex items-center gap-1 mt-1">
               {user.is_admin && (
                 <>
@@ -37,18 +38,19 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
                   <span className="text-gray-500 text-xs">•</span>
                 </>
               )}
-              <span className="text-gray-500 text-xs">{user.email}</span>
+              <span className="text-gray-500 text-xs">{user.email || 'No email available'}</span>
             </CardDescription>
           </div>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-gray-700">Full Name</Label>
             <Input 
               id="name" 
-              value={user.name} 
+              value={user.full_name || user.name || ''} 
               readOnly 
               className="bg-gray-50 border-gray-200 focus:border-primary cursor-not-allowed" 
             />
@@ -58,7 +60,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
             <Label htmlFor="email" className="text-gray-700">Email</Label>
             <Input 
               id="email" 
-              value={user.email} 
+              value={user.email || ''} 
               readOnly 
               className="bg-gray-50 border-gray-200 focus:border-primary cursor-not-allowed" 
             />
@@ -70,7 +72,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
           <div className="flex gap-3">
             <Input 
               id="phone" 
-              value={user.phone} 
+              value={user.phone || ''} 
               readOnly 
               className="flex-1 bg-gray-50 border-gray-200 focus:border-primary cursor-not-allowed" 
             />
@@ -83,7 +85,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
         <div className="pt-4 border-t border-gray-200">
           <h3 className="text-sm font-medium text-gray-800 mb-4">Account Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
+            <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-800 text-gray-800">
               <KeyRound className="h-4 w-4 mr-2" />
               Change Password
             </Button>

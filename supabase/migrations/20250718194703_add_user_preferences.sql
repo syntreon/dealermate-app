@@ -16,9 +16,11 @@ BEGIN
         "notificationEmails": []
       },
       "displaySettings": {
-        "theme": "dark",
+        "theme": "light",
         "dashboardLayout": "detailed"
-      }
+      },
+      "language": "en",
+      "timezone": "America/Toronto"
     }'::jsonb;
     
     -- Add comment to the column

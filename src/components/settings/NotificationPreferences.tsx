@@ -344,7 +344,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                     setNewEmail('');
                   }}
                   variant="outline"
-                  className="bg-white border-gray-300 hover:bg-gray-50"
+                  className="bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-800 text-gray-700"
                 >
                   <Plus size={16} className="mr-1" /> Add
                 </Button>
