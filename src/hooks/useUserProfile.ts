@@ -19,6 +19,18 @@ export interface UserData {
   client_id?: string | null; // UUID, Foreign key to clients
   role?: 'owner' | 'admin' | 'user' | 'client_admin' | 'client_user';
   full_name?: string;
+  preferences?: {
+    notifications: {
+      email: boolean;
+      leadAlerts: boolean;
+      systemAlerts: boolean;
+      notificationEmails: string[];
+    };
+    displaySettings: {
+      theme: 'light' | 'dark' | 'system';
+      dashboardLayout: 'compact' | 'detailed';
+    };
+  };
 }
 
 export const useUserProfile = () => {

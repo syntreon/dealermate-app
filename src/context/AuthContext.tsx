@@ -9,6 +9,7 @@ import { UserData } from "@/hooks/useUserProfile";
 
 interface AuthContextType {
   user: UserData | null;
+  setUser: (user: UserData) => void;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const {
     user,
+    setUser,
     isAuthenticated,
     isLoading,
     login,
@@ -69,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      setUser,
       isAuthenticated, 
       login, 
       logout, 
