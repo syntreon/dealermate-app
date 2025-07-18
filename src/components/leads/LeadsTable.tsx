@@ -26,6 +26,8 @@ import {
   Edit,
   Trash2,
   Download,
+  PhoneCall,
+  ExternalLink,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -302,6 +304,13 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                             Client ID: {lead.clientId}
                           </div>
                         )}
+                        {/* Show call ID with link to call details */}
+                        {lead.callId && (
+                          <div className="text-xs text-primary/80 mt-0.5 flex items-center">
+                            <PhoneCall className="h-3 w-3 mr-1" />
+                            <span>Call #{lead.callId.substring(0, 8)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>
@@ -333,7 +342,9 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-foreground/50 mr-2" />
                       <span className="text-sm text-foreground">
-                        {format(new Date(lead.createdAt), 'MMM d, yyyy')}
+                        {lead.createdAt && !isNaN(new Date(lead.createdAt).getTime()) 
+                          ? format(new Date(lead.createdAt), 'MMM d, yyyy')
+                          : 'Invalid date'}
                       </span>
                     </div>
                   </TableCell>

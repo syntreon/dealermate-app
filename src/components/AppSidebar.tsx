@@ -23,6 +23,7 @@ const navItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: Phone, label: 'Call', path: '/call' },
   { icon: FileText, label: 'Logs', path: '/logs' },
+  { icon: User, label: 'Leads', path: '/leads' },
   { icon: BarChart, label: 'Analytics', path: '/analytics' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];

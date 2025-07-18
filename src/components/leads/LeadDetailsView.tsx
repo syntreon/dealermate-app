@@ -29,6 +29,8 @@ import {
     ExternalLink,
     MessageSquare,
     Clock,
+    PhoneCall,
+    Link,
 } from 'lucide-react';
 import { Lead } from '@/context/LeadContext';
 import { cn } from '@/lib/utils';
@@ -256,10 +258,25 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            <FileText className="h-5 w-5 text-muted-foreground" />
+                                            <PhoneCall className="h-5 w-5 text-muted-foreground" />
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Call ID</p>
-                                                <p className="font-medium">{lead.callId}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-medium">{lead.callId}</p>
+                                                    {lead.callId && (
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="sm" 
+                                                            className="h-7 px-2 text-primary"
+                                                            asChild
+                                                        >
+                                                            <a href={`/logs?callId=${lead.callId}`} target="_blank" rel="noopener noreferrer">
+                                                                <Link className="h-3.5 w-3.5 mr-1" />
+                                                                View Call
+                                                            </a>
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 

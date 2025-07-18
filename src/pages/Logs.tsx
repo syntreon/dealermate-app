@@ -1,16 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, RefreshCw } from 'lucide-react';
+import { FileText, RefreshCw, Filter } from 'lucide-react';
 import { useCallLogs } from '@/hooks/useCallLogs';
 import CallLogsTable from '@/components/CallLogsTable';
+import ClientSelector from '@/components/ClientSelector';
+import { useAuth } from '@/context/AuthContext';
+import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
 /**
  * Logs page component for displaying call logs from Supabase
  * Shows a table of call logs with caller information, appointment details, and status
  */
 const Logs: React.FC = () => {
-  const { callLogs, loading, error, forceRefresh } = useCallLogs();
+  const { user } = useAuth();
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const { callLogs, loading, error, forceRefresh, refetch } = useCallLogs();
+
+  // Handle client selection change
+  const handleClientChange = (clientId: string | null) => {
+    setSelectedClientId(clientId);
+    // Refetch call logs with the selected client ID
+    refetch({ clientId });
+  };
 
   return (
     <div className="space-y-6 pb-8">
@@ -24,6 +36,13 @@ const Logs: React.FC = () => {
         </div>
         
         <div className="flex gap-2 self-start">
+          {/* Client selector for admin users */}
+          {canViewSensitiveInfo(user) && (
+            <ClientSelector
+              selectedClientId={selectedClientId}
+              onClientChange={handleClientChange}
+            />
+          )}
           <Button 
             variant="outline" 
             size="sm" 

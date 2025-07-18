@@ -108,6 +108,7 @@
     - _Requirements: 4.1, 8.3_
 
 
+
   - [x] 5.2 Develop lead details view
     - Create component to display contact information, call source, and status
     - Implement status update functionality
