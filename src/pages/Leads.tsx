@@ -1,74 +1,102 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Plus, Download } from 'lucide-react';
-import { useLeads, Lead } from '@/context/LeadContext';
+import { Download, RefreshCw, User } from 'lucide-react';
 import LeadsTable from '@/components/leads/LeadsTable';
 import LeadDetailsView from '@/components/leads/LeadDetailsView';
+import LeadExportDialog, { LeadExportOptions } from '@/components/leads/LeadExportDialog';
+import { useLeadService } from '@/hooks/useLeadService';
+import { downloadFile, generateExportFilename } from '@/utils/exportUtils';
 import { toast } from 'sonner';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Lead } from '@/integrations/supabase/lead-service';
 
 /**
  * Leads page component for displaying and managing leads
+ * Shows a table of leads with filtering, sorting, and export functionality
  */
 const Leads: React.FC = () => {
-  const { leads, updateLeadStatus, addLeadNote } = useLeads();
-  const [loading, setLoading] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const { 
+    leads, 
+    loading, 
+    error, 
+    forceRefresh,
+    updateLeadStatus,
+    addLeadNote,
+    deleteLead,
+    exportLeadsToCSV,
+    exportLeadsToExcel
+  } = useLeadService();
+  
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    // Simulate refresh delay
-    setTimeout(() => {
-      setLoading(false);
-      toast.success('Leads refreshed successfully');
-    }, 1000);
-  };
-
+  // Handle view lead
   const handleViewLead = (lead: Lead) => {
     setSelectedLead(lead);
     setIsDetailsOpen(true);
   };
 
+  // Handle edit lead (placeholder for now)
   const handleEditLead = (lead: Lead) => {
-    // For now, just show a toast. In the next task, we'll implement the lead edit form
-    toast.info(`Editing lead: ${lead.fullName}`);
+    toast.info('Edit lead functionality coming soon');
   };
 
-  const handleDeleteLead = (lead: Lead) => {
-    setLeadToDelete(lead);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteLead = () => {
-    if (!leadToDelete) return;
-    
-    // For now, just show a toast. In the next task, we'll implement the delete functionality
-    toast.success(`Lead deleted: ${leadToDelete.fullName}`);
-    setDeleteDialogOpen(false);
-    setLeadToDelete(null);
-  };
-
-  const handleStatusChange = async (lead: Lead, status: Lead['status']) => {
-    try {
-      const success = await updateLeadStatus(lead.id, status);
-      if (success) {
-        toast.success(`Lead status updated to ${status}`);
-      } else {
-        toast.error('Failed to update lead status');
+  // Handle delete lead
+  const handleDeleteLead = async (lead: Lead) => {
+    if (window.confirm(`Are you sure you want to delete the lead for ${lead.full_name}?`)) {
+      try {
+        await deleteLead(lead.id);
+        toast.success('Lead deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete lead');
       }
-    } catch (error) {
-      console.error('Error updating lead status:', error);
-      toast.error('An error occurred while updating lead status');
     }
   };
 
-  const handleExportLeads = () => {
-    // For now, just show a toast. In the next task, we'll implement the export functionality
-    toast.success('Leads exported successfully');
+  // Handle status change
+  const handleStatusChange = async (lead: Lead, status: Lead['status']) => {
+    try {
+      await updateLeadStatus(lead.id, status);
+      toast.success(`Lead status updated to ${status}`);
+    } catch (error) {
+      toast.error('Failed to update lead status');
+    }
+  };
+
+  // Handle add note
+  const handleAddNote = async (lead: Lead, note: string) => {
+    try {
+      await addLeadNote(lead.id, note);
+      return true;
+    } catch (error) {
+      toast.error('Failed to add note');
+      return false;
+    }
+  };
+
+  // Handle export
+  const handleExport = async (format: 'csv' | 'excel', options: LeadExportOptions) => {
+    try {
+      if (format === 'csv') {
+        const csvData = await exportLeadsToCSV(options);
+        downloadFile(
+          csvData, 
+          generateExportFilename('leads', 'csv'), 
+          'text/csv;charset=utf-8'
+        );
+        toast.success('Leads exported to CSV successfully');
+      } else {
+        const excelData = await exportLeadsToExcel(options);
+        downloadFile(
+          excelData, 
+          generateExportFilename('leads', 'xlsx')
+        );
+        toast.success('Leads exported to Excel successfully');
+      }
+    } catch (error) {
+      toast.error('Failed to export leads');
+    }
   };
 
   return (
@@ -79,22 +107,26 @@ const Leads: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-3xl font-bold text-foreground">Leads</h1>
           </div>
-          <p className="text-muted-foreground">View and manage your leads</p>
+          <p className="text-muted-foreground">Manage and track leads generated from calls</p>
         </div>
         
         <div className="flex gap-2 self-start">
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={handleRefresh}
+            onClick={() => setIsExportOpen(true)}
+          >
+            <Download className="h-4 w-4 mr-2" /> 
+            Export
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={forceRefresh}
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> 
             Refresh
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Lead
           </Button>
         </div>
       </div>
@@ -104,40 +136,23 @@ const Leads: React.FC = () => {
           <CardTitle className="text-xl font-semibold">Leads</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <LeadsTable 
-            leads={leads}
-            loading={loading}
-            onViewLead={handleViewLead}
-            onEditLead={handleEditLead}
-            onDeleteLead={handleDeleteLead}
-            onStatusChange={handleStatusChange}
-            onExportLeads={handleExportLeads}
-          />
+          {error ? (
+            <div className="bg-destructive/10 text-destructive p-6 m-4 rounded-md">
+              <p>Error loading leads: {typeof error === 'string' ? error : error.message || 'Unknown error'}</p>
+            </div>
+          ) : (
+            <LeadsTable 
+              leads={leads} 
+              loading={loading} 
+              onViewLead={handleViewLead}
+              onEditLead={handleEditLead}
+              onDeleteLead={handleDeleteLead}
+              onStatusChange={handleStatusChange}
+              onExportLeads={() => setIsExportOpen(true)}
+            />
+          )}
         </CardContent>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the lead{' '}
-              <strong>{leadToDelete?.fullName}</strong>.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteLead}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Lead Details View */}
       <LeadDetailsView
@@ -145,17 +160,15 @@ const Leads: React.FC = () => {
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         onStatusChange={handleStatusChange}
-        onAddNote={async (lead, note) => {
-          const success = await addLeadNote(lead.id, note);
-          if (!success) {
-            throw new Error('Failed to add note');
-          }
-          // Update the selected lead with the latest data after adding a note
-          const updatedLead = leads.find(l => l.id === lead.id);
-          if (updatedLead) {
-            setSelectedLead(updatedLead);
-          }
-        }}
+        onAddNote={handleAddNote}
+      />
+
+      {/* Lead Export Dialog */}
+      <LeadExportDialog
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        onExport={handleExport}
+        exportCount={leads.length}
       />
     </div>
   );

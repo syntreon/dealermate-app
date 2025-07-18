@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users } from 'lucide-react';
+import { LogOut, Users, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -57,7 +57,20 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
           <CardContent className="space-y-6 pt-6">
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Admin Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Admin settings buttons - visible on all screen sizes */}
+              <div className="grid grid-cols-1 gap-4">
+                <Button 
+                  variant="outline" 
+                  className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800" 
+                  onClick={() => navigate('/admin/settings')}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Admin Settings Panel
+                </Button>
+              </div>
+              
+              {/* Other admin options - grid layout for responsive design */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <Button 
                   variant="outline" 
                   className="justify-start bg-zinc-900 border-zinc-800 hover:bg-zinc-800" 

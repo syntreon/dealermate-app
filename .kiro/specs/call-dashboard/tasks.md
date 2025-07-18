@@ -94,7 +94,8 @@
     - Add minimize and close functionality
     - _Requirements: 3.2, 3.3, 3.4, 3.5_
 
-- [-] 5. Implement leads management module
+- [x] 5. Implement leads management module
+
 
 
 
@@ -105,6 +106,7 @@
 
 
     - _Requirements: 4.1, 8.3_
+
 
   - [x] 5.2 Develop lead details view
     - Create component to display contact information, call source, and status
@@ -210,6 +212,8 @@
     - Implement login, logout, and token refresh functions
     - Add user session management
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
+
+
 
   - [x] 8.2 Build call data service
     - Implement functions to fetch and filter call data

@@ -296,7 +296,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                         <div className="text-sm font-medium text-foreground">
                           {lead.fullName}
                         </div>
-                        {lead.clientId && (
+                        {/* Only show client ID to admins */}
+                        {lead.clientId && canViewSensitiveInfo(user) && (
                           <div className="text-xs text-foreground/60 mt-0.5">
                             Client ID: {lead.clientId}
                           </div>
