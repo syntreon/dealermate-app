@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Plus, Download } from 'lucide-react';
 import { useLeads, Lead } from '@/context/LeadContext';
 import LeadsTable from '@/components/leads/LeadsTable';
+import LeadDetailsView from '@/components/leads/LeadDetailsView';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -11,10 +12,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
  * Leads page component for displaying and managing leads
  */
 const Leads: React.FC = () => {
-  const { leads, updateLeadStatus } = useLeads();
+  const { leads, updateLeadStatus, addLeadNote } = useLeads();
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleRefresh = () => {
     setLoading(true);
@@ -26,8 +29,8 @@ const Leads: React.FC = () => {
   };
 
   const handleViewLead = (lead: Lead) => {
-    // For now, just show a toast. In the next task, we'll implement the lead details view
-    toast.info(`Viewing lead: ${lead.fullName}`);
+    setSelectedLead(lead);
+    setIsDetailsOpen(true);
   };
 
   const handleEditLead = (lead: Lead) => {
@@ -135,6 +138,25 @@ const Leads: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Lead Details View */}
+      <LeadDetailsView
+        lead={selectedLead}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        onStatusChange={handleStatusChange}
+        onAddNote={async (lead, note) => {
+          const success = await addLeadNote(lead.id, note);
+          if (!success) {
+            throw new Error('Failed to add note');
+          }
+          // Update the selected lead with the latest data after adding a note
+          const updatedLead = leads.find(l => l.id === lead.id);
+          if (updatedLead) {
+            setSelectedLead(updatedLead);
+          }
+        }}
+      />
     </div>
   );
 };

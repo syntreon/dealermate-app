@@ -101,6 +101,7 @@
     - Implement table with lead information
     - Add sorting and pagination
 
+
     - _Requirements: 4.1, 8.3_
 
   - [ ] 5.2 Develop lead details view
