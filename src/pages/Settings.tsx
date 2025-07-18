@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Settings as SettingsIcon, User as UserIcon, Bell, Building2, Bot, Sliders } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +13,7 @@ import { UserSettingsForm } from '@/components/settings/UserSettingsForm';
 import { NotificationPreferences } from '@/components/settings/NotificationPreferences';
 import { BusinessSettings } from '@/components/settings/BusinessSettings';
 import { AgentSettings } from '@/components/settings/AgentSettings';
-import { SettingsOptions } from '@/components/settings/SettingsOptions';
+import { Preferences } from '@/components/settings/Preferences';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { UserData } from '@/hooks/useUserProfile';
@@ -146,40 +146,35 @@ const Settings = () => {
                 onClick={() => setActiveTab('user')}
                 className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'user' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
+                <UserIcon className="h-4 w-4" />
                 <span>User</span>
               </button>
               <button
                 onClick={() => setActiveTab('notifications')}
                 className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'notifications' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
-                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
-                </svg>
+                <Bell className="h-4 w-4" />
                 <span>Notifications</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('preferences')}
+                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'preferences' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
+              >
+                <Sliders className="h-4 w-4" />
+                <span>Preferences</span>
               </button>
               <button
                 onClick={() => setActiveTab('business')}
                 className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'business' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
+                <Building2 className="h-4 w-4" />
                 <span>Business</span>
               </button>
               <button
                 onClick={() => setActiveTab('agent')}
                 className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'agent' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
+                <Bot className="h-4 w-4" />
                 <span>Agent</span>
               </button>
               {/* Admin panel button */}
@@ -219,6 +214,15 @@ const Settings = () => {
             </div>
           )}
           
+          {activeTab === 'preferences' && (
+            <div className="space-y-6">
+              <Preferences 
+                user={user} 
+                onUserUpdate={(updatedUser) => handleUserUpdate(updatedUser)} 
+              />
+            </div>
+          )}
+          
           {activeTab === 'business' && (
             <div className="space-y-6">
               <BusinessSettings clientId={user.client_id || null} isAdmin={canViewSensitiveInfo(user as unknown as User)} />
@@ -231,14 +235,33 @@ const Settings = () => {
             </div>
           )}
           
-          {/* Account options at the bottom of any tab */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <SettingsOptions 
-              onOpenWebhookDialog={() => setWebhookDialogOpen(true)} 
-              onOpenAddUserDialog={() => setAddUserDialogOpen(true)}
-              isAdmin={canViewSensitiveInfo(user as unknown as User)} 
-            />
-          </div>
+          {/* Admin options - only shown for admin users */}
+          {canViewSensitiveInfo(user as unknown as User) && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-800">Admin Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
+                      onClick={() => setWebhookDialogOpen(true)}
+                    >
+                      Webhook Configuration
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
+                      onClick={() => setAddUserDialogOpen(true)}
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Add New User
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
