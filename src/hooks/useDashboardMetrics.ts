@@ -1,16 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-
-interface DashboardMetrics {
-  totalCalls: number;
-  averageHandleTime: string;
-  callsTransferred: number;
-  totalLeads: number;
-  callsGrowth?: number;
-  timeGrowth?: number;
-  transferGrowth?: number;
-  leadsGrowth?: number;
-}
+import { DashboardMetrics, SystemMessage, AgentStatus } from '@/types/dashboard';
 
 export const useDashboardMetrics = (clientId?: string) => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -37,7 +27,28 @@ export const useDashboardMetrics = (clientId?: string) => {
           callsGrowth: 12,
           timeGrowth: -5,
           transferGrowth: 8,
-          leadsGrowth: 15
+          leadsGrowth: 15,
+          agentStatus: {
+            status: 'active',
+            lastUpdated: new Date(),
+            message: 'All systems operational'
+          },
+          systemMessages: [
+            {
+              id: '1',
+              type: 'info',
+              message: 'System maintenance scheduled for tonight at 2:00 AM EST',
+              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // expires in 24 hours
+            },
+            {
+              id: '2',
+              type: 'success',
+              message: 'New lead capture feature is now available',
+              timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+              expiresAt: null
+            }
+          ]
         };
         
         setMetrics(mockMetrics);

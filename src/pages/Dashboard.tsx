@@ -123,7 +123,16 @@ const Dashboard = () => {
 
       {/* Metrics Summary Cards */}
       <MetricsSummaryCards
-        metrics={metrics || {
+        metrics={metrics ? {
+          totalCalls: metrics.totalCalls,
+          averageHandleTime: metrics.averageHandleTime,
+          callsTransferred: metrics.callsTransferred,
+          totalLeads: metrics.totalLeads,
+          callsGrowth: metrics.callsGrowth,
+          timeGrowth: metrics.timeGrowth,
+          transferGrowth: metrics.transferGrowth,
+          leadsGrowth: metrics.leadsGrowth
+        } : {
           totalCalls: 156,
           averageHandleTime: '2h 22m',
           callsTransferred: 23,

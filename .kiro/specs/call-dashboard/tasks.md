@@ -47,6 +47,9 @@
     - _Requirements: 1.3, 1.5_
 
   - [x] 2.3 Add agent status and system messages
+
+
+
     - Create status indicator component in the topbar
     - Implement system messages display
     - _Requirements: 1.4_

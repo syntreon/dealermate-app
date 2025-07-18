@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Moon, Sun, Settings } from 'lucide-react';
+import { Moon, Sun, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import AgentStatusIndicator from '@/components/dashboard/AgentStatusIndicator';
+import SystemMessages from '@/components/dashboard/SystemMessages';
+import useDashboardMetrics from '@/hooks/useDashboardMetrics';
 
 const TopBar = () => {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  
+  // Get client ID from user if available
+  const clientId = user?.client_id || undefined;
+  
+  // Fetch dashboard metrics for agent status and system messages
+  const { metrics } = useDashboardMetrics(clientId);
   
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -29,6 +38,16 @@ const TopBar = () => {
       </div>
       
       <div className="flex items-center space-x-3">
+        {/* Agent Status Indicator */}
+        {metrics?.agentStatus && (
+          <AgentStatusIndicator agentStatus={metrics.agentStatus} />
+        )}
+        
+        {/* System Messages */}
+        {metrics?.systemMessages && (
+          <SystemMessages messages={metrics.systemMessages} />
+        )}
+        
         {/* Theme Toggle */}
         <Button 
           variant="ghost" 
@@ -43,30 +62,6 @@ const TopBar = () => {
             <Moon className="h-5 w-5" />
           )}
         </Button>
-        
-        {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full relative"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-primary"></span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="max-h-80 overflow-auto">
-              <div className="py-2 px-3 text-sm">
-                <p className="text-muted-foreground text-center">No new notifications</p>
-              </div>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
         
         {/* User Profile */}
         <DropdownMenu>

@@ -16,6 +16,9 @@ export interface UserData {
   phone: string;
   is_admin?: boolean;
   webhookUrl?: string;
+  client_id?: string | null; // UUID, Foreign key to clients
+  role?: 'owner' | 'admin' | 'user' | 'client_admin' | 'client_user';
+  full_name?: string;
 }
 
 export const useUserProfile = () => {
