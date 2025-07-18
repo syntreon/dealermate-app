@@ -37,6 +37,8 @@ import { Lead as ContextLead } from '@/context/LeadContext';
 import { Lead as SupabaseLead } from '@/integrations/supabase/lead-service';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import CallDetailsPopup from '@/components/calls/CallDetailsPopup';
+import { CallLog } from '@/integrations/supabase/call-logs-service';
 
 interface LeadDetailsViewProps {
     lead: SupabaseLead | null;
@@ -59,12 +61,14 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
     const [activeTab, setActiveTab] = useState('details');
     const [newNote, setNewNote] = useState('');
     const [isAddingNote, setIsAddingNote] = useState(false);
+    const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
+    const [isCallDetailsOpen, setIsCallDetailsOpen] = useState(false);
 
     // Get status badge
     const getStatusBadge = (status: string) => {
         // Normalize status to handle any case variations
         const normalizedStatus = status?.toLowerCase() || 'unknown';
-        
+
         const statusConfig: Record<string, { color: string, label: string }> = {
             'new': { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'New' },
             'contacted': { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Contacted' },
@@ -89,7 +93,7 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
     const getSourceBadge = (source: string) => {
         // Normalize source to handle any case variations
         const normalizedSource = source?.toLowerCase() || 'unknown';
-        
+
         const sourceConfig: Record<string, { color: string, label: string }> = {
             'website': { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', label: 'Website' },
             'direct_call': { color: 'bg-teal-100 text-teal-800 border-teal-200', label: 'Direct Call' },
@@ -150,20 +154,20 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
 
         return notes.split('\n').filter(note => note.trim() !== '');
     };
-    
+
     // Store a reference to track if we've processed custom data
     const processedLeadId = React.useRef<string | null>(null);
-    
+
     // Process custom lead data and add to notes when component mounts
     useEffect(() => {
         // Skip if we've already processed this lead or if there's no lead
         if (!lead || !lead.id || processedLeadId.current === lead.id || isAddingNote || !lead.custom_lead_data) {
             return;
         }
-        
+
         // Mark this lead as processed
         processedLeadId.current = lead.id;
-        
+
         // Use a timeout to ensure we don't interfere with other state updates
         const timer = setTimeout(() => {
             try {
@@ -177,23 +181,23 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                         console.log('Custom lead data is not valid JSON, using as string');
                     }
                 }
-                
+
                 // Only process if we have valid data
                 if (customData && typeof customData === 'object') {
                     // Format custom lead data
                     const customDataFormatted = formatCustomLeadData(customData);
-                    
+
                     // Check if custom data is already in notes to avoid duplication
-                    if (customDataFormatted && 
-                        lead.notes && 
+                    if (customDataFormatted &&
+                        lead.notes &&
                         !lead.notes.includes('--- Custom Lead Data ---')) {
                         const combinedNotes = combineNotesWithCustomData(lead.notes, customData);
-                        onAddNote(lead, combinedNotes).catch(err => 
+                        onAddNote(lead, combinedNotes).catch(err =>
                             console.error('Error adding combined notes:', err)
                         );
                     } else if (customDataFormatted && !lead.notes) {
                         // If no notes exist yet, just add the custom data
-                        onAddNote(lead, customDataFormatted).catch(err => 
+                        onAddNote(lead, customDataFormatted).catch(err =>
                             console.error('Error adding custom data as notes:', err)
                         );
                     }
@@ -202,7 +206,7 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                 console.error('Error processing custom lead data:', error);
             }
         }, 1000); // Longer delay to ensure component is fully mounted
-        
+
         // Cleanup function
         return () => {
             clearTimeout(timer);
@@ -339,24 +343,41 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                             </div>
                                         </div>
 
-                                        {/* Show call time instead of call ID for client view */}
+                                        {/* Show call time and View Call button for all users */}
                                         <div className="flex items-center gap-3">
                                             <PhoneCall className="h-5 w-5 text-muted-foreground" />
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Call Time</p>
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-medium">{lead.call_time || 'Not available'}</p>
-                                                    {lead.call_id && canViewSensitiveInfo(user) && (
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="sm" 
+                                                    {lead.call_id && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
                                                             className="h-7 px-2 text-primary"
-                                                            asChild
+                                                            onClick={async () => {
+                                                                try {
+                                                                    // Import the call logs service
+                                                                    const { callLogsService } = await import('@/integrations/supabase/call-logs-service');
+
+                                                                    // Fetch the call data
+                                                                    const callData = await callLogsService.getCallLogById(lead.call_id);
+
+                                                                    if (callData) {
+                                                                        // Set the selected call and open the popup
+                                                                        setSelectedCall(callData);
+                                                                        setIsCallDetailsOpen(true);
+                                                                    } else {
+                                                                        toast.error('Call details not found');
+                                                                    }
+                                                                } catch (error) {
+                                                                    console.error('Error fetching call details:', error);
+                                                                    toast.error('Failed to load call details');
+                                                                }
+                                                            }}
                                                         >
-                                                            <a href={`/logs?callId=${lead.call_id}`} target="_blank" rel="noopener noreferrer">
-                                                                <Link className="h-3.5 w-3.5 mr-1" />
-                                                                View Call
-                                                            </a>
+                                                            <Link className="h-3.5 w-3.5 mr-1" />
+                                                            View Call
                                                         </Button>
                                                     )}
                                                 </div>
@@ -373,7 +394,7 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                                 </div>
                                             </div>
                                         )}
-                                        
+
                                         {/* Add Sent To field */}
                                         {lead.sent_to && (
                                             <div className="flex items-center gap-3">
@@ -530,6 +551,13 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                     </Button>
                 </DialogFooter>
             </DialogContent>
+
+            {/* Call Details Popup */}
+            <CallDetailsPopup
+                call={selectedCall}
+                isOpen={isCallDetailsOpen}
+                onClose={() => setIsCallDetailsOpen(false)}
+            />
         </Dialog>
     );
 };

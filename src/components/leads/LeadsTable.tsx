@@ -301,7 +301,18 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
               </TableRow>
             ) : (
               filteredAndSortedLeads.map((lead) => (
-                <TableRow key={lead.id} className="hover:bg-secondary/20 transition-colors">
+                <TableRow 
+                  key={lead.id} 
+                  className="hover:bg-secondary/20 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    // Prevent row click if clicking on dropdown menu or its children
+                    if ((e.target as HTMLElement).closest('.dropdown-menu-container')) {
+                      return;
+                    }
+                    onViewLead(lead);
+                  }}
+                  title="Click to view lead details"
+                >
                   <TableCell>
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
@@ -351,7 +362,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right dropdown-menu-container">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
