@@ -99,12 +99,10 @@
 
 
 
-  - [ ] 5.1 Create leads list component
-    - Implement table with lead information
-    - Add sorting and pagination
-
-
-
+  - [x] 5.1 Create leads list component
+    - [x] Implement table with lead information
+    - [x] Add sorting and pagination
+    - [x] Add row click functionality for improved accessibility
     - _Requirements: 4.1, 8.3_
 
 
@@ -222,10 +220,11 @@
     - Create call search functionality
     - _Requirements: 3.1, 3.3, 3.7, 3.8_
 
-  - [ ] 8.3 Develop lead management service
-    - Create functions for lead CRUD operations
-    - Implement lead filtering and search
-    - Add lead export functionality
+  - [x] 8.3 Develop lead management service
+    - [x] Create functions for lead CRUD operations
+    - [x] Implement lead filtering and search
+    - [x] Add lead export functionality
+    - [x] Fix database schema alignment issues
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
   - [x] 8.4 Implement analytics service
