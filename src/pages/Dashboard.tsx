@@ -17,19 +17,19 @@ const Dashboard = () => {
   const { networkErrorDetected, user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  
+
   // Get client ID from user if available
   const clientId = user?.client_id || undefined;
-  
+
   // Use our custom hook to fetch dashboard metrics
   const { metrics, isLoading, error } = useDashboardMetrics(clientId);
-  
+
   const chartData = [
     { name: 'Sent', value: stats.sent, color: '#a78bfa' }, // Lighter purple for better contrast
     { name: 'Answered', value: stats.answered, color: '#8b5cf6' }, // Primary purple
     { name: 'Failed', value: stats.failed, color: '#f87171' }, // Lighter red for better contrast
   ];
-  
+
   const getStatusIcon = (status: Call['status']) => {
     switch (status) {
       case 'sent':
@@ -42,12 +42,12 @@ const Dashboard = () => {
         return <Clock className="h-4 w-4 text-yellow-500" />;
     }
   };
-  
+
   // Custom function to format time ago (replacement for formatDistanceToNow)
   const formatTimeAgo = (date: Date): string => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     // Define time intervals in seconds
     const minute = 60;
     const hour = minute * 60;
@@ -55,7 +55,7 @@ const Dashboard = () => {
     const week = day * 7;
     const month = day * 30;
     const year = day * 365;
-    
+
     // Calculate the appropriate time format
     if (diffInSeconds < minute) {
       return 'just now';
@@ -79,7 +79,7 @@ const Dashboard = () => {
       return `${years} ${years === 1 ? 'year' : 'years'} ago`;
     }
   };
-  
+
   const handleForceRefresh = () => {
     window.location.reload();
   };
@@ -87,7 +87,7 @@ const Dashboard = () => {
   const handleNewCall = () => {
     navigate('/call');
   };
-  
+
   return (
     <div className="space-y-8 pb-8"> {/* Increased top-level spacing */}
       {/* Enhanced responsive header layout with improved spacing */}
@@ -99,20 +99,20 @@ const Dashboard = () => {
           </div>
           <p className="text-[#6B7280]">Overview of your AI call system performance. (Mock Data)</p> {/* Improved contrast */}
         </div>
-        
+
         <div className="flex gap-3 mt-4 sm:mt-0"> {/* Increased button spacing and added top margin on mobile */}
           {networkErrorDetected && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleForceRefresh}
               className="animate-pulse"
             >
               <RefreshCw className="h-4 w-4 mr-2" /> Refresh
             </Button>
           )}
-          
-          <Button 
+
+          <Button
             onClick={handleNewCall}
             className="bg-primary hover:bg-primary/90 text-white px-4 py-2" /* Added more padding */
           >
@@ -120,9 +120,9 @@ const Dashboard = () => {
           </Button>
         </div>
       </div>
-      
+
       {/* Metrics Summary Cards */}
-      <MetricsSummaryCards 
+      <MetricsSummaryCards
         metrics={metrics || {
           totalCalls: 156,
           averageHandleTime: '2h 22m',
@@ -135,10 +135,10 @@ const Dashboard = () => {
         }}
         isLoading={isLoading}
       />
-      
+
       {/* Call Activity Timeline */}
       <CallActivityTimeline />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
           <CardHeader className="pb-2">
@@ -163,7 +163,7 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
@@ -185,7 +185,7 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
-      
+
         <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
@@ -194,7 +194,7 @@ const Dashboard = () => {
             {calls.length > 0 ? (
               <div className="space-y-4">
                 {calls.slice(0, 5).map((call) => (
-                  <div 
+                  <div
                     key={call.id}
                     className="flex items-start gap-4 p-3 rounded-lg bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200"
                   >

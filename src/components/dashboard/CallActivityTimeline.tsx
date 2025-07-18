@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { callLogsService } from '@/integrations/supabase/call-logs-service';
-import { format, parseISO, isValid } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { determineAggregationType, aggregateCallData, getAggregationDescription, type AggregationType } from '@/utils/dateAggregation';
 
 /**
  * Call Activity Timeline Chart Component
@@ -23,13 +24,13 @@ export function CallActivityTimeline() {
     const fetchCallData = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const filters = {
           ...(startDate && { startDate }),
           ...(endDate && { endDate })
         };
-        
+
         const calls = await callLogsService.getCallLogs(filters);
         setCallData(calls);
       } catch (err) {
@@ -39,34 +40,34 @@ export function CallActivityTimeline() {
         setLoading(false);
       }
     };
-    
+
     fetchCallData();
   }, [startDate, endDate]);
 
-  // Process call data for the chart
+  // Determine aggregation type based on date range
+  const aggregationType = useMemo(() => {
+    return determineAggregationType(startDate, endDate);
+  }, [startDate, endDate]);
+
+  // Process call data for the chart with adaptive aggregation
   const chartData = useMemo(() => {
     if (!callData.length) return [];
-    
-    // Group calls by hour of day
-    const hourCounts: Record<number, number> = {};
-    
-    callData.forEach(call => {
-      if (call.call_start_time) {
-        const date = parseISO(call.call_start_time);
-        if (isValid(date)) {
-          const hour = date.getHours();
-          hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-        }
-      }
-    });
-    
-    // Convert to chart data format
-    return Array.from({ length: 24 }, (_, hour) => ({
-      hour: hour,
-      hourLabel: format(new Date().setHours(hour, 0, 0, 0), 'h a'),
-      calls: hourCounts[hour] || 0
+
+    const aggregatedData = aggregateCallData(callData, aggregationType, startDate, endDate);
+
+    // Convert to chart format expected by recharts
+    return aggregatedData.map(item => ({
+      key: item.key,
+      label: item.label,
+      calls: item.calls,
+      period: item.period
     }));
-  }, [callData]);
+  }, [callData, aggregationType, startDate, endDate]);
+
+  // Get description for current aggregation
+  const aggregationDescription = useMemo(() => {
+    return getAggregationDescription(aggregationType);
+  }, [aggregationType]);
 
   // Handle date range changes
   const handleDateRangeChange = (start: string | null, end: string | null) => {
@@ -80,13 +81,13 @@ export function CallActivityTimeline() {
     const fetchCallData = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const filters = {
           ...(startDate && { startDate }),
           ...(endDate && { endDate })
         };
-        
+
         const calls = await callLogsService.getCallLogs(filters, true); // Force refresh
         setCallData(calls);
       } catch (err) {
@@ -96,18 +97,23 @@ export function CallActivityTimeline() {
         setLoading(false);
       }
     };
-    
+
     fetchCallData();
   };
 
   return (
     <Card className="col-span-12 lg:col-span-8">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
+        <div className="space-y-2">
           <CardTitle>Call Activity Timeline</CardTitle>
-          <CardDescription>Most active call times throughout the day</CardDescription>
+          <div className="flex items-center gap-2">
+            <CardDescription>Call activity over time</CardDescription>
+            <Badge variant="secondary" className="text-xs">
+              {aggregationDescription}
+            </Badge>
+          </div>
         </div>
-        <DateRangeFilter 
+        <DateRangeFilter
           onRangeChange={handleDateRangeChange}
           onRefresh={handleRefresh}
         />
@@ -124,7 +130,7 @@ export function CallActivityTimeline() {
             <div>
               <p className="text-destructive">Error loading call activity data</p>
               <p className="text-sm text-muted-foreground">{error.message}</p>
-              <button 
+              <button
                 onClick={handleRefresh}
                 className="mt-4 text-sm text-primary hover:underline"
               >
@@ -137,8 +143,8 @@ export function CallActivityTimeline() {
             <div>
               <p className="text-lg font-medium">No call data available</p>
               <p className="text-sm text-muted-foreground">
-                {startDate || endDate ? 
-                  'Try selecting a different date range' : 
+                {startDate || endDate ?
+                  'Try selecting a different date range' :
                   'There are no calls recorded yet'}
               </p>
             </div>
@@ -151,24 +157,27 @@ export function CallActivityTimeline() {
                 margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis 
-                  dataKey="hourLabel" 
+                <XAxis
+                  dataKey="label"
                   tick={{ fontSize: 12 }}
                   tickMargin={8}
+                  angle={aggregationType === 'day' ? -45 : 0}
+                  textAnchor={aggregationType === 'day' ? 'end' : 'middle'}
+                  height={aggregationType === 'day' ? 60 : 30}
                 />
-                <YAxis 
+                <YAxis
                   allowDecimals={false}
                   tick={{ fontSize: 12 }}
                 />
-                <Tooltip 
+                <Tooltip
                   formatter={(value) => [`${value} calls`, 'Call Volume']}
-                  labelFormatter={(label) => `Time: ${label}`}
+                  labelFormatter={(label) => `Period: ${label}`}
                 />
                 <Legend />
-                <Bar 
-                  dataKey="calls" 
-                  name="Call Volume" 
-                  fill="#a78bfa" 
+                <Bar
+                  dataKey="calls"
+                  name="Call Volume"
+                  fill="#a78bfa"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

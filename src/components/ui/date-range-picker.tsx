@@ -30,8 +30,8 @@ export function DateRangePicker({
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  // Predefined date ranges
-  const presets = [
+  // Predefined date ranges - using useMemo to recalculate fresh dates
+  const presets = React.useMemo(() => [
     {
       id: "today",
       name: "Today",
@@ -43,26 +43,38 @@ export function DateRangePicker({
     {
       id: "yesterday",
       name: "Yesterday",
-      dateRange: {
-        from: new Date(new Date().setDate(new Date().getDate() - 1)),
-        to: new Date(new Date().setDate(new Date().getDate() - 1)),
-      },
+      dateRange: (() => {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        return {
+          from: yesterday,
+          to: new Date(yesterday),
+        };
+      })(),
     },
     {
       id: "last7days",
       name: "Last 7 days",
-      dateRange: {
-        from: new Date(new Date().setDate(new Date().getDate() - 6)),
-        to: new Date(),
-      },
+      dateRange: (() => {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        return {
+          from: sevenDaysAgo,
+          to: new Date(),
+        };
+      })(),
     },
     {
       id: "last30days",
       name: "Last 30 days",
-      dateRange: {
-        from: new Date(new Date().setDate(new Date().getDate() - 29)),
-        to: new Date(),
-      },
+      dateRange: (() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+        return {
+          from: thirtyDaysAgo,
+          to: new Date(),
+        };
+      })(),
     },
     {
       id: "thisMonth",
@@ -75,27 +87,54 @@ export function DateRangePicker({
     {
       id: "lastMonth",
       name: "Last month",
-      dateRange: {
-        from: new Date(
-          new Date().getFullYear(),
-          new Date().getMonth() - 1,
-          1
-        ),
-        to: new Date(
-          new Date().getFullYear(),
-          new Date().getMonth(),
-          0
-        ),
-      },
+      dateRange: (() => {
+        const now = new Date();
+        return {
+          from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          to: new Date(now.getFullYear(), now.getMonth(), 0),
+        };
+      })(),
     },
-  ];
+  ], []);
 
   // Handle preset selection
   const handlePresetChange = (presetId: string) => {
-    const preset = presets.find((p) => p.id === presetId);
-    if (preset) {
-      onChange(preset.dateRange);
+    try {
+      const preset = presets.find((p) => p.id === presetId);
+      if (preset) {
+        onChange(preset.dateRange);
+        setIsOpen(false); // Close the popover after selection
+      }
+    } catch (error) {
+      console.error('Error applying date preset:', error);
     }
+  };
+
+  // Handle calendar date selection
+  const handleDateSelect = (range: DateRange | undefined) => {
+    if (!range) {
+      onChange(undefined);
+      return;
+    }
+
+    // If user selects the same date for both from and to, keep it as a single date
+    if (range.from && range.to && format(range.from, "yyyy-MM-dd") === format(range.to, "yyyy-MM-dd")) {
+      onChange({
+        from: range.from,
+        to: range.from, // Same date for both
+      });
+    } else {
+      onChange(range);
+    }
+  };
+
+  // Handle "Today" quick selection
+  const handleTodaySelect = () => {
+    const today = new Date();
+    onChange({
+      from: today,
+      to: today,
+    });
   };
 
   // Format the date range for display
@@ -145,9 +184,15 @@ export function DateRangePicker({
               mode="range"
               defaultMonth={value?.from}
               selected={value}
-              onSelect={onChange}
+              onSelect={handleDateSelect}
               numberOfMonths={2}
               className="border-r"
+              disabled={(date) => {
+                // Disable future dates (tomorrow and beyond)
+                const today = new Date();
+                today.setHours(23, 59, 59, 999); // Set to end of today
+                return date > today;
+              }}
             />
             {showPresets && (
               <div className="p-3 border-t sm:border-t-0 sm:border-l">
@@ -184,6 +229,14 @@ export function DateRangePicker({
                   >
                     Apply
                   </Button>
+                </div>
+                <div className="mt-3 text-center">
+                  <button
+                    onClick={handleTodaySelect}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Today
+                  </button>
                 </div>
               </div>
             )}
