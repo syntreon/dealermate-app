@@ -28,6 +28,7 @@ import {
   Download,
   PhoneCall,
   ExternalLink,
+  Clock,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -37,16 +38,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Lead } from '@/context/LeadContext';
+import { Lead as ContextLead } from '@/context/LeadContext';
+import { Lead as SupabaseLead } from '@/integrations/supabase/lead-service';
+import { adaptSupabaseLeadToContextLead } from '@/utils/leadAdapter';
 import { cn } from '@/lib/utils';
 
 interface LeadsTableProps {
-  leads: Lead[];
+  leads: SupabaseLead[];
   loading: boolean;
-  onViewLead: (lead: Lead) => void;
-  onEditLead: (lead: Lead) => void;
-  onDeleteLead: (lead: Lead) => void;
-  onStatusChange: (lead: Lead, status: Lead['status']) => void;
+  onViewLead: (lead: SupabaseLead) => void;
+  onEditLead: (lead: SupabaseLead) => void;
+  onDeleteLead: (lead: SupabaseLead) => void;
+  onStatusChange: (lead: SupabaseLead, status: SupabaseLead['status']) => void;
   onExportLeads: () => void;
 }
 
@@ -60,14 +63,14 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   onExportLeads,
 }) => {
   const { user } = useAuth();
-  const [sortField, setSortField] = useState<keyof Lead>('createdAt');
+  const [sortField, setSortField] = useState<keyof SupabaseLead>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<Lead['status'] | 'all'>('all');
-  const [selectedSource, setSelectedSource] = useState<Lead['source'] | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<SupabaseLead['status'] | 'all'>('all');
+  const [selectedSource, setSelectedSource] = useState<SupabaseLead['source'] | 'all'>('all');
 
   // Handle sorting
-  const handleSort = (field: keyof Lead) => {
+  const handleSort = (field: keyof SupabaseLead) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -94,8 +97,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
         const search = searchTerm.toLowerCase();
         // Search in multiple fields
         return (
-          lead.fullName.toLowerCase().includes(search) ||
-          lead.phoneNumber.toLowerCase().includes(search) ||
+          lead.full_name.toLowerCase().includes(search) ||
+          lead.phone_number.toLowerCase().includes(search) ||
           (lead.email?.toLowerCase().includes(search) || false) ||
           (lead.notes?.toLowerCase().includes(search) || false)
         );
@@ -105,9 +108,9 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
     })
     .sort((a, b) => {
       // Handle sorting based on field type
-      if (sortField === 'createdAt') {
-        const dateA = new Date(a.createdAt);
-        const dateB = new Date(b.createdAt);
+      if (sortField === 'created_at') {
+        const dateA = new Date(a.created_at);
+        const dateB = new Date(b.created_at);
         return sortDirection === 'asc' ? 
           dateA.getTime() - dateB.getTime() : 
           dateB.getTime() - dateA.getTime();
@@ -123,7 +126,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
     });
 
   // Render sort icon
-  const renderSortIcon = (field: keyof Lead) => {
+  const renderSortIcon = (field: keyof SupabaseLead) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? 
       <ChevronUp className="h-4 w-4 ml-1" /> : 
@@ -131,17 +134,22 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   };
 
   // Get status badge
-  const getStatusBadge = (status: Lead['status']) => {
-    const statusConfig: Record<Lead['status'], { color: string, label: string }> = {
-      new: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'New' },
-      contacted: { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Contacted' },
-      qualified: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Qualified' },
-      proposal: { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Proposal' },
-      closed_won: { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed (Won)' },
-      closed_lost: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Closed (Lost)' }
+  const getStatusBadge = (status: string) => {
+    // Normalize status to handle any case variations
+    const normalizedStatus = status?.toLowerCase() || 'unknown';
+    
+    const statusConfig: Record<string, { color: string, label: string }> = {
+      'new': { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'New' },
+      'contacted': { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Contacted' },
+      'qualified': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Qualified' },
+      'proposal': { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Proposal' },
+      'closed_won': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed (Won)' },
+      'closed': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed' },
+      'closed_lost': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Closed (Lost)' },
+      'lost': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Lost' }
     };
 
-    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
+    const config = statusConfig[normalizedStatus] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
 
     return (
       <Badge className={cn('px-3 py-1 rounded-full text-xs font-medium border', config.color)}>
@@ -151,16 +159,20 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   };
 
   // Get source badge
-  const getSourceBadge = (source: Lead['source']) => {
-    const sourceConfig: Record<Lead['source'], { color: string, label: string }> = {
-      website: { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', label: 'Website' },
-      direct_call: { color: 'bg-teal-100 text-teal-800 border-teal-200', label: 'Direct Call' },
-      referral: { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'Referral' },
-      social_media: { color: 'bg-sky-100 text-sky-800 border-sky-200', label: 'Social Media' },
-      other: { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Other' }
+  const getSourceBadge = (source: string) => {
+    // Normalize source to handle any case variations
+    const normalizedSource = source?.toLowerCase() || 'unknown';
+    
+    const sourceConfig: Record<string, { color: string, label: string }> = {
+      'website': { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', label: 'Website' },
+      'direct_call': { color: 'bg-teal-100 text-teal-800 border-teal-200', label: 'Direct Call' },
+      'referral': { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'Referral' },
+      'social_media': { color: 'bg-sky-100 text-sky-800 border-sky-200', label: 'Social Media' },
+      'ai_agent': { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'AI Agent' },
+      'other': { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Other' }
     };
 
-    const config = sourceConfig[source] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
+    const config = sourceConfig[normalizedSource] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
 
     return (
       <Badge variant="outline" className={cn('px-3 py-1 rounded-full text-xs font-medium border', config.color)}>
@@ -170,7 +182,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   };
 
   // Column definition for sortable headers
-  const SortableHeader = ({ field, label, className }: { field: keyof Lead, label: string, className?: string }) => (
+  const SortableHeader = ({ field, label, className }: { field: keyof SupabaseLead, label: string, className?: string }) => (
     <th 
       className={cn(
         "px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider cursor-pointer hover:bg-secondary/50 transition-colors",
@@ -219,7 +231,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
             <select
               className="pl-10 md:pl-12 pr-8 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value as Lead['status'] | 'all')}
+              onChange={(e) => setSelectedStatus(e.target.value as SupabaseLead['status'] | 'all')}
             >
               <option value="all">All Statuses</option>
               <option value="new">New</option>
@@ -238,13 +250,14 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
             <select
               className="pl-10 md:pl-12 pr-8 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
               value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value as Lead['source'] | 'all')}
+              onChange={(e) => setSelectedSource(e.target.value as SupabaseLead['source'] | 'all')}
             >
               <option value="all">All Sources</option>
               <option value="website">Website</option>
               <option value="direct_call">Direct Call</option>
               <option value="referral">Referral</option>
               <option value="social_media">Social Media</option>
+              <option value="ai_agent">AI Agent</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -256,11 +269,11 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <SortableHeader field="fullName" label="Name" />
-              <SortableHeader field="phoneNumber" label="Contact" />
+              <SortableHeader field="full_name" label="Name" />
+              <SortableHeader field="phone_number" label="Contact" />
               <SortableHeader field="status" label="Status" />
-              <SortableHeader field="source" label="Source" />
-              <SortableHeader field="createdAt" label="Created" />
+              {/* Hide source column as requested */}
+              <SortableHeader field="created_at" label="Created" />
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -296,54 +309,44 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       </div>
                       <div className="ml-3 md:ml-4">
                         <div className="text-sm font-medium text-foreground">
-                          {lead.fullName}
+                          {lead.full_name}
                         </div>
-                        {/* Only show client ID to admins */}
-                        {lead.clientId && canViewSensitiveInfo(user) && (
-                          <div className="text-xs text-foreground/60 mt-0.5">
-                            Client ID: {lead.clientId}
+                        {/* For admin view: show client name */}
+                        {canViewSensitiveInfo(user) ? (
+                          <div className="text-xs text-foreground/60 mt-0.5 flex items-center">
+                            <User className="h-3 w-3 mr-1" />
+                            <span>Client: {lead.client_name || 'Unknown'}</span>
                           </div>
-                        )}
-                        {/* Show call ID with link to call details */}
-                        {lead.callId && (
-                          <div className="text-xs text-primary/80 mt-0.5 flex items-center">
-                            <PhoneCall className="h-3 w-3 mr-1" />
-                            <span>Call #{lead.callId.substring(0, 8)}</span>
-                          </div>
+                        ) : (
+                          /* For client view: show call time instead of call ID */
+                          lead.call_time && (
+                            <div className="text-xs text-primary/80 mt-0.5 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              <span>{lead.call_time}</span>
+                            </div>
+                          )
                         )}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center">
-                        <Phone className="h-4 w-4 text-foreground/50 mr-2" />
-                        <span className="text-sm text-foreground">
-                          {lead.phoneNumber}
-                        </span>
-                      </div>
-                      {lead.email && (
-                        <div className="flex items-center">
-                          <Mail className="h-4 w-4 text-foreground/50 mr-2" />
-                          <span className="text-sm text-foreground">
-                            {lead.email}
-                          </span>
-                        </div>
-                      )}
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 text-foreground/50 mr-2" />
+                      <span className="text-sm text-foreground">
+                        {lead.phone_number}
+                      </span>
                     </div>
+                    {/* Email hidden as requested for now */}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(lead.status)}
                   </TableCell>
                   <TableCell>
-                    {getSourceBadge(lead.source)}
-                  </TableCell>
-                  <TableCell>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-foreground/50 mr-2" />
                       <span className="text-sm text-foreground">
-                        {lead.createdAt && !isNaN(new Date(lead.createdAt).getTime()) 
-                          ? format(new Date(lead.createdAt), 'MMM d, yyyy')
+                        {lead.created_at && !isNaN(new Date(lead.created_at).getTime()) 
+                          ? format(new Date(lead.created_at), 'MMM d, yyyy')
                           : 'Invalid date'}
                       </span>
                     </div>

@@ -5,21 +5,29 @@ import { Download, RefreshCw, User } from 'lucide-react';
 import LeadsTable from '@/components/leads/LeadsTable';
 import LeadDetailsView from '@/components/leads/LeadDetailsView';
 import LeadExportDialog, { LeadExportOptions } from '@/components/leads/LeadExportDialog';
+import ClientSelector from '@/components/ClientSelector';
 import { useLeadService } from '@/hooks/useLeadService';
 import { downloadFile, generateExportFilename } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 import { Lead } from '@/integrations/supabase/lead-service';
+import { useAuth } from '@/context/AuthContext';
+import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+
 
 /**
  * Leads page component for displaying and managing leads
  * Shows a table of leads with filtering, sorting, and export functionality
  */
 const Leads: React.FC = () => {
+  const { user } = useAuth();
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  
   const { 
     leads, 
     loading, 
     error, 
     forceRefresh,
+    refetch,
     updateLeadStatus,
     addLeadNote,
     deleteLead,
@@ -99,6 +107,8 @@ const Leads: React.FC = () => {
     }
   };
 
+  // No need to adapt leads anymore since LeadsTable now accepts Supabase lead format directly
+
   return (
     <div className="space-y-6 pb-8">
       {/* Responsive header layout */}
@@ -111,6 +121,16 @@ const Leads: React.FC = () => {
         </div>
         
         <div className="flex gap-2 self-start">
+          {/* Client selector for admin users */}
+          {canViewSensitiveInfo(user) && (
+            <ClientSelector
+              selectedClientId={selectedClientId}
+              onClientChange={(clientId) => {
+                setSelectedClientId(clientId);
+                refetch({ clientId });
+              }}
+            />
+          )}
           <Button 
             variant="outline" 
             size="sm" 

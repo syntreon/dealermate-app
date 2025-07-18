@@ -6,6 +6,7 @@
  */
 import { supabase } from './client';
 import type { Database } from './types';
+import { format } from 'date-fns';
 
 // Type for leads from database
 export type Lead = {
@@ -13,12 +14,19 @@ export type Lead = {
   full_name: string;
   phone_number: string;
   email: string | null;
-  status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'closed_won' | 'closed_lost';
-  source: 'website' | 'direct_call' | 'referral' | 'social_media' | 'other';
+  lead_status: string; // Changed from status to lead_status to match DB schema
+  status?: string; // Alias for lead_status for backward compatibility
+  source: 'website' | 'direct_call' | 'referral' | 'social_media' | 'other' | 'ai_agent';
   call_id: string;
   client_id: string;
   created_at: string;
   notes?: string;
+  // New fields
+  from_phone_number?: string;
+  call_time?: string;
+  custom_lead_data?: any;
+  sent_to?: string;
+  client_name?: string; // For admin view
 };
 
 // Interface for lead filters
@@ -97,7 +105,10 @@ class LeadService {
       // Start building the query
       let query = supabase
         .from('leads')
-        .select('*');
+        .select(`
+          *,
+          clients(name)
+        `);
       
       // Apply filters if provided
       if (filters) {
@@ -107,7 +118,7 @@ class LeadService {
         }
         
         if (filters.status) {
-          query = query.eq('status', filters.status);
+          query = query.eq('lead_status', filters.status);
         }
         
         if (filters.source) {
@@ -137,12 +148,31 @@ class LeadService {
         throw new Error(`Failed to fetch leads: ${error.message}`);
       }
       
+      // Process the data to extract client name and fetch call times
+      const processedData = data.map(lead => ({
+        ...lead,
+        client_name: lead.clients?.name || null,
+        // Add status field as an alias for lead_status for backward compatibility
+        status: lead.lead_status,
+        // Hardcode source as "AI Agent" for now until we add it to the database
+        source: 'ai_agent',
+        clients: undefined // Remove the clients object
+      }));
+      
+      // Fetch call times for all leads
+      const enhancedLeads = await import('@/utils/callTimeHelper')
+        .then(module => module.enhanceLeadsWithCallTime(processedData))
+        .catch(err => {
+          console.error('Error importing callTimeHelper:', err);
+          return processedData;
+        });
+      
       // Update cache if no filters were applied
       if (!filters) {
-        this.updateCache(data as Lead[]);
+        this.updateCache(enhancedLeads as Lead[]);
       }
       
-      return data as Lead[];
+      return enhancedLeads as Lead[];
     } catch (error) {
       console.error('Error in getLeads:', error);
       throw error;
@@ -157,9 +187,13 @@ class LeadService {
    */
   public async getLeadById(id: string): Promise<Lead | null> {
     try {
+      // Get lead data with client name
       const { data, error } = await supabase
         .from('leads')
-        .select('*')
+        .select(`
+          *,
+          clients(name)
+        `)
         .eq('id', id)
         .single();
       
@@ -168,7 +202,42 @@ class LeadService {
         throw new Error(`Failed to fetch lead: ${error.message}`);
       }
       
-      return data as Lead;
+      if (!data) {
+        return null;
+      }
+      
+      // Process the data to extract client name
+      const processedLead = {
+        ...data,
+        client_name: data.clients?.name || null,
+        // Add status field as an alias for lead_status for backward compatibility
+        status: data.lead_status,
+        // Hardcode source as "AI Agent" for now until we add it to the database
+        source: 'ai_agent',
+        clients: undefined // Remove the clients object
+      };
+      
+      // Get call time if call_id exists
+      if (processedLead.call_id) {
+        try {
+          const { data: callData, error: callError } = await supabase
+            .from('calls')
+            .select('call_start_time')
+            .eq('id', processedLead.call_id)
+            .single();
+          
+          if (!callError && callData && callData.call_start_time) {
+            const callTime = new Date(callData.call_start_time);
+            if (!isNaN(callTime.getTime())) {
+              processedLead.call_time = format(callTime, 'MMM d, yyyy h:mm a');
+            }
+          }
+        } catch (callError) {
+          console.error('Error fetching call time:', callError);
+        }
+      }
+      
+      return processedLead as Lead;
     } catch (error) {
       console.error('Error in getLeadById:', error);
       throw error;
@@ -238,7 +307,8 @@ class LeadService {
    * Update lead status
    */
   public async updateLeadStatus(id: string, status: Lead['status']): Promise<Lead> {
-    return this.updateLead(id, { status });
+    // Map status to lead_status to match the database schema
+    return this.updateLead(id, { lead_status: status });
   }
   
   /**

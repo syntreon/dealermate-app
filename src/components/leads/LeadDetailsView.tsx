@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
     Dialog,
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import { formatCustomLeadData, combineNotesWithCustomData } from '@/utils/leadDataFormatter';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -32,16 +33,17 @@ import {
     PhoneCall,
     Link,
 } from 'lucide-react';
-import { Lead } from '@/context/LeadContext';
+import { Lead as ContextLead } from '@/context/LeadContext';
+import { Lead as SupabaseLead } from '@/integrations/supabase/lead-service';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface LeadDetailsViewProps {
-    lead: Lead | null;
+    lead: SupabaseLead | null;
     isOpen: boolean;
     onClose: () => void;
-    onStatusChange: (lead: Lead, status: Lead['status']) => Promise<void>;
-    onAddNote: (lead: Lead, note: string) => Promise<void>;
+    onStatusChange: (lead: SupabaseLead, status: SupabaseLead['status']) => Promise<void>;
+    onAddNote: (lead: SupabaseLead, note: string) => Promise<void>;
     clientName?: string; // Optional client name to display instead of ID
 }
 
@@ -59,17 +61,22 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
     const [isAddingNote, setIsAddingNote] = useState(false);
 
     // Get status badge
-    const getStatusBadge = (status: Lead['status']) => {
-        const statusConfig: Record<Lead['status'], { color: string, label: string }> = {
-            new: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'New' },
-            contacted: { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Contacted' },
-            qualified: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Qualified' },
-            proposal: { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Proposal' },
-            closed_won: { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed (Won)' },
-            closed_lost: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Closed (Lost)' }
+    const getStatusBadge = (status: string) => {
+        // Normalize status to handle any case variations
+        const normalizedStatus = status?.toLowerCase() || 'unknown';
+        
+        const statusConfig: Record<string, { color: string, label: string }> = {
+            'new': { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'New' },
+            'contacted': { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Contacted' },
+            'qualified': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Qualified' },
+            'proposal': { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Proposal' },
+            'closed_won': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed (Won)' },
+            'closed': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed' },
+            'closed_lost': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Closed (Lost)' },
+            'lost': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Lost' }
         };
 
-        const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
+        const config = statusConfig[normalizedStatus] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
 
         return (
             <Badge className={cn('px-3 py-1 rounded-full text-xs font-medium border', config.color)}>
@@ -79,16 +86,20 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
     };
 
     // Get source badge
-    const getSourceBadge = (source: Lead['source']) => {
-        const sourceConfig: Record<Lead['source'], { color: string, label: string }> = {
-            website: { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', label: 'Website' },
-            direct_call: { color: 'bg-teal-100 text-teal-800 border-teal-200', label: 'Direct Call' },
-            referral: { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'Referral' },
-            social_media: { color: 'bg-sky-100 text-sky-800 border-sky-200', label: 'Social Media' },
-            other: { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Other' }
+    const getSourceBadge = (source: string) => {
+        // Normalize source to handle any case variations
+        const normalizedSource = source?.toLowerCase() || 'unknown';
+        
+        const sourceConfig: Record<string, { color: string, label: string }> = {
+            'website': { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', label: 'Website' },
+            'direct_call': { color: 'bg-teal-100 text-teal-800 border-teal-200', label: 'Direct Call' },
+            'referral': { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'Referral' },
+            'social_media': { color: 'bg-sky-100 text-sky-800 border-sky-200', label: 'Social Media' },
+            'ai_agent': { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'AI Agent' },
+            'other': { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Other' }
         };
 
-        const config = sourceConfig[source] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
+        const config = sourceConfig[normalizedSource] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
 
         return (
             <Badge variant="outline" className={cn('px-3 py-1 rounded-full text-xs font-medium border', config.color)}>
@@ -105,7 +116,7 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
     };
 
     // Handle status change
-    const handleStatusChange = async (status: Lead['status']) => {
+    const handleStatusChange = async (status: SupabaseLead['status']) => {
         if (!lead) return;
 
         try {
@@ -139,6 +150,64 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
 
         return notes.split('\n').filter(note => note.trim() !== '');
     };
+    
+    // Store a reference to track if we've processed custom data
+    const processedLeadId = React.useRef<string | null>(null);
+    
+    // Process custom lead data and add to notes when component mounts
+    useEffect(() => {
+        // Skip if we've already processed this lead or if there's no lead
+        if (!lead || !lead.id || processedLeadId.current === lead.id || isAddingNote || !lead.custom_lead_data) {
+            return;
+        }
+        
+        // Mark this lead as processed
+        processedLeadId.current = lead.id;
+        
+        // Use a timeout to ensure we don't interfere with other state updates
+        const timer = setTimeout(() => {
+            try {
+                // Check if the custom data is valid JSON or already a parsed object
+                let customData = lead.custom_lead_data;
+                if (typeof customData === 'string') {
+                    try {
+                        customData = JSON.parse(customData);
+                    } catch (e) {
+                        // If it's not valid JSON, just use it as is
+                        console.log('Custom lead data is not valid JSON, using as string');
+                    }
+                }
+                
+                // Only process if we have valid data
+                if (customData && typeof customData === 'object') {
+                    // Format custom lead data
+                    const customDataFormatted = formatCustomLeadData(customData);
+                    
+                    // Check if custom data is already in notes to avoid duplication
+                    if (customDataFormatted && 
+                        lead.notes && 
+                        !lead.notes.includes('--- Custom Lead Data ---')) {
+                        const combinedNotes = combineNotesWithCustomData(lead.notes, customData);
+                        onAddNote(lead, combinedNotes).catch(err => 
+                            console.error('Error adding combined notes:', err)
+                        );
+                    } else if (customDataFormatted && !lead.notes) {
+                        // If no notes exist yet, just add the custom data
+                        onAddNote(lead, customDataFormatted).catch(err => 
+                            console.error('Error adding custom data as notes:', err)
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error('Error processing custom lead data:', error);
+            }
+        }, 1000); // Longer delay to ensure component is fully mounted
+        
+        // Cleanup function
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [lead?.id]); // Only depend on lead ID to prevent unnecessary re-runs
 
     if (!isOpen || !lead) return null;
 
@@ -183,10 +252,10 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <Avatar className="h-16 w-16">
-                                        <AvatarFallback>{getInitials(lead.fullName)}</AvatarFallback>
+                                        <AvatarFallback>{getInitials(lead.full_name)}</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <h2 className="text-xl font-bold">{lead.fullName}</h2>
+                                        <h2 className="text-xl font-bold">{lead.full_name}</h2>
                                         <div className="flex items-center gap-2 mt-1">
                                             <div>{getStatusBadge(lead.status)}</div>
                                             <div>{getSourceBadge(lead.source)}</div>
@@ -213,24 +282,36 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                             <Phone className="h-5 w-5 text-muted-foreground" />
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Phone Number</p>
-                                                <p className="font-medium">{lead.phoneNumber}</p>
+                                                <p className="font-medium">{lead.phone_number}</p>
                                             </div>
                                         </div>
 
+                                        {/* Add dialed from phone number field */}
                                         <div className="flex items-center gap-3">
+                                            <PhoneCall className="h-5 w-5 text-muted-foreground" />
+                                            <div>
+                                                <p className="text-sm text-muted-foreground">Dialed From</p>
+                                                <p className="font-medium">{lead.from_phone_number || 'Not available'}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Hide email for now as requested */}
+                                        {/* <div className="flex items-center gap-3">
                                             <Mail className="h-5 w-5 text-muted-foreground" />
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Email</p>
                                                 <p className="font-medium">{lead.email || 'Not provided'}</p>
                                             </div>
-                                        </div>
+                                        </div> */}
 
                                         <div className="flex items-center gap-3">
                                             <Calendar className="h-5 w-5 text-muted-foreground" />
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Created Date</p>
                                                 <p className="font-medium">
-                                                    {format(new Date(lead.createdAt), 'MMMM d, yyyy')}
+                                                    {lead.created_at && !isNaN(new Date(lead.created_at).getTime())
+                                                        ? format(new Date(lead.created_at), 'MMMM d, yyyy')
+                                                        : 'Invalid date'}
                                                 </p>
                                             </div>
                                         </div>
@@ -252,25 +333,27 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                                         lead.source === 'website' ? 'Website' :
                                                             lead.source === 'referral' ? 'Referral' :
                                                                 lead.source === 'social_media' ? 'Social Media' :
-                                                                    'Other'}
+                                                                    lead.source === 'ai_agent' ? 'AI Agent' :
+                                                                        'Other'}
                                                 </p>
                                             </div>
                                         </div>
 
+                                        {/* Show call time instead of call ID for client view */}
                                         <div className="flex items-center gap-3">
                                             <PhoneCall className="h-5 w-5 text-muted-foreground" />
                                             <div>
-                                                <p className="text-sm text-muted-foreground">Call ID</p>
+                                                <p className="text-sm text-muted-foreground">Call Time</p>
                                                 <div className="flex items-center gap-2">
-                                                    <p className="font-medium">{lead.callId}</p>
-                                                    {lead.callId && (
+                                                    <p className="font-medium">{lead.call_time || 'Not available'}</p>
+                                                    {lead.call_id && canViewSensitiveInfo(user) && (
                                                         <Button 
                                                             variant="ghost" 
                                                             size="sm" 
                                                             className="h-7 px-2 text-primary"
                                                             asChild
                                                         >
-                                                            <a href={`/logs?callId=${lead.callId}`} target="_blank" rel="noopener noreferrer">
+                                                            <a href={`/logs?callId=${lead.call_id}`} target="_blank" rel="noopener noreferrer">
                                                                 <Link className="h-3.5 w-3.5 mr-1" />
                                                                 View Call
                                                             </a>
@@ -286,7 +369,18 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                                 <User className="h-5 w-5 text-muted-foreground" />
                                                 <div>
                                                     <p className="text-sm text-muted-foreground">Client</p>
-                                                    <p className="font-medium">{clientName || lead.clientId || 'N/A'}</p>
+                                                    <p className="font-medium">{lead.client_name || clientName || 'Unknown'}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Add Sent To field */}
+                                        {lead.sent_to && (
+                                            <div className="flex items-center gap-3">
+                                                <Mail className="h-5 w-5 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Sent To</p>
+                                                    <p className="font-medium">{lead.sent_to}</p>
                                                 </div>
                                             </div>
                                         )}

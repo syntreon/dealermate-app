@@ -190,3 +190,27 @@ interface MonthlyBillingSummary {
   total_partner_payout_cad: number;
   net_profit_usd_cad: number;
 }
+
+create table public.leads (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  call_id uuid not null,
+  client_id uuid not null,
+  first_name text null,
+  last_name text null,
+  full_name text null,
+  phone_number text null,
+  email text null,
+  callback_timing_captured boolean null,
+  callback_timing_value text null,
+  lead_status text not null default 'new'::text,
+  sent_to_client_at timestamp with time zone null,
+  appointment_confirmed_at timestamp with time zone null,
+  created_at timestamp with time zone null default now(),
+  custom_lead_data jsonb null,
+  from_phone_number text null,
+  notes text null,
+  constraint leads_pkey primary key (id),
+  constraint leads_call_id_key unique (call_id),
+  constraint leads_call_id_fkey foreign KEY (call_id) references calls (id) on delete CASCADE,
+  constraint leads_client_id_fkey foreign KEY (client_id) references clients (id) on delete CASCADE
+) TABLESPACE pg_default;
