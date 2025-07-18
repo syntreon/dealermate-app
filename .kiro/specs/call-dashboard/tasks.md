@@ -86,17 +86,21 @@
     - Add search functionality for phone number and call ID
     - _Requirements: 3.7, 3.8_
 
-  - [-] 4.3 Develop call details popup
+  - [x] 4.3 Develop call details popup
+
 
     - Create modal component for call details
     - Implement audio player for call recordings
     - Add minimize and close functionality
     - _Requirements: 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 5. Implement leads management module
+- [x] 5. Implement leads management module
+
+
   - [ ] 5.1 Create leads list component
     - Implement table with lead information
     - Add sorting and pagination
+
     - _Requirements: 4.1, 8.3_
 
   - [ ] 5.2 Develop lead details view

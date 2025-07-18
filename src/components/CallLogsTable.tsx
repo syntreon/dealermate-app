@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, ChevronDown, ChevronUp, Clock, Filter, Phone, PhoneCall, PhoneOutgoing, Search, User, VoicemailIcon } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Clock, Filter, Phone, PhoneCall, PhoneOutgoing, Search, User, VoicemailIcon, Eye } from 'lucide-react';
 import { CallLog, CallType } from '@/integrations/supabase/call-logs-service';
 import { cn } from '@/lib/utils';
+import CallDetailsPopup from './calls/CallDetailsPopup';
+import { Button } from '@/components/ui/button';
 
 // Call type badge component
 const CallTypeBadge = ({ callType }: { callType: string }) => {
@@ -66,6 +68,8 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCallType, setSelectedCallType] = useState<string | null>(null);
+  const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Handle sorting
   const handleSort = (field: keyof CallLog) => {
@@ -200,6 +204,9 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
               <th className="px-4 md:px-5 py-3 md:py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider">
                 Summary
               </th>
+              <th className="px-4 md:px-5 py-3 md:py-4 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-card divide-y divide-border">
@@ -280,6 +287,20 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                       {log.call_summary || 'No summary'}
                     </p>
                   </td>
+                  <td className="px-4 md:px-5 py-4 md:py-5 text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedCall(log);
+                        setIsDetailsOpen(true);
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View Details</span>
+                    </Button>
+                  </td>
                 </tr>
               ))
             )}
@@ -300,6 +321,13 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Call Details Popup */}
+      <CallDetailsPopup
+        call={selectedCall}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+      />
     </div>
   );
 };
