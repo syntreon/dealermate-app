@@ -148,6 +148,14 @@
     - Implement performance metrics visualization
     - _Requirements: 6.7_
 
+  - [ ] 7.5 Create system status management interface
+    - Implement admin page for managing agent status and system messages
+    - Create agent status control panel with status updates
+    - Build system message manager with CRUD operations
+    - Add database tables for system_messages and agent_status
+    - Implement real-time updates using Supabase subscriptions
+    - _Requirements: 1.4, 6.7_
+
 - [x] 8. Implement data services and API integration
   - [x] 8.1 Create authentication service
     - Implement login, logout, and token refresh functions
