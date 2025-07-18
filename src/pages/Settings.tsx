@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { AddUserForm } from '@/components/settings/AddUserForm';
-import { WebhookConfig } from '@/components/settings/WebhookConfig';
 import { UserProfileCard } from '@/components/settings/UserProfileCard';
 import { UserSettingsForm } from '@/components/settings/UserSettingsForm';
 import { NotificationPreferences } from '@/components/settings/NotificationPreferences';
@@ -54,57 +53,16 @@ const Settings = () => {
     setUser
   } = useAuth();
   const navigate = useNavigate();
-  const [webhookUrl, setWebhookUrl] = useState('https://webhook.site/your-webhook-id');
-  const [webhookDialogOpen, setWebhookDialogOpen] = useState(false);
+  // Removed webhook-related state as it's not used in the new app
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('user');
 
-  // Fetch global webhook URL from app_settings table
+  // Loading state for initial data fetching
   useEffect(() => {
-    const fetchWebhookUrl = async () => {
-      try {
-        setIsLoading(true);
-        const {
-          data,
-          error
-        } = await supabase.from('app_settings').select('value').eq('id', 'webhook_url').single();
-        if (error) {
-          console.error('Error fetching webhook URL:', error);
-          return;
-        }
-        if (data?.value) {
-          setWebhookUrl(data.value);
-        }
-      } catch (err) {
-        console.error('Error in fetch webhook:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchWebhookUrl();
+    // Set loading to false after initial render
+    setIsLoading(false);
   }, []);
-  
-  const handleSaveWebhook = async (url: string) => {
-    if (!isValidWebhookUrl(url)) {
-      toast.error('Invalid webhook URL format');
-      return;
-    }
-    setWebhookUrl(url);
-    try {
-      const {
-        data,
-        error
-      } = await supabase.from('app_settings').update({
-        value: url
-      }).eq('id', 'webhook_url').single();
-      if (error) throw error;
-      toast.success('Webhook URL updated successfully');
-    } catch (err) {
-      console.error('Error updating webhook:', err);
-      toast.error('Failed to update webhook URL');
-    }
-  };
   
   // Handle user updates
   const handleUserUpdate = (updatedUser: UserWithPreferences) => {
@@ -241,17 +199,10 @@ const Settings = () => {
               <div className="space-y-6">
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-gray-800">Admin Settings</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <Button 
                       variant="outline" 
-                      className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
-                      onClick={() => setWebhookDialogOpen(true)}
-                    >
-                      Webhook Configuration
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
+                      className="justify-start bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-800 text-gray-800" 
                       onClick={() => setAddUserDialogOpen(true)}
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
@@ -264,13 +215,6 @@ const Settings = () => {
           )}
         </div>
       </div>
-
-      <WebhookConfig 
-        open={webhookDialogOpen} 
-        onOpenChange={setWebhookDialogOpen} 
-        initialUrl={webhookUrl} 
-        onSave={handleSaveWebhook} 
-      />
 
       <AddUserForm open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen} />
     </div>
