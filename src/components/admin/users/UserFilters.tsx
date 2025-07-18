@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,9 +24,23 @@ const UserFilters: React.FC<UserFiltersProps> = ({
   onFilterChange,
   onResetFilters,
 }) => {
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({ ...filters, search: e.target.value });
-  };
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchTerm !== (filters.search || '')) {
+        onFilterChange({ ...filters, search: searchTerm });
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm, filters, onFilterChange]);
+
+  // Sync local state when external filters are reset
+  useEffect(() => {
+    if (!filters.search) {
+      setSearchTerm('');
+    }
+  }, [filters.search]);
 
   const handleRoleChange = (value: string) => {
     onFilterChange({
@@ -63,8 +77,8 @@ const UserFilters: React.FC<UserFiltersProps> = ({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search users..."
-            value={filters.search || ''}
-            onChange={handleSearchChange}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"
           />
         </div>

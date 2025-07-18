@@ -66,6 +66,18 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
   const currentConfig = getStatusConfig(currentStatus.status);
   const CurrentIcon = currentConfig.icon;
 
+  const handleQuickUpdate = async (status: AgentStatus['status'], message: string) => {
+    setIsUpdating(true);
+    try {
+      await onUpdateStatus({ status, message });
+      toast.success(`Agent status set to ${status}`);
+    } catch (error) {
+      toast.error('Failed to update agent status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
@@ -179,7 +191,8 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button
               variant="outline"
-              onClick={() => setFormData({ status: 'active', message: 'All systems operational' })}
+              onClick={() => handleQuickUpdate('active', 'All systems operational')}
+              disabled={isUpdating}
               className="flex items-center gap-2"
             >
               <Circle className="h-4 w-4 text-green-500" />
@@ -187,7 +200,8 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
             </Button>
             <Button
               variant="outline"
-              onClick={() => setFormData({ status: 'maintenance', message: 'Scheduled maintenance in progress' })}
+              onClick={() => handleQuickUpdate('maintenance', 'Scheduled maintenance in progress')}
+              disabled={isUpdating}
               className="flex items-center gap-2"
             >
               <Wrench className="h-4 w-4 text-yellow-500" />
@@ -195,7 +209,8 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
             </Button>
             <Button
               variant="outline"
-              onClick={() => setFormData({ status: 'inactive', message: 'System temporarily unavailable' })}
+              onClick={() => handleQuickUpdate('inactive', 'System temporarily unavailable')}
+              disabled={isUpdating}
               className="flex items-center gap-2"
             >
               <AlertTriangle className="h-4 w-4 text-red-500" />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -79,6 +79,21 @@ const ClientForm: React.FC<ClientFormProps> = ({
       status: client?.status,
     },
   });
+
+  const watchedName = form.watch('name');
+  const isSlugManuallyEdited = form.formState.dirtyFields.slug;
+
+  useEffect(() => {
+    if (watchedName && !isSlugManuallyEdited) {
+      const slug = watchedName
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-') // Replace spaces with -
+        .replace(/[^\w-]+/g, '') // Remove all non-word chars
+        .replace(/--+/g, '-'); // Replace multiple - with single -
+      form.setValue('slug', slug, { shouldValidate: true });
+    }
+  }, [watchedName, isSlugManuallyEdited, form]);
 
   const handleSubmit = async (values: ClientFormValues) => {
     await onSubmit(values);

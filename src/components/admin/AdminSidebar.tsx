@@ -70,7 +70,7 @@ const AdminSidebar = () => {
         {/* Admin Navigation */}
         <SidebarMenu className="space-y-2.5 px-2">
           {adminNavItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname.startsWith(item.path);
             return (
               <SidebarMenuItem key={item.path}>
                 <SidebarMenuButton

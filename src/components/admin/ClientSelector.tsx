@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Users } from 'lucide-react';
@@ -35,6 +35,14 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({
   const selectedClientData = selectedClient === 'all' 
     ? null 
     : clients.find(c => c.id === selectedClient);
+
+  useEffect(() => {
+    // If a client ID is selected but not found in the list (e.g., due to filtering),
+    // reset the selection to 'all' to prevent state inconsistency.
+    if (selectedClient !== 'all' && !isLoading && !clients.find(c => c.id === selectedClient)) {
+      onClientChange('all');
+    }
+  }, [selectedClient, clients, isLoading, onClientChange]);
 
   return (
     <div className="flex items-center gap-4">

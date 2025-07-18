@@ -167,8 +167,9 @@ const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
               <div className="flex items-center gap-2 justify-end">
                 <span className="text-sm font-medium">Overall Health:</span>
                 <Progress value={
-                  health.status === 'healthy' ? 100 : 
-                  health.status === 'degraded' ? 50 : 0
+                  health.components && Object.keys(health.components).length > 0
+                    ? (Object.values(health.components).filter(c => c.status === 'up').length / Object.values(health.components).length) * 100
+                    : 100
                 } className="w-32" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">

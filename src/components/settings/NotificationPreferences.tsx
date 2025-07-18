@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserData } from '@/hooks/useUserProfile';
 import { Plus, X } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -38,7 +38,7 @@ const formSchema = z.object({
   email: z.boolean(),
   leadAlerts: z.boolean(),
   systemAlerts: z.boolean(),
-  notificationEmails: z.array(z.string().email())
+  notificationEmails: z.array(z.object({ value: z.string().email('Invalid email address') }))
 });
 
 // Default preferences structure
@@ -66,14 +66,19 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
   });
   
   // Setup react-hook-form with zod validation
-  const form = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: preferences.notifications.email,
       leadAlerts: preferences.notifications.leadAlerts,
       systemAlerts: preferences.notifications.systemAlerts,
-      notificationEmails: preferences.notifications.notificationEmails
+      notificationEmails: preferences.notifications.notificationEmails.map(email => ({ value: email }))
     }
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "notificationEmails"
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,7 +95,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
       email: newPreferences.notifications.email,
       leadAlerts: newPreferences.notifications.leadAlerts,
       systemAlerts: newPreferences.notifications.systemAlerts,
-      notificationEmails: newPreferences.notifications.notificationEmails
+      notificationEmails: newPreferences.notifications.notificationEmails.map(email => ({ value: email }))
     });
   }, [user, form.reset]);
 
@@ -147,12 +152,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
   };
   */
 
-  // Remove notification email - updated to work with react-hook-form
-  const handleRemoveEmail = (emailToRemove: string) => {
-    const currentEmails = form.getValues('notificationEmails') || [];
-    const updatedEmails = currentEmails.filter(email => email !== emailToRemove);
-    form.setValue('notificationEmails', updatedEmails, { shouldDirty: true });
-  };
+
 
   // We're now using the form's onSubmit handler instead of this separate function
 
@@ -168,7 +168,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
           email: values.email,
           leadAlerts: values.leadAlerts,
           systemAlerts: values.systemAlerts,
-          notificationEmails: values.notificationEmails
+          notificationEmails: values.notificationEmails.map(email => email.value)
         }
       };
       
@@ -285,36 +285,36 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
               
               <div className="space-y-3">
                 {/* List of current notification emails */}
-                <FormField
-                  control={form.control}
-                  name="notificationEmails"
-                  render={({ field }) => (
-                    <FormItem>
-                      {field.value.length > 0 ? (
-                        <div className="space-y-2 mb-4">
-                          {field.value.map((email, index) => (
-                            <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-md border border-gray-200">
-                              <span className="text-sm text-gray-700">{email}</span>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleRemoveEmail(email)}
-                                className="h-8 w-8 text-gray-400 hover:text-red-500"
-                                type="button"
-                              >
-                                <X size={16} />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-gray-500 italic text-sm bg-gray-50 rounded-md border border-gray-200">
-                          No notification recipients added yet
-                        </div>
+                <div className="space-y-2 mb-4">
+                  {fields.map((field, index) => (
+                     <FormField
+                      control={form.control}
+                      key={field.id}
+                      name={`notificationEmails.${index}.value`}
+                      render={({ field: itemField }) => (
+                        <FormItem className="flex items-center justify-between bg-gray-50 p-3 rounded-md border border-gray-200">
+                          <FormControl>
+                            <Input {...itemField} className="border-none bg-transparent focus-visible:ring-0 text-sm text-gray-700" readOnly />
+                          </FormControl>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => remove(index)}
+                            className="h-8 w-8 text-gray-400 hover:text-red-500"
+                            type="button"
+                          >
+                            <X size={16} />
+                          </Button>
+                        </FormItem>
                       )}
-                    </FormItem>
+                    />
+                  ))}
+                  {fields.length === 0 && (
+                     <div className="text-center py-4 text-gray-500 italic text-sm bg-gray-50 rounded-md border border-gray-200">
+                        No notification recipients added yet
+                      </div>
                   )}
-                />
+                </div>
               
               {/* Add new email form */}
               <div className="flex gap-2 mt-2">
@@ -334,22 +334,20 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                 <Button 
                   type="button"
                   onClick={() => {
-                    // Validate email using zod
                     const emailValidation = z.string().email().safeParse(newEmail);
                     if (!emailValidation.success) {
                       setEmailError('Please enter a valid email address');
                       return;
                     }
-                    
-                    // Add email to form
-                    const currentEmails = form.getValues('notificationEmails') || [];
-                    if (currentEmails.includes(newEmail)) {
+
+                    if (fields.some(field => field.value === newEmail)) {
                       setEmailError('This email is already in the list');
                       return;
                     }
-                    
-                    form.setValue('notificationEmails', [...currentEmails, newEmail]);
+
+                    append({ value: newEmail });
                     setNewEmail('');
+                    setEmailError('');
                   }}
                   variant="outline"
                   className="bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-800 text-gray-700"

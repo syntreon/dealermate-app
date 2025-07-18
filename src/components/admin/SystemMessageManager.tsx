@@ -33,6 +33,11 @@ const SystemMessageManager: React.FC<SystemMessageManagerProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.expiresAt && new Date(formData.expiresAt) < new Date()) {
+      toast.error('Expiration date cannot be in the past.');
+      return;
+    }
     
     try {
       const messageData = {

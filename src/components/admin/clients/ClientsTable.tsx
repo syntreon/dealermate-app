@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Client } from '@/types/admin';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 interface ClientsTableProps {
   clients: Client[];
@@ -104,7 +104,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
               <TableCell>{getStatusBadge(client.status)}</TableCell>
               <TableCell>{client.subscription_plan}</TableCell>
               <TableCell>{formatCurrency(client.monthly_billing_amount_cad, 'CAD')}</TableCell>
-              <TableCell>{client.joined_at.toLocaleDateString()}</TableCell>
+              <TableCell>{formatDate(client.joined_at)}</TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
