@@ -20,6 +20,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminSystemStatus from "./pages/AdminSystemStatus";
 import ClientManagement from "./pages/admin/ClientManagement";
+import ClientDetails from "./pages/admin/ClientDetails";
 import UserManagement from "./pages/admin/UserManagement";
 import AdminSettings from "./pages/admin/AdminSettings";
 
@@ -49,6 +50,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="clients" element={<ClientManagement />} />
+                  <Route path="clients/:id" element={<ClientDetails />} />
                   <Route path="users" element={<UserManagement />} />
                   <Route path="system-status" element={<AdminSystemStatus />} />
                   <Route path="settings" element={<AdminSettings />} />
