@@ -23,6 +23,7 @@ import ClientManagement from "./pages/admin/ClientManagement";
 import ClientDetails from "./pages/admin/ClientDetails";
 import UserManagement from "./pages/admin/UserManagement";
 import AdminSettings from "./pages/admin/AdminSettings";
+import SystemHealthMonitoring from "./pages/admin/SystemHealthMonitoring";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
                   <Route path="clients/:id" element={<ClientDetails />} />
                   <Route path="users" element={<UserManagement />} />
                   <Route path="system-status" element={<AdminSystemStatus />} />
+                  <Route path="system-health" element={<SystemHealthMonitoring />} />
                   <Route path="settings" element={<AdminSettings />} />
                   <Route index element={<AdminDashboard />} />
                 </Route>

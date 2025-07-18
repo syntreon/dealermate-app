@@ -205,36 +205,36 @@ export const AdminService = {
   getClients: async (filters?: ClientFilters): Promise<Client[]> => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     let filteredClients = [...mockClients];
-    
+
     if (filters) {
       // Apply status filter
       if (filters.status && filters.status !== 'all') {
         filteredClients = filteredClients.filter(client => client.status === filters.status);
       }
-      
+
       // Apply type filter
       if (filters.type) {
         filteredClients = filteredClients.filter(client => client.type === filters.type);
       }
-      
+
       // Apply search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        filteredClients = filteredClients.filter(client => 
-          client.name.toLowerCase().includes(searchLower) || 
+        filteredClients = filteredClients.filter(client =>
+          client.name.toLowerCase().includes(searchLower) ||
           client.slug.toLowerCase().includes(searchLower) ||
           client.contact_person?.toLowerCase().includes(searchLower) ||
           client.contact_email?.toLowerCase().includes(searchLower)
         );
       }
-      
+
       // Apply sorting
       if (filters.sortBy) {
         filteredClients.sort((a, b) => {
           const direction = filters.sortDirection === 'desc' ? -1 : 1;
-          
+
           switch (filters.sortBy) {
             case 'name':
               return direction * a.name.localeCompare(b.name);
@@ -252,18 +252,18 @@ export const AdminService = {
         });
       }
     }
-    
+
     return filteredClients;
   },
-  
+
   getClientById: async (id: string): Promise<Client | null> => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return mockClients.find(client => client.id === id) || null;
   },
-  
+
   createClient: async (data: CreateClientData): Promise<Client> => {
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     const newClient: Client = {
       id: Math.random().toString(36).substring(2, 11),
       ...data,
@@ -278,86 +278,86 @@ export const AdminService = {
         leadsToday: 0
       }
     };
-    
+
     // In a real implementation, this would be saved to the database
     mockClients.push(newClient);
-    
+
     return newClient;
   },
-  
+
   updateClient: async (id: string, data: UpdateClientData): Promise<Client> => {
     await new Promise(resolve => setTimeout(resolve, 600));
-    
+
     const clientIndex = mockClients.findIndex(client => client.id === id);
     if (clientIndex === -1) {
       throw new Error('Client not found');
     }
-    
+
     const updatedClient = {
       ...mockClients[clientIndex],
       ...data
     };
-    
+
     // In a real implementation, this would update the database
     mockClients[clientIndex] = updatedClient;
-    
+
     return updatedClient;
   },
-  
+
   deleteClient: async (id: string): Promise<void> => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     const clientIndex = mockClients.findIndex(client => client.id === id);
     if (clientIndex === -1) {
       throw new Error('Client not found');
     }
-    
+
     // In a real implementation, this would delete from the database
     mockClients.splice(clientIndex, 1);
   },
-  
+
   activateClient: async (id: string): Promise<Client> => {
     return AdminService.updateClient(id, { status: 'active' });
   },
-  
+
   deactivateClient: async (id: string): Promise<Client> => {
     return AdminService.updateClient(id, { status: 'inactive' });
   },
-  
+
   // User management functions
   getUsers: async (filters?: UserFilters): Promise<User[]> => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     let filteredUsers = [...mockUsers];
-    
+
     if (filters) {
       // Apply role filter
       if (filters.role && filters.role !== 'all') {
         filteredUsers = filteredUsers.filter(user => user.role === filters.role);
       }
-      
+
       // Apply client filter
       if (filters.client_id && filters.client_id !== 'all') {
-        filteredUsers = filteredUsers.filter(user => 
+        filteredUsers = filteredUsers.filter(user =>
           user.client_id === filters.client_id || user.client_id === null // Include global admins
         );
       }
-      
+
       // Apply search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        filteredUsers = filteredUsers.filter(user => 
-          user.full_name.toLowerCase().includes(searchLower) || 
+        filteredUsers = filteredUsers.filter(user =>
+          user.full_name.toLowerCase().includes(searchLower) ||
           user.email.toLowerCase().includes(searchLower)
         );
       }
-      
+
       // Apply sorting
       if (filters.sortBy) {
         filteredUsers.sort((a, b) => {
           const direction = filters.sortDirection === 'desc' ? -1 : 1;
-          
+
           switch (filters.sortBy) {
             case 'full_name':
               return direction * a.full_name.localeCompare(b.full_name);
@@ -375,18 +375,18 @@ export const AdminService = {
         });
       }
     }
-    
+
     return filteredUsers;
   },
-  
+
   getUserById: async (id: string): Promise<User | null> => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return mockUsers.find(user => user.id === id) || null;
   },
-  
+
   createUser: async (data: CreateUserData): Promise<User> => {
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     const newUser: User = {
       id: Math.random().toString(36).substring(2, 11),
       ...data,
@@ -405,43 +405,287 @@ export const AdminService = {
         }
       }
     };
-    
+
     // In a real implementation, this would be saved to the database
     mockUsers.push(newUser);
-    
+
     return newUser;
   },
-  
+
   updateUser: async (id: string, data: UpdateUserData): Promise<User> => {
     await new Promise(resolve => setTimeout(resolve, 600));
-    
+
     const userIndex = mockUsers.findIndex(user => user.id === id);
     if (userIndex === -1) {
       throw new Error('User not found');
     }
-    
+
     const updatedUser = {
       ...mockUsers[userIndex],
       ...data
     };
-    
+
     // In a real implementation, this would update the database
     mockUsers[userIndex] = updatedUser;
-    
+
     return updatedUser;
   },
-  
+
   deleteUser: async (id: string): Promise<void> => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     const userIndex = mockUsers.findIndex(user => user.id === id);
     if (userIndex === -1) {
       throw new Error('User not found');
     }
-    
+
     // In a real implementation, this would delete from the database
     mockUsers.splice(userIndex, 1);
   },
+
+  // System health functions
+  getSystemHealth: async (clientId?: string | null): Promise<SystemHealth> => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // If clientId is provided, return client-specific health data
+    if (clientId) {
+      const client = mockClients.find(c => c.id === clientId);
+      
+      // For demo purposes, show different health status for different clients
+      if (client?.status === 'inactive') {
+        return {
+          status: 'down',
+          components: {
+            database: {
+              name: 'Database',
+              type: 'database',
+              status: 'up',
+              message: 'Connection pool healthy',
+              lastChecked: new Date()
+            },
+            api: {
+              name: 'API Server',
+              type: 'api',
+              status: 'up',
+              message: 'All endpoints responding',
+              lastChecked: new Date()
+            },
+            vapi: {
+              name: 'Voice API',
+              type: 'api',
+              status: 'down',
+              message: 'Voice services unavailable for this client',
+              lastChecked: new Date()
+            },
+            agent: {
+              name: `${client?.name} Agent`,
+              type: 'server',
+              status: 'down',
+              message: 'Agent is currently inactive',
+              lastChecked: new Date()
+            }
+          },
+          lastChecked: new Date()
+        };
+      } else if (client?.status === 'pending') {
+        return {
+          status: 'degraded',
+          components: {
+            database: {
+              name: 'Database',
+              type: 'database',
+              status: 'up',
+              message: 'Connection pool healthy',
+              lastChecked: new Date()
+            },
+            api: {
+              name: 'API Server',
+              type: 'api',
+              status: 'up',
+              message: 'All endpoints responding',
+              lastChecked: new Date()
+            },
+            vapi: {
+              name: 'Voice API',
+              type: 'api',
+              status: 'up',
+              message: 'Voice services operational',
+              lastChecked: new Date()
+            },
+            agent: {
+              name: `${client?.name} Agent`,
+              type: 'server',
+              status: 'down',
+              message: 'Agent setup in progress',
+              lastChecked: new Date()
+            }
+          },
+          lastChecked: new Date()
+        };
+      } else {
+        return {
+          status: 'healthy',
+          components: {
+            database: {
+              name: 'Database',
+              type: 'database',
+              status: 'up',
+              message: 'Connection pool healthy',
+              lastChecked: new Date()
+            },
+            api: {
+              name: 'API Server',
+              type: 'api',
+              status: 'up',
+              message: 'All endpoints responding',
+              lastChecked: new Date()
+            },
+            vapi: {
+              name: 'Voice API',
+              type: 'api',
+              status: 'up',
+              message: 'Voice services operational',
+              lastChecked: new Date()
+            },
+            agent: {
+              name: `${client?.name} Agent`,
+              type: 'server',
+              status: 'up',
+              message: 'Agent is active and responding',
+              lastChecked: new Date()
+            }
+          },
+          lastChecked: new Date()
+        };
+      }
+    }
+    
+    // Default platform-wide health data
+    return {
+      status: 'healthy',
+      components: {
+        database: {
+          name: 'Database',
+          type: 'database',
+          status: 'up',
+          message: 'Connection pool healthy',
+          lastChecked: new Date()
+        },
+        api: {
+          name: 'API Server',
+          type: 'api',
+          status: 'up',
+          message: 'All endpoints responding',
+          lastChecked: new Date()
+        },
+        storage: {
+          name: 'File Storage',
+          type: 'storage',
+          status: 'up',
+          message: 'S3 bucket accessible',
+          lastChecked: new Date()
+        },
+        auth: {
+          name: 'Authentication Service',
+          type: 'server',
+          status: 'up',
+          message: 'JWT verification working',
+          lastChecked: new Date()
+        },
+        vapi: {
+          name: 'Voice API',
+          type: 'api',
+          status: 'up',
+          message: 'All voice services operational',
+          lastChecked: new Date()
+        },
+        openai: {
+          name: 'OpenAI Integration',
+          type: 'api',
+          status: 'up',
+          message: 'API responding within SLA',
+          lastChecked: new Date()
+        }
+      },
+      lastChecked: new Date()
+    };
+  },
   
-  // System health functions would go here
+  getSystemMetrics: async (timeframe: 'day' | 'week' | 'month', clientId?: string | null): Promise<SystemMetrics> => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Generate mock timeframe data based on selected timeframe
+    const now = new Date();
+    const timeframeData: Array<{ timestamp: Date, value: number }> = [];
+    
+    const dataPoints = timeframe === 'day' ? 24 : timeframe === 'week' ? 7 : 30;
+    const interval = timeframe === 'day' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    
+    for (let i = 0; i < dataPoints; i++) {
+      const timestamp = new Date(now.getTime() - (dataPoints - i) * interval);
+      timeframeData.push({
+        timestamp,
+        value: Math.floor(Math.random() * 100) + 50
+      });
+    }
+    
+    // Mock recent events
+    const recentEvents = [
+      {
+        type: 'info' as const,
+        message: 'System update completed',
+        details: 'Version 2.4.1 deployed successfully',
+        timestamp: new Date(now.getTime() - 35 * 60 * 1000)
+      },
+      {
+        type: 'warning' as const,
+        message: 'High API usage detected',
+        details: 'Client ABC Corp exceeded normal API call volume',
+        timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000)
+      },
+      {
+        type: 'error' as const,
+        message: 'Database connection error',
+        details: 'Temporary connection issue resolved automatically',
+        timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000)
+      },
+      {
+        type: 'success' as const,
+        message: 'Backup completed',
+        details: 'Daily database backup completed successfully',
+        timestamp: new Date(now.getTime() - 12 * 60 * 60 * 1000)
+      },
+      {
+        type: 'info' as const,
+        message: 'New client onboarded',
+        details: 'XYZ Company successfully onboarded to the platform',
+        timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      }
+    ];
+    
+    // Mock system metrics
+    return {
+      totalCalls: 12478,
+      totalLeads: 3245,
+      activeClients: 18,
+      averageResponseTime: 245, // milliseconds
+      errorRate: 0.42, // percentage
+      timeframeData,
+      recentEvents
+    };
+  },
+  
+  runSystemHealthCheck: async (clientId?: string | null): Promise<void> => {
+    // Simulate API delay for running a health check
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // In a real implementation, this would trigger a comprehensive health check
+    // for the specified client or the entire platform if clientId is null
+    // and update the health status in the database
+    
+    console.log(`Running health check for ${clientId ? `client ${clientId}` : 'all clients'}`);
+    return;
+  }
 };

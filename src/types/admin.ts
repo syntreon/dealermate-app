@@ -95,3 +95,35 @@ export interface UserFilters {
   sortBy?: 'full_name' | 'email' | 'created_at' | 'last_login_at';
   sortDirection?: 'asc' | 'desc';
 }
+
+export interface SystemComponent {
+  name: string;
+  type: 'database' | 'api' | 'server' | 'storage' | 'processor' | string;
+  status: 'up' | 'down';
+  message?: string;
+  lastChecked?: Date;
+}
+
+export interface SystemHealth {
+  status: 'healthy' | 'degraded' | 'down';
+  components: Record<string, SystemComponent>;
+  lastChecked: Date;
+}
+
+export interface SystemEvent {
+  type: 'error' | 'warning' | 'info' | 'success';
+  message: string;
+  details: string;
+  timestamp: Date;
+  component?: string;
+}
+
+export interface SystemMetrics {
+  totalCalls: number;
+  totalLeads: number;
+  activeClients: number;
+  averageResponseTime: number;
+  errorRate: number;
+  timeframeData: Array<{ timestamp: Date, value: number }>;
+  recentEvents: SystemEvent[];
+}

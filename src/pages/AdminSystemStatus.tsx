@@ -6,8 +6,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, AlertTriangle } from 'lucide-react';
 import SystemMessageManager from '@/components/admin/SystemMessageManager';
 import AgentStatusControl from '@/components/admin/AgentStatusControl';
+import ClientSelector from '@/components/admin/ClientSelector';
 import { SystemStatusService } from '@/services/systemStatusService';
+import { AdminService } from '@/services/adminService';
 import { SystemMessage, AgentStatus } from '@/types/dashboard';
+import { Client } from '@/types/admin';
 import { toast } from 'sonner';
 
 const AdminSystemStatus = () => {
@@ -15,6 +18,9 @@ const AdminSystemStatus = () => {
   const [systemMessages, setSystemMessages] = useState<SystemMessage[]>([]);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string | 'all'>('all');
+  const [clientsLoading, setClientsLoading] = useState(true);
 
   // Check if user has admin privileges
   const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.is_admin;
@@ -22,11 +28,37 @@ const AdminSystemStatus = () => {
   useEffect(() => {
     if (!isAdmin) return;
 
-    const loadData = async () => {
+    // Load clients first
+    const loadClients = async () => {
+      setClientsLoading(true);
       try {
+        const clientsData = await AdminService.getClients();
+        setClients(clientsData);
+      } catch (error) {
+        console.error('Failed to load clients:', error);
+        toast.error('Failed to load clients');
+      } finally {
+        setClientsLoading(false);
+      }
+    };
+
+    loadClients();
+  }, [isAdmin]);
+
+  // Load system status data when selected client changes
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // If 'all' is selected, get platform-wide status
+        // Otherwise, get client-specific status
+        const clientId = selectedClient === 'all' ? null : selectedClient;
+        
         const [messages, status] = await Promise.all([
-          SystemStatusService.getSystemMessages(),
-          SystemStatusService.getAgentStatus()
+          SystemStatusService.getSystemMessages(clientId),
+          SystemStatusService.getAgentStatus(clientId)
         ]);
         
         setSystemMessages(messages);
@@ -42,6 +74,7 @@ const AdminSystemStatus = () => {
     loadData();
 
     // Set up real-time subscriptions
+    // In a real implementation, these would be filtered by client ID
     const unsubscribeMessages = SystemStatusService.subscribeToSystemMessages(setSystemMessages);
     const unsubscribeStatus = SystemStatusService.subscribeToAgentStatus(setAgentStatus);
 
@@ -49,11 +82,14 @@ const AdminSystemStatus = () => {
       unsubscribeMessages();
       unsubscribeStatus();
     };
-  }, [isAdmin]);
+  }, [isAdmin, selectedClient]);
 
   // System Message handlers
   const handleCreateMessage = async (message: Omit<SystemMessage, 'id' | 'timestamp'>) => {
-    await SystemStatusService.createSystemMessage(message);
+    // If a specific client is selected, create a client-specific message
+    // Otherwise, create a platform-wide message
+    const clientId = selectedClient === 'all' ? null : selectedClient;
+    await SystemStatusService.createSystemMessage(message, clientId);
   };
 
   const handleUpdateMessage = async (id: string, updates: Partial<SystemMessage>) => {
@@ -66,7 +102,10 @@ const AdminSystemStatus = () => {
 
   // Agent Status handlers
   const handleUpdateStatus = async (status: Omit<AgentStatus, 'lastUpdated'>) => {
-    await SystemStatusService.updateAgentStatus(status);
+    // If a specific client is selected, update that client's status
+    // Otherwise, update the platform-wide status
+    const clientId = selectedClient === 'all' ? null : selectedClient;
+    await SystemStatusService.updateAgentStatus(status, clientId);
   };
 
   if (!isAdmin) {
@@ -95,10 +134,25 @@ const AdminSystemStatus = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
+      <div className="mb-4">
         <h1 className="text-3xl font-bold mb-2">System Status Administration</h1>
         <p className="text-gray-600">
-          Manage agent status and system messages that appear to all users
+          Manage agent status and system messages for clients
+        </p>
+      </div>
+
+      {/* Client Selector */}
+      <div className="mb-6">
+        <ClientSelector
+          clients={clients}
+          selectedClient={selectedClient}
+          onClientChange={setSelectedClient}
+          isLoading={clientsLoading}
+        />
+        <p className="text-sm text-muted-foreground mt-2">
+          {selectedClient === 'all' 
+            ? 'Managing platform-wide status and messages (visible to all clients)' 
+            : `Managing status and messages for ${clients.find(c => c.id === selectedClient)?.name || 'selected client'}`}
         </p>
       </div>
 
