@@ -35,7 +35,7 @@ const userFormSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   phone: z.string().min(10, { message: 'Please enter a valid phone number' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
-  role: z.enum(['user', 'admin']),
+
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -60,7 +60,7 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
       email: '',
       phone: '',
       password: '',
-      role: 'user',
+
     },
   });
 
@@ -90,18 +90,7 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
         throw new Error("User creation failed");
       }
       
-      // Now set admin status if needed
-      if (values.role === 'admin') {
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ is_admin: true })
-          .eq('id', authData.user.id);
-        
-        if (updateError) {
-          console.error("Error setting admin status:", updateError);
-          // Continue anyway, the user is created
-        }
-      }
+
       
       toast.success(`User ${values.name} created successfully`);
       onOpenChange(false);
@@ -205,30 +194,7 @@ export const AddUserForm: React.FC<AddUserFormProps> = ({
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="bg-zinc-900 border-zinc-800 focus:border-purple">
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-zinc-900 border-zinc-800">
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             
             <DialogFooter className="pt-4">
               <Button 

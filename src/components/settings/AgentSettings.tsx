@@ -4,6 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
+// Type guard to check if the fetched data conforms to AgentConfig
+const isAgentConfig = (config: any): config is AgentConfig => {
+  return (
+    config &&
+    typeof config === 'object' &&
+    (!config.lead_capture_config || typeof config.lead_capture_config === 'object') &&
+    (!config.conversation_quality_config || typeof config.conversation_quality_config === 'object')
+  );
+};
+
 interface AgentSettingsProps {
   clientId: string | null;
 }
@@ -50,7 +60,14 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
           throw error;
         }
         
-        setAgentConfig(data?.config_json as AgentConfig || {});
+        const configData = data?.config_json;
+        if (isAgentConfig(configData)) {
+          setAgentConfig(configData);
+        } else {
+          // Set to a default/empty state or handle as an error
+          setAgentConfig({});
+          console.warn('Fetched agent configuration does not match the expected structure.');
+        }
         
         // For demo purposes, set a random agent status
         // In a real app, this would come from the agent status API or context

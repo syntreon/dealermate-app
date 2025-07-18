@@ -80,6 +80,20 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
   const [newEmail, setNewEmail] = useState('');
   const [emailError, setEmailError] = useState('');
 
+  // Add a useEffect to reset the form if the user prop changes
+  React.useEffect(() => {
+    const newPreferences = user && 'preferences' in user && user.preferences 
+      ? (user as UserWithPreferences).preferences 
+      : defaultPreferences;
+
+    form.reset({
+      email: newPreferences.notifications.email,
+      leadAlerts: newPreferences.notifications.leadAlerts,
+      systemAlerts: newPreferences.notifications.systemAlerts,
+      notificationEmails: newPreferences.notifications.notificationEmails
+    });
+  }, [user, form.reset]);
+
   // This function is no longer needed as we're using react-hook-form
   // Keeping it commented for reference
   /*
@@ -134,13 +148,10 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
   */
 
   // Remove notification email - updated to work with react-hook-form
-  const handleRemoveEmail = (email: string) => {
-    // Get current emails from form
+  const handleRemoveEmail = (emailToRemove: string) => {
     const currentEmails = form.getValues('notificationEmails') || [];
-    // Filter out the email to remove
-    const updatedEmails = currentEmails.filter(e => e !== email);
-    // Update form value
-    form.setValue('notificationEmails', updatedEmails);
+    const updatedEmails = currentEmails.filter(email => email !== emailToRemove);
+    form.setValue('notificationEmails', updatedEmails, { shouldDirty: true });
   };
 
   // We're now using the form's onSubmit handler instead of this separate function
@@ -287,11 +298,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                onClick={() => {
-                                  const newEmails = [...field.value];
-                                  newEmails.splice(index, 1);
-                                  field.onChange(newEmails);
-                                }}
+                                onClick={() => handleRemoveEmail(email)}
                                 className="h-8 w-8 text-gray-400 hover:text-red-500"
                                 type="button"
                               >
@@ -327,8 +334,9 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                 <Button 
                   type="button"
                   onClick={() => {
-                    // Validate email
-                    if (!newEmail || !newEmail.includes('@')) {
+                    // Validate email using zod
+                    const emailValidation = z.string().email().safeParse(newEmail);
+                    if (!emailValidation.success) {
                       setEmailError('Please enter a valid email address');
                       return;
                     }
