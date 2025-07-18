@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import { InfoIcon, AlertTriangle, Bot, ListChecks, MessageSquare, Building2, Target, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,11 +40,61 @@ interface AgentConfig {
   };
 }
 
+// Define Zod schema for form validation
+const agentSettingsSchema = z.object({
+  lead_capture_config: z.object({
+    required_fields: z.string().optional(),
+  }).optional(),
+  conversation_quality_config: z.object({
+    client_name: z.string().optional(),
+    persona_name: z.string().optional(),
+    persona_speech_style: z.string().optional(),
+    client_business_context: z.string().optional(),
+    primary_call_objectives: z.string().optional(),
+    persona_identity_and_personality: z.string().optional(),
+  }).optional(),
+});
+
+type AgentSettingsFormValues = z.infer<typeof agentSettingsSchema>;
+
 export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
   const [agentStatus, setAgentStatus] = useState<'online' | 'offline' | 'busy'>('offline');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const form = useForm<AgentSettingsFormValues>({
+    resolver: zodResolver(agentSettingsSchema),
+    defaultValues: agentConfig || {},
+  });
+
+  // Reset form when agentConfig changes
+  useEffect(() => {
+    if (agentConfig) {
+      form.reset(agentConfig);
+    }
+  }, [agentConfig, form]);
+
+  const onSubmit = async (values: AgentSettingsFormValues) => {
+    if (!clientId) return;
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ config_json: values })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      setAgentConfig(values as AgentConfig);
+      setIsEditing(false);
+      toast.success('Agent settings updated successfully!');
+    } catch (err) {
+      console.error('Error updating agent settings:', err);
+      toast.error('Failed to update agent settings.');
+    }
+  };
 
   // Fetch agent configuration
   useEffect(() => {
@@ -151,23 +209,29 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
 
   // Render agent configuration
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
       <div className="border-b border-gray-200 bg-gray-50 p-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-medium text-gray-800">Agent Settings</h2>
             <p className="text-sm text-gray-500 mt-1">Agent configuration and status</p>
           </div>
-          <Badge 
-            variant="outline" 
-            className={`
-              ${agentStatus === 'online' ? 'bg-green-100 text-green-700 border-green-200' : 
-                agentStatus === 'busy' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 
-                'bg-red-100 text-red-700 border-red-200'}
-            `}
-          >
-            {agentStatus.charAt(0).toUpperCase() + agentStatus.slice(1)}
-          </Badge>
+          <div>
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)}>Edit Settings</Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setIsEditing(false);
+                  form.reset(agentConfig || {});
+                }}>Cancel</Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="p-6 space-y-6">
@@ -209,9 +273,25 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
               </div>
             </div>
             <div className="mt-3">
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                {formatText(agentConfig.lead_capture_config.required_fields)}
-              </p>
+              {isEditing ? (
+                <FormField
+                  control={form.control}
+                  name="lead_capture_config.required_fields"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Required Fields</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="e.g., name, email, phone_number" rows={3} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {formatText(agentConfig.lead_capture_config.required_fields)}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -230,9 +310,24 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                   </div>
                   <p className="text-gray-500 text-sm">Persona Name</p>
                 </div>
-                <p className="text-sm text-gray-700 pl-10">
-                  {formatText(agentConfig.conversation_quality_config.persona_name)}
-                </p>
+                {isEditing ? (
+                  <FormField
+                    control={form.control}
+                    name="conversation_quality_config.persona_name"
+                    render={({ field }) => (
+                      <FormItem className="pl-10">
+                        <FormControl>
+                          <Input {...field} placeholder="Enter persona name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-700 pl-10">
+                    {formatText(agentConfig.conversation_quality_config.persona_name)}
+                  </p>
+                )}
               </div>
             )}
             
@@ -245,9 +340,24 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                   </div>
                   <p className="text-gray-500 text-sm">Speech Style</p>
                 </div>
-                <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
-                  {formatText(agentConfig.conversation_quality_config.persona_speech_style)}
-                </p>
+                {isEditing ? (
+                  <FormField
+                    control={form.control}
+                    name="conversation_quality_config.persona_speech_style"
+                    render={({ field }) => (
+                      <FormItem className="pl-10">
+                        <FormControl>
+                          <Textarea {...field} placeholder="Describe the speech style" rows={3} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                    {formatText(agentConfig.conversation_quality_config.persona_speech_style)}
+                  </p>
+                )}
               </div>
             )}
             
@@ -260,9 +370,24 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                   </div>
                   <p className="text-gray-500 text-sm">Business Context</p>
                 </div>
-                <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
-                  {formatText(agentConfig.conversation_quality_config.client_business_context)}
-                </p>
+                {isEditing ? (
+                  <FormField
+                    control={form.control}
+                    name="conversation_quality_config.client_business_context"
+                    render={({ field }) => (
+                      <FormItem className="pl-10">
+                        <FormControl>
+                          <Textarea {...field} placeholder="Describe the business context" rows={4} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                    {formatText(agentConfig.conversation_quality_config.client_business_context)}
+                  </p>
+                )}
               </div>
             )}
             
@@ -275,9 +400,24 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                   </div>
                   <p className="text-gray-500 text-sm">Call Objectives</p>
                 </div>
-                <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
-                  {formatText(agentConfig.conversation_quality_config.primary_call_objectives)}
-                </p>
+                {isEditing ? (
+                  <FormField
+                    control={form.control}
+                    name="conversation_quality_config.primary_call_objectives"
+                    render={({ field }) => (
+                      <FormItem className="pl-10">
+                        <FormControl>
+                          <Textarea {...field} placeholder="List the primary call objectives" rows={4} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                    {formatText(agentConfig.conversation_quality_config.primary_call_objectives)}
+                  </p>
+                )}
               </div>
             )}
             
@@ -290,9 +430,24 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                   </div>
                   <p className="text-gray-500 text-sm">Persona Identity & Personality</p>
                 </div>
-                <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
-                  {formatText(agentConfig.conversation_quality_config.persona_identity_and_personality)}
-                </p>
+                {isEditing ? (
+                  <FormField
+                    control={form.control}
+                    name="conversation_quality_config.persona_identity_and_personality"
+                    render={({ field }) => (
+                      <FormItem className="pl-10">
+                        <FormControl>
+                          <Textarea {...field} placeholder="Describe the persona's identity and personality" rows={4} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                    {formatText(agentConfig.conversation_quality_config.persona_identity_and_personality)}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -313,6 +468,7 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
           </div>
         )}
       </div>
-    </div>
+    </form>
+  </Form>
   );
 };

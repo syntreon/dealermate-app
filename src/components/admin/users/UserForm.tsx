@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,8 +27,10 @@ import { User, Client, CreateUserData, UpdateUserData } from '@/types/admin';
 const userFormSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['owner', 'admin', 'client_admin', 'client_user']),
+  role: z.enum(['owner', 'admin', 'client_admin', 'client_user', 'user']),
   client_id: z.string().nullable().optional(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -49,10 +51,35 @@ const UserForm: React.FC<UserFormProps> = ({
   isSubmitting,
 }) => {
   const isEditing = !!user;
-  
+
+  const refinedSchema = userFormSchema.refine(
+    (data) => {
+      // Password is required for new users
+      if (!isEditing && !data.password) return false;
+      return true;
+    },
+    {
+      message: 'Password is required',
+      path: ['password'],
+    }
+  ).refine(
+    (data) => {
+      // If password is provided, it must be at least 6 characters
+      if (data.password && data.password.length < 6) return false;
+      return true;
+    },
+    {
+      message: 'Password must be at least 6 characters',
+      path: ['password'],
+    }
+  ).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
   // Initialize form with default values or existing user data
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(refinedSchema),
     defaultValues: {
       full_name: user?.full_name || '',
       email: user?.email || '',
@@ -65,14 +92,23 @@ const UserForm: React.FC<UserFormProps> = ({
   const isGlobalRole = watchRole === 'owner' || watchRole === 'admin';
 
   // Reset client_id when switching to a global role
-  React.useEffect(() => {
+  useEffect(() => {
     if (isGlobalRole) {
       form.setValue('client_id', null);
     }
   }, [isGlobalRole, form]);
 
   const handleSubmit = async (values: UserFormValues) => {
-    await onSubmit(values);
+    const { confirmPassword, ...submissionData } = values;
+    if (!isEditing) {
+      await onSubmit(submissionData as CreateUserData);
+    } else {
+      // For updates, don't send an empty password
+      if (!submissionData.password) {
+        delete submissionData.password;
+      }
+      await onSubmit({ ...submissionData, id: user.id } as UpdateUserData);
+    }
   };
 
   return (
@@ -132,6 +168,7 @@ const UserForm: React.FC<UserFormProps> = ({
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="client_admin">Client Admin</SelectItem>
                         <SelectItem value="client_user">Client User</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
@@ -173,6 +210,39 @@ const UserForm: React.FC<UserFormProps> = ({
                         ? 'Global roles have access to all clients' 
                         : 'Select which client this user belongs to'}
                     </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter new password" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      {isEditing ? 'Leave blank to keep current password' : 'Set an initial password for the user'}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Confirm new password" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
