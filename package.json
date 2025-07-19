@@ -2,7 +2,7 @@
   "name": "your-new-app",
   "private": true,
   "version": "1.0.0",
-  "description": "A forked version of CallBrighter with custom features",
+  "description": "A forked version of DealerMate AI with custom features",
   "type": "module",
   "scripts": {
     "dev": "vite",

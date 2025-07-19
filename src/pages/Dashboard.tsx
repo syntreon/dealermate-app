@@ -131,10 +131,10 @@ const Dashboard = () => {
       <div className="flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center">
         <div className="space-y-3"> {/* Increased vertical spacing */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3"> {/* Stack vertically on mobile */}
-            <h1 className="text-3xl font-bold text-[#1F2937] mb-2 sm:mb-0">Dashboard</h1>
-            <ComingSoonBadge />
+            <h1 className="text-3xl font-bold text-card-foreground mb-2 sm:mb-0">Dashboard</h1>
+            {/* Coming Soon badge hidden as requested */}
           </div>
-          <p className="text-[#6B7280]">Overview of your AI call system performance.</p> {/* Improved contrast */}
+          <p className="text-muted-foreground">Overview of your AI call system performance.</p> {/* Theme-aware text */}
         </div>
 
         <div className="flex gap-3 mt-4 sm:mt-0"> {/* Increased button spacing and added top margin on mobile */}

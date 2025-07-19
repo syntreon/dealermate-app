@@ -63,7 +63,7 @@ export const ClientSettings: React.FC<ClientSettingsProps> = ({ clientId, isAdmi
   // Render loading state
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+      <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
         <div className="border-b border-gray-200 bg-gray-50 p-4">
           <Skeleton className="h-8 w-64 bg-gray-200" />
           <Skeleton className="h-4 w-48 bg-gray-200 mt-2" />

@@ -173,10 +173,10 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
       'referral': { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'Referral' },
       'social_media': { color: 'bg-sky-100 text-sky-800 border-sky-200', label: 'Social Media' },
       'ai_agent': { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'AI Agent' },
-      'other': { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Other' }
+      'other': { color: 'bg-muted text-muted-foreground border-border', label: 'Other' }
     };
 
-    const config = sourceConfig[normalizedSource] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
+    const config = sourceConfig[normalizedSource] || { color: 'bg-muted text-muted-foreground border-border', label: 'Unknown' };
 
     return (
       <Badge variant="outline" className={cn('px-3 py-1 rounded-full text-xs font-medium border', config.color)}>
