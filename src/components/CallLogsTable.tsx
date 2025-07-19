@@ -157,8 +157,9 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   return (
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden mx-auto">
       {/* Table filters */}
-      <div className="p-4 md:p-6 border-b border-border bg-secondary/30 flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between">
-        <div className="relative flex-1 max-w-md">
+      <div className="p-4 md:p-6 border-b border-border bg-secondary/30 flex flex-col sm:flex-row gap-4 items-center">
+        {/* Search Input */}
+        <div className="relative flex-grow max-w-md w-full sm:w-auto">
           <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-foreground/50" />
           </div>
@@ -171,23 +172,22 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
           />
         </div>
 
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative min-w-[180px] sm:min-w-[200px]">
-            <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-foreground/50" />
-            </div>
-            <select
-              className="pl-10 md:pl-12 pr-8 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
-              value={selectedCallType || 'all'}
-              onChange={(e) => setSelectedCallType(e.target.value === 'all' ? null : e.target.value)}
-            >
-              <option value="all">All Call Types</option>
-              <option value={CallType.INBOUND}>Inbound</option>
-              <option value={CallType.OUTBOUND}>Outbound</option>
-              <option value={CallType.MISSED}>Missed</option>
-              <option value={CallType.VOICEMAIL}>Voicemail</option>
-            </select>
+        {/* Call Type Filter */}
+        <div className="relative w-full sm:w-auto sm:min-w-[200px]">
+          <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+            <Filter className="h-4 w-4 text-foreground/50" />
           </div>
+          <select
+            className="pl-10 md:pl-12 pr-8 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+            value={selectedCallType || 'all'}
+            onChange={(e) => setSelectedCallType(e.target.value === 'all' ? null : e.target.value)}
+          >
+            <option value="all">All Call Types</option>
+            <option value={CallType.INBOUND}>Inbound</option>
+            <option value={CallType.OUTBOUND}>Outbound</option>
+            <option value={CallType.MISSED}>Missed</option>
+            <option value={CallType.VOICEMAIL}>Voicemail</option>
+          </select>
         </div>
       </div>
       

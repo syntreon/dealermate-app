@@ -200,36 +200,29 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   return (
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden mx-auto">
       {/* Table filters */}
-      <div className="p-4 md:p-6 border-b border-border bg-secondary/30 flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between">
-          <div className="relative flex-1 max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+      <div className="p-4 md:p-6 border-b border-border bg-secondary/30">
+        <div className="flex flex-col md:flex-row md:flex-wrap gap-4 items-center">
+          {/* Search Input */}
+          <div className="relative flex-grow w-full md:w-auto md:max-w-xs">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-foreground/50" />
             </div>
             <input
               type="text"
               placeholder="Search by name, phone, or email..."
-              className="pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm"
+              className="pl-10 pr-3 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="flex flex-wrap gap-3 items-center">
-            <Button variant="outline" size="sm" onClick={onExportLeads}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Leads
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <div className="relative min-w-[180px]">
-            <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+          {/* Status Filter */}
+          <div className="relative w-full md:w-auto md:min-w-[180px]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter className="h-4 w-4 text-foreground/50" />
             </div>
             <select
-              className="pl-10 md:pl-12 pr-8 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+              className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as SupabaseLead['status'] | 'all')}
             >
@@ -243,12 +236,13 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
             </select>
           </div>
 
-          <div className="relative min-w-[180px]">
-            <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+          {/* Source Filter */}
+          <div className="relative w-full md:w-auto md:min-w-[180px]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter className="h-4 w-4 text-foreground/50" />
             </div>
             <select
-              className="pl-10 md:pl-12 pr-8 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+              className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value as SupabaseLead['source'] | 'all')}
             >
@@ -261,6 +255,12 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
               <option value="other">Other</option>
             </select>
           </div>
+
+          {/* Export Button */}
+          <Button variant="outline" size="sm" onClick={onExportLeads} className="w-full md:w-auto">
+            <Download className="h-4 w-4 mr-2" />
+            Export Leads
+          </Button>
         </div>
       </div>
       

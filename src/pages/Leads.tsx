@@ -76,10 +76,9 @@ const Leads: React.FC = () => {
   const handleAddNote = async (lead: Lead, note: string) => {
     try {
       await addLeadNote(lead.id, note);
-      return true;
+      toast.success('Note added successfully');
     } catch (error) {
       toast.error('Failed to add note');
-      return false;
     }
   };
 
@@ -120,9 +119,9 @@ const Leads: React.FC = () => {
           <p className="text-muted-foreground">Manage and track leads generated from calls</p>
         </div>
         
-        <div className="flex gap-2 self-start">
+        <div className="flex flex-col sm:flex-row gap-2 self-start sm:self-center">
           {/* Client selector for admin users */}
-          {canViewSensitiveInfo(user) && (
+          {user && canViewSensitiveInfo(user) && (
             <ClientSelector
               selectedClientId={selectedClientId}
               onClientChange={(clientId) => {

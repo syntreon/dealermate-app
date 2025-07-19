@@ -214,3 +214,77 @@ create table public.leads (
   constraint leads_call_id_fkey foreign KEY (call_id) references calls (id) on delete CASCADE,
   constraint leads_client_id_fkey foreign KEY (client_id) references clients (id) on delete CASCADE
 ) TABLESPACE pg_default;
+
+create table public.agent_status (
+  id uuid not null default gen_random_uuid (),
+  client_id uuid null,
+  status text not null,
+  message text null,
+  last_updated timestamp with time zone not null default now(),
+  updated_by uuid not null,
+  created_at timestamp with time zone not null default now(),
+  constraint agent_status_pkey primary key (id),
+  constraint agent_status_client_id_key unique (client_id),
+  constraint agent_status_client_id_fkey foreign KEY (client_id) references clients (id) on delete CASCADE,
+  constraint agent_status_updated_by_fkey foreign KEY (updated_by) references users (id),
+  constraint agent_status_status_check check (
+    (
+      status = any (
+        array[
+          'active'::text,
+          'inactive'::text,
+          'maintenance'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_agent_status_client_id on public.agent_status using btree (client_id) TABLESPACE pg_default;
+
+create index IF not exists idx_agent_status_updated_by on public.agent_status using btree (updated_by) TABLESPACE pg_default;
+
+create index IF not exists idx_agent_status_last_updated on public.agent_status using btree (last_updated desc) TABLESPACE pg_default;
+
+create table public.system_messages (
+  id uuid not null default gen_random_uuid (),
+  client_id uuid null,
+  type text not null,
+  message text not null,
+  timestamp timestamp with time zone not null default now(),
+  expires_at timestamp with time zone null,
+  created_by uuid not null,
+  updated_by uuid null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint system_messages_pkey primary key (id),
+  constraint system_messages_client_id_fkey foreign KEY (client_id) references clients (id) on delete CASCADE,
+  constraint system_messages_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint system_messages_updated_by_fkey foreign KEY (updated_by) references users (id),
+  constraint system_messages_type_check check (
+    (
+      type = any (
+        array[
+          'info'::text,
+          'warning'::text,
+          'error'::text,
+          'success'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_system_messages_timestamp on public.system_messages using btree ("timestamp" desc) TABLESPACE pg_default;
+
+create index IF not exists idx_system_messages_expires_at on public.system_messages using btree (expires_at) TABLESPACE pg_default;
+
+create index IF not exists idx_system_messages_type on public.system_messages using btree (type) TABLESPACE pg_default;
+
+create index IF not exists idx_system_messages_client_id on public.system_messages using btree (client_id) TABLESPACE pg_default;
+
+create index IF not exists idx_system_messages_created_by on public.system_messages using btree (created_by) TABLESPACE pg_default;
+
+create trigger update_system_messages_updated_at BEFORE
+update on system_messages for EACH row
+execute FUNCTION update_updated_at_column ();

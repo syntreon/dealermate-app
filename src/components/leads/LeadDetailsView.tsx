@@ -219,20 +219,10 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <div className="flex justify-between items-center">
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            <User className="h-5 w-5" />
-                            Lead Details
-                        </DialogTitle>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onClose}
-                            className="h-8 w-8 p-0"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Lead Details
+                    </DialogTitle>
                     <DialogDescription>
                         View and manage lead information
                     </DialogDescription>
@@ -253,7 +243,7 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                     <TabsContent value="details" className="mt-4">
                         <div className="space-y-6">
                             {/* Lead Header */}
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div className="flex items-center gap-4">
                                     <Avatar className="h-16 w-16">
                                         <AvatarFallback>{getInitials(lead.full_name)}</AvatarFallback>
