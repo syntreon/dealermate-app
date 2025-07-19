@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Call } from '@/context/CallsContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PotentialEarnings } from '@/components/dashboard/PotentialEarnings';
 import { Phone, Clock, Calendar, MessageSquare, CheckCircle, XCircle, SendHorizontal, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -175,56 +175,11 @@ const Dashboard = () => {
       <CallActivityTimeline />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium text-card-foreground">Call Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center">
-            {!loadingCalls && stats.totalCalls > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={70}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-card border border-border shadow-md p-3 rounded-md">
-                            <p className="text-card-foreground">{`${payload[0].name}: ${payload[0].value}`}</p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : loadingCalls ? (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                <p>Loading call data...</p>
-              </div>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                <p>No call data available yet</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <PotentialEarnings 
+          totalCalls={metrics?.totalCalls || 0} 
+          totalLeads={metrics?.totalLeads || 0} 
+          isLoading={isLoading} 
+        />
 
         <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
           <CardHeader className="pb-2">

@@ -103,7 +103,7 @@ export function CallActivityTimeline() {
 
   return (
     <Card className="col-span-12 lg:col-span-8">
-      <CardHeader className="flex flex-col gap-4 pb-2 md:flex-row md:items-center md:justify-between">
+      <CardHeader className="flex flex-col gap-4 pb-2 md:flex-row md:items-center md:justify-between px-4">
         <div className="space-y-2">
           <CardTitle>Call Activity Timeline</CardTitle>
           <div className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export function CallActivityTimeline() {
           onRefresh={handleRefresh}
         />
       </CardHeader>
-      <CardContent className="pt-2">
+      <CardContent className="pt-2 px-4">
         {loading ? (
           <div className="w-full h-[300px] flex items-center justify-center">
             <div className="space-y-2 w-full">
@@ -154,7 +154,7 @@ export function CallActivityTimeline() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                margin={{ top: 10, right: 10, left: -5, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis

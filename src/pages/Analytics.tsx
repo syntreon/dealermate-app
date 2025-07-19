@@ -32,9 +32,15 @@ const Analytics = () => {
 
       <Tabs defaultValue="calls" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3 mb-8">
-          <TabsTrigger value="calls">Call Analytics</TabsTrigger>
-          <TabsTrigger value="quality">Quality Analytics</TabsTrigger>
-          <TabsTrigger value="costs">Cost Analytics</TabsTrigger>
+          {/* Mobile view tabs */}
+          <TabsTrigger value="calls" className="sm:hidden px-1">Call</TabsTrigger>
+          <TabsTrigger value="quality" className="sm:hidden px-1">Quality</TabsTrigger>
+          <TabsTrigger value="costs" className="sm:hidden px-1">Cost</TabsTrigger>
+          
+          {/* Desktop view tabs */}
+          <TabsTrigger value="calls" className="hidden sm:flex">Call Analytics</TabsTrigger>
+          <TabsTrigger value="quality" className="hidden sm:flex">Quality Analytics</TabsTrigger>
+          <TabsTrigger value="costs" className="hidden sm:flex">Cost Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calls">
