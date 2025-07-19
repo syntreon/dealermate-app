@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAuthData } from '@/utils/authHelpers';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -22,20 +23,13 @@ const Login = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // If there's a profile error, force logout first to clear the session
-    if (hasProfileError) {
-      const clearSession = async () => {
-        await supabase.auth.signOut();
-        toast.error('User profile not found. Please contact an administrator.');
-      };
-      clearSession();
-    }
-    // Redirect to dashboard if already authenticated and no profile error
-    else if (isAuthenticated) {
+    // Redirect to dashboard if already authenticated
+    if (isAuthenticated && !hasProfileError) {
       console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard');
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, hasProfileError]);
+  }, [isAuthenticated, hasProfileError, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,16 +53,26 @@ const Login = () => {
       
       if (success) {
         toast.success('Login successful!');
-        // We don't need to navigate here as the AuthContext will do it
-        // when isAuthenticated changes in the useEffect above
+        // Navigation will be handled by the useEffect when isAuthenticated changes
       } else {
         setError('Login failed. Please check your credentials and try again.');
-        setIsLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('An unexpected error occurred during login');
+    } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleClearAuthData = async () => {
+    try {
+      await clearAuthData();
+      toast.success('Authentication data cleared. Please try logging in again.');
+      setError(null);
+    } catch (error) {
+      console.error('Error clearing auth data:', error);
+      toast.error('Error clearing authentication data');
     }
   };
 
@@ -130,7 +134,7 @@ const Login = () => {
             </div>
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col space-y-2">
           <Button 
             className="w-full bg-purple hover:bg-purple-dark text-white" 
             disabled={isLoading}
@@ -138,6 +142,17 @@ const Login = () => {
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
+          {error && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full text-xs"
+              onClick={handleClearAuthData}
+              disabled={isLoading}
+            >
+              Clear Authentication Data
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

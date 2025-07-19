@@ -22,7 +22,22 @@ export const supabase = createClient<Database>(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      storage: localStorage
+      storage: localStorage,
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    },
+    global: {
+      headers: {
+        'x-client-info': 'supabase-js-web'
+      }
+    },
+    db: {
+      schema: 'public'
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 2
+      }
     }
   }
 );

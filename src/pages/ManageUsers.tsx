@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddUserForm } from '@/components/settings/AddUserForm';
 import { ManageUsersTable } from '@/components/settings/ManageUsersTable';
-import { UserData } from '@/hooks/useUserProfile';
+import { UserData } from '@/hooks/useAuthSession';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 

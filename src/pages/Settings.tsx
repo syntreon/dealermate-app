@@ -15,7 +15,7 @@ import { AgentSettings } from '@/components/settings/AgentSettings';
 import { Preferences } from '@/components/settings/Preferences';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { UserData } from '@/hooks/useUserProfile';
+import { UserData } from '@/hooks/useAuthSession';
 
 // Import User type
 import { User } from '@/types/user';

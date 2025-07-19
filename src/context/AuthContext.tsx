@@ -1,21 +1,17 @@
-
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Session } from "@supabase/supabase-js";
+import React, { createContext, useContext, ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { useAuthSession } from "@/hooks/useAuthSession";
-import { UserData } from "@/hooks/useUserProfile";
+import { useAuthSession, UserData } from "@/hooks/useAuthSession";
 
 interface AuthContextType {
   user: UserData | null;
-  setUser: (user: UserData) => void;
+  setUser: (user: UserData | null) => void;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasProfileError: boolean;
   isLoading: boolean;
-  networkErrorDetected?: boolean;
   refreshUserSession: () => Promise<void>;
 }
 
@@ -29,10 +25,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     login,
     logout,
-    profileError,
-    networkErrorDetected,
-    refreshUserSession,
-    isInitializing
+    hasProfileError,
+    refreshSession
   } = useAuthSession();
   
   // Handle force refresh
@@ -40,8 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.location.reload();
   };
 
-  // If still loading, show a better loading state
-  if (isLoading || isInitializing) {
+  // Show loading screen while initializing
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-zinc-950">
         <div className="w-full max-w-md p-6 space-y-6 rounded-lg border border-zinc-800 bg-black/20">
@@ -56,30 +50,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             <Skeleton className="h-10 w-full bg-zinc-800 animate-pulse" />
             <Skeleton className="h-10 w-full bg-zinc-800 animate-pulse" />
           </div>
-          <Button 
-            onClick={handleForceRefresh} 
-            variant="outline" 
-            className="w-full"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" /> Reload Application
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              onClick={handleForceRefresh} 
+              variant="outline" 
+              className="flex-1"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Reload App
+            </Button>
+            <Button 
+              onClick={refreshSession} 
+              variant="secondary" 
+              className="flex-1"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh Session
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      setUser,
-      isAuthenticated, 
-      login, 
-      logout, 
-      hasProfileError: profileError,
-      isLoading,
-      networkErrorDetected,
-      refreshUserSession
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        isAuthenticated,
+        login,
+        logout,
+        hasProfileError,
+        isLoading,
+        refreshUserSession: refreshSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

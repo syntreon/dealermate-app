@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { UserData } from '@/hooks/useUserProfile';
+import { UserData } from '@/hooks/useAuthSession';
 
 interface PreferencesProps {
   user: UserData & {

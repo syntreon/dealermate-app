@@ -25,6 +25,7 @@ import ClientDetails from "./pages/admin/ClientDetails";
 import UserManagement from "./pages/admin/UserManagement";
 import AdminSettings from "./pages/admin/AdminSettings";
 import SystemHealthMonitoring from "./pages/admin/SystemHealthMonitoring";
+import AuthTest from "./test/AuthTest";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <LeadProvider>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/auth-test" element={<AuthTest />} />
                 
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />

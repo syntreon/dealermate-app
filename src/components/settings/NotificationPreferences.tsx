@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { UserData } from '@/hooks/useUserProfile';
+import { UserData } from '@/hooks/useAuthSession';
 import { Plus, X } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { useForm, useFieldArray } from 'react-hook-form';

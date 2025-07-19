@@ -22,7 +22,7 @@ import {
   Shield, 
   ShieldAlert 
 } from 'lucide-react';
-import { UserData } from '@/hooks/useUserProfile';
+import { UserData } from '@/hooks/useAuthSession';
 import { 
   AlertDialog,
   AlertDialogAction,

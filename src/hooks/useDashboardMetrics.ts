@@ -7,7 +7,7 @@ export const useDashboardMetrics = (clientId?: string) => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -114,15 +114,17 @@ export const useDashboardMetrics = (clientId?: string) => {
       }
     };
 
-    // Only fetch if we have a user
-    if (user) {
+    // Only fetch if auth is done loading and we have a user.
+    if (!isAuthLoading && user && user.id && user.role) {
       fetchMetrics();
     }
     
-    // In a real implementation, we might want to set up a polling interval
-    // to refresh the data periodically
+    // If auth is done and there's no user, stop loading.
+    if (!isAuthLoading && !user) {
+      setIsLoading(false);
+    }
     
-  }, [user, clientId]);
+  }, [user?.id, user?.role, user?.client_id, clientId, isAuthLoading]); // Add isAuthLoading to dependencies
 
   return { metrics, isLoading, error };
 };

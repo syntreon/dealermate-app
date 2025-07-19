@@ -19,7 +19,6 @@ const AppLayout = () => {
     hasProfileError,
     isLoading,
     user,
-    networkErrorDetected,
     refreshUserSession
   } = useAuth();
   const location = useLocation();
@@ -35,101 +34,55 @@ const AppLayout = () => {
     await refreshUserSession();
   };
 
-  // If still loading, show a better loading state
-  if (isLoading) {
-    return <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md">
-          <div className="space-y-6 p-6 rounded-lg glass-morphism border border-zinc-800">
-            <div className="flex items-center justify-center space-x-2">
-              <RefreshCw className="h-5 w-5 animate-spin text-purple" />
-              <p className="text-zinc-300">Loading your profile...</p>
-            </div>
-            <div className="animate-pulse space-y-4">
-              <Skeleton className="h-12 bg-zinc-800 rounded" />
-              <Skeleton className="h-48 bg-zinc-800 rounded" />
-              <Skeleton className="h-8 bg-zinc-800 rounded w-2/3" />
-            </div>
-            <Button onClick={handleForceRefresh} variant="outline" className="w-full mt-4">
-              <RefreshCw className="h-4 w-4 mr-2" /> Retry Loading
-            </Button>
-          </div>
-        </div>
-      </div>;
+  // If not authenticated, redirect to login
+  if (!isAuthenticated && !isLoading) {
+    const currentPath = location.pathname;
+    return <Navigate to="/login" state={{
+      from: currentPath === '/login' ? undefined : location
+    }} replace />;
   }
 
-  // Prevent infinite redirect loop by checking profile error
-  if (!isAuthenticated) {
-    // Only redirect if there's no profile error and not loading
-    if (!hasProfileError && !isLoading) {
-      const currentPath = location.pathname;
-      return <Navigate to="/login" state={{
-        from: currentPath === '/login' ? undefined : location
-      }} replace />;
-    }
-  }
-
-  // If there's a profile error, show an error page instead of redirecting
+  // If there's a profile error, show an error page
   if (hasProfileError) {
-    return <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6">
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md">
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Authentication Error</AlertTitle>
             <AlertDescription>
-              User profile not found. This usually happens when you have an authenticated session but no user record exists.
-              Please contact an administrator or try logging out and back in.
+              User profile not found. Please contact an administrator or try logging out and back in.
             </AlertDescription>
           </Alert>
           <Button onClick={() => window.location.href = '/login'} className="w-full py-2 px-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded mt-4">
             Return to Login
           </Button>
         </div>
-      </div>;
+      </div>
+    );
   }
-
-  // If we have a user but it's a temporary one due to network issues
-  const isTemporaryUser = user?.name === "Temporary User" || networkErrorDetected;
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
           {/* Top Bar - Only show on desktop */}
           {!isMobile && <TopBar />}
-          
+
           <div className="flex flex-1">
             <AppSidebar />
-            
+
             <SidebarInset className={cn(
-              "flex-1 overflow-auto", 
+              "flex-1 overflow-auto",
               isMobile ? "p-4 pb-24" : "p-6" // Add bottom padding on mobile to prevent content being hidden behind navbar
             )}>
-              {isTemporaryUser && (
-                <Alert variant="destructive" className="mb-4">
-                  <WifiOff className="h-4 w-4" />
-                  <AlertTitle>Network Connection Issue</AlertTitle>
-                  <AlertDescription className="flex flex-col gap-2">
-                    <p>
-                      There was a problem connecting to the server. Some features may be limited.
-                      You're currently using the app in a limited mode.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="self-start" onClick={handleForceRefresh}>
-                        <RefreshCw className="h-3 w-3 mr-2" /> Refresh Page
-                      </Button>
-                      <Button variant="outline" size="sm" className="self-start" onClick={handleRefreshData}>
-                        <RefreshCw className="h-3 w-3 mr-2" /> Refresh Data
-                      </Button>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
+
+
               <div className="container mx-auto max-w-7xl animate-in px-0">
                 <Outlet />
               </div>
             </SidebarInset>
           </div>
-          
+
           <Toaster position="top-right" />
         </div>
       </SidebarProvider>
