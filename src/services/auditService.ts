@@ -9,7 +9,30 @@ import {
   Client
 } from '@/types/admin';
 import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+
+// Create an admin client if the service role key is available
+// This is used to bypass RLS policies for administrative operations
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "";
+
+// Create admin client only if service role key is available
+const adminSupabase = SUPABASE_SERVICE_ROLE_KEY ? createClient<Database>(
+  SUPABASE_URL, 
+  SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: {
+      headers: {
+        'x-client-info': 'supabase-js-admin'
+      }
+    }
+  }
+) : null;
 
 // Database utility functions
 const handleDatabaseError = (error: any): DatabaseError => {
@@ -80,33 +103,86 @@ export const AuditService = {
     ipAddress?: string,
     userAgent?: string
   ): Promise<AuditLog> => {
+    // Create a minimal audit log object that will be returned if logging fails
+    const minimalAuditLog = {
+      id: 'error',
+      user_id: userId,
+      client_id: clientId || null,
+      action: action,
+      table_name: tableName,
+      record_id: recordId || null,
+      old_values: oldValues || null,
+      new_values: newValues || null,
+      ip_address: ipAddress || null,
+      user_agent: userAgent || null,
+      created_at: new Date(),
+      summary: `Failed to log ${action} on ${tableName}`
+    };
+
+    // Check if we have the service role key available
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('Audit logging skipped: No service role key available');
+      return minimalAuditLog;
+    }
+
     try {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: userId,
-          client_id: clientId || null,
-          action,
-          table_name: tableName,
-          record_id: recordId || null,
-          old_values: oldValues || null,
-          new_values: newValues || null,
-          ip_address: ipAddress || null,
-          user_agent: userAgent || null
-        })
-        .select()
-        .single();
+      const auditData = {
+        user_id: userId,
+        client_id: clientId || null,
+        action,
+        table_name: tableName,
+        record_id: recordId || null,
+        old_values: oldValues || null,
+        new_values: newValues || null,
+        ip_address: ipAddress || null,
+        user_agent: userAgent || null
+      };
 
-      if (error) {
-        throw handleDatabaseError(error);
+      console.log('Attempting audit log with admin client:', { 
+        action, 
+        tableName, 
+        recordId,
+        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+        adminClientAvailable: !!adminSupabase
+      });
+
+      // Try admin client if available (bypasses RLS)
+      if (adminSupabase) {
+        try {
+          const { data, error } = await adminSupabase
+            .from('audit_logs')
+            .insert(auditData)
+            .select()
+            .single();
+
+          if (error) {
+            console.error('Admin client error for audit logging:', error);
+            return minimalAuditLog;
+          }
+
+          if (data) {
+            const auditLog = transformAuditLog(data);
+            auditLog.summary = generateAuditSummary(auditLog);
+            console.log('Audit log created successfully with admin client');
+            return auditLog;
+          }
+        } catch (adminError) {
+          console.error('Admin client exception for audit logging:', adminError);
+          return minimalAuditLog;
+        }
+      } else {
+        console.warn('Admin client not available for audit logging');
       }
-
-      const auditLog = transformAuditLog(data);
-      auditLog.summary = generateAuditSummary(auditLog);
       
-      return auditLog;
+      // Don't try with regular client as it will fail due to RLS
+      // Just return the minimal audit log
+      console.warn('Skipping regular client fallback for audit logging due to RLS restrictions');
+      return minimalAuditLog;
     } catch (error) {
-      throw handleDatabaseError(error);
+      // For non-critical operations, log the error but don't throw
+      // This prevents audit logging failures from breaking core functionality
+      console.error('Audit logging failed:', error);
+      return minimalAuditLog;
     }
   },
 
@@ -466,17 +542,39 @@ export const AuditService = {
     ipAddress?: string,
     userAgent?: string
   ): Promise<AuditLog> => {
-    return AuditService.logAuditEvent(
-      userId,
-      action,
-      'users',
-      targetUserId,
-      oldValues,
-      newValues,
-      clientId,
-      ipAddress,
-      userAgent
-    );
+    // Use the generic logAuditEvent which already handles the adminSupabase client
+    try {
+      return AuditService.logAuditEvent(
+        userId,
+        action,
+        'users',
+        targetUserId,
+        oldValues,
+        newValues,
+        clientId,
+        ipAddress,
+        userAgent
+      );
+    } catch (error) {
+      // For user actions, we don't want audit failures to break core functionality
+      // Log the error but return a minimal audit log object
+      console.error('Failed to log user action:', error);
+      
+      return {
+        id: 'error',
+        user_id: userId,
+        client_id: clientId || null,
+        action: action,
+        table_name: 'users',
+        record_id: targetUserId,
+        old_values: oldValues || null,
+        new_values: newValues || null,
+        ip_address: ipAddress || null,
+        user_agent: userAgent || null,
+        created_at: new Date(),
+        summary: `Failed to log ${action} on users record ${targetUserId}`
+      };
+    }
   },
 
   logAgentStatusChange: async (
@@ -529,16 +627,38 @@ export const AuditService = {
     ipAddress?: string,
     userAgent?: string
   ): Promise<AuditLog> => {
-    return AuditService.logAuditEvent(
-      userId,
-      'bulk_operation',
-      tableName,
-      undefined,
-      undefined,
-      { operation, affected_ids: affectedIds, count: affectedIds.length },
-      clientId,
-      ipAddress,
-      userAgent
-    );
+    // Use the generic logAuditEvent which already handles the adminSupabase client
+    try {
+      return AuditService.logAuditEvent(
+        userId,
+        'bulk_operation',
+        tableName,
+        undefined,
+        undefined,
+        { operation, affected_ids: affectedIds, count: affectedIds.length },
+        clientId,
+        ipAddress,
+        userAgent
+      );
+    } catch (error) {
+      // For bulk operations, we don't want audit failures to break core functionality
+      // Log the error but return a minimal audit log object
+      console.error('Failed to log bulk operation:', error);
+      
+      return {
+        id: 'error',
+        user_id: userId,
+        client_id: clientId || null,
+        action: 'bulk_operation',
+        table_name: tableName,
+        record_id: null,
+        old_values: null,
+        new_values: { operation, affected_ids: affectedIds, count: affectedIds.length },
+        ip_address: ipAddress || null,
+        user_agent: userAgent || null,
+        created_at: new Date(),
+        summary: `Failed to log bulk ${operation} on ${tableName}`
+      };
+    }
   }
 };

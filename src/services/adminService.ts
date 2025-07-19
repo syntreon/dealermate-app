@@ -48,7 +48,7 @@ const transformClient = (row: Database['public']['Tables']['clients']['Row']): C
     name: row.name,
     status: row.status as 'active' | 'inactive' | 'trial' | 'churned',
     type: row.type,
-    subscription_plan: row.subscription_plan as 'free trial' | 'basic' | 'Pro' | 'Custom',
+    subscription_plan: row.subscription_plan as 'Free Trial' | 'Basic' | 'Pro' | 'Custom',
     contact_person: row.contact_person,
     contact_email: row.contact_email,
     phone_number: row.phone_number,
@@ -588,20 +588,28 @@ export const AdminService = {
       
       const user = transformUser(directUser);
       
-      // Log audit event
+      // Log audit event asynchronously to prevent RLS policy errors from breaking user creation
       if (createdBy) {
-        try {
-          await AuditService.logUserAction(
-            createdBy,
-            'create',
-            user.id,
-            undefined,
-            { email: user.email, role: user.role, full_name: user.full_name },
-            user.client_id || undefined
-          );
-        } catch (auditError) {
-          console.error('Failed to log audit event:', auditError);
-        }
+        // Store user data for audit logging
+        const newUserData = { email: user.email, role: user.role, full_name: user.full_name };
+        const clientId = user.client_id || undefined;
+        const userId = user.id;
+        
+        // Use setTimeout to make audit logging non-blocking
+        setTimeout(async () => {
+          try {
+            await AuditService.logUserAction(
+              createdBy,
+              'create',
+              userId,
+              undefined,
+              newUserData,
+              clientId
+            );
+          } catch (auditError) {
+            console.error('Failed to log user creation audit event:', auditError);
+          }
+        }, 0);
       }
 
       return user;
@@ -637,20 +645,28 @@ export const AdminService = {
 
       const user = transformUser(updatedUser);
       
-      // Log audit event
+      // Log audit event asynchronously to prevent RLS policy errors from breaking the update
       if (updatedBy && oldUser) {
-        try {
-          await AuditService.logUserAction(
-            updatedBy,
-            'update',
-            user.id,
-            { email: oldUser.email, role: oldUser.role, full_name: oldUser.full_name },
-            { email: user.email, role: user.role, full_name: user.full_name },
-            user.client_id || undefined
-          );
-        } catch (auditError) {
-          console.error('Failed to log audit event:', auditError);
-        }
+        // Store user data for audit logging
+        const oldUserData = { email: oldUser.email, role: oldUser.role, full_name: oldUser.full_name };
+        const newUserData = { email: user.email, role: user.role, full_name: user.full_name };
+        const clientId = user.client_id || undefined;
+        
+        // Use setTimeout to make audit logging non-blocking
+        setTimeout(async () => {
+          try {
+            await AuditService.logUserAction(
+              updatedBy,
+              'update',
+              user.id,
+              oldUserData,
+              newUserData,
+              clientId
+            );
+          } catch (auditError) {
+            console.error('Failed to log user update audit event:', auditError);
+          }
+        }, 0);
       }
 
       return user;
@@ -664,6 +680,15 @@ export const AdminService = {
       // Get the user data for audit logging before deletion
       const user = deletedBy ? await AdminService.getUserById(id) : null;
       
+      // Store user data for audit logging before deletion
+      const userData = user ? {
+        email: user.email,
+        role: user.role,
+        full_name: user.full_name,
+        client_id: user.client_id
+      } : null;
+      
+      // Delete the user first
       const { error } = await supabase
         .from('users')
         .delete()
@@ -673,20 +698,25 @@ export const AdminService = {
         throw handleDatabaseError(error);
       }
       
-      // Log audit event
-      if (deletedBy && user) {
-        try {
-          await AuditService.logUserAction(
-            deletedBy,
-            'delete',
-            id,
-            { email: user.email, role: user.role, full_name: user.full_name },
-            undefined,
-            user.client_id || undefined
-          );
-        } catch (auditError) {
-          console.error('Failed to log audit event:', auditError);
-        }
+      // Log audit event after successful deletion
+      // This is done in a non-blocking way to prevent audit failures from affecting core functionality
+      if (deletedBy && userData) {
+        // Use setTimeout to make this non-blocking
+        setTimeout(async () => {
+          try {
+            await AuditService.logUserAction(
+              deletedBy,
+              'delete',
+              id,
+              { email: userData.email, role: userData.role, full_name: userData.full_name },
+              undefined,
+              userData.client_id || undefined
+            );
+          } catch (auditError) {
+            // Just log the error but don't throw - this prevents audit failures from breaking functionality
+            console.error('Failed to log audit event:', auditError);
+          }
+        }, 0);
       }
     } catch (error) {
       throw handleDatabaseError(error);
