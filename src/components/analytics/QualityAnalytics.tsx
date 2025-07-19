@@ -353,9 +353,9 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
                 <Tooltip 
                   formatter={(value: number) => [`${value} calls`, 'Count']}
                 />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} name="score-distribution">
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} name="score-distribution" fill="#8884d8">
                   {data.scoreDistribution.map((entry, index) => (
-                    <Cell key={`cell-${entry.scoreRange}-${index}`} fill={scoreColors[index % scoreColors.length]} />
+                    <Cell key={`score-cell-${entry.scoreRange}-${index}`} fill={scoreColors[index % scoreColors.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -417,32 +417,22 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
             <CardTitle className="text-lg font-semibold text-card-foreground">Reasons for Human Review</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.reviewReasons} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis type="number" tick={{ fontSize: 12 }} />
-                <YAxis 
-                  type="category" 
-                  dataKey="reason" 
-                  tick={{ fontSize: 12 }}
-                  width={120}
-                />
-                <Tooltip 
-                  formatter={(value: number) => [`${value} calls`, 'Count']}
-                />
-                <Bar 
-                  dataKey="count" 
-                  fill="#f59e0b" 
-                  radius={[0, 4, 4, 0]}
-                  name="review-reasons"
-                  id="review-reasons-bar"
-                >
-                  {data.reviewReasons.map((entry, index) => (
-                    <Cell key={`cell-${entry.reason}-${index}`} fill="#f59e0b" />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-4 h-[300px] overflow-y-auto pr-2">
+              {data.reviewReasons && data.reviewReasons.length > 0 ? (
+                data.reviewReasons.map((item, index) => (
+                  <div key={`reason-${index}-${item.count}`} className="flex items-start justify-between text-sm">
+                    <p className="text-muted-foreground mr-4 flex-1">
+                      {item.reason}
+                    </p>
+                    <Badge variant="secondary" className="font-semibold">{item.count}</Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No specific reasons for review were provided.</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

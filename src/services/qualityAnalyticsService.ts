@@ -216,15 +216,22 @@ function processQualityData(evaluations: any[]): QualityAnalyticsData {
 function generateDailyQualityTrends(evaluations: any[]): Array<{ date: string; score: number }> {
   const dailyScores: { [key: string]: { total: number; count: number } } = {};
 
-  evaluations.forEach(evaluation => {
-    if (evaluation.overall_evaluation_score !== null) {
-      const date = new Date(evaluation.evaluated_at).toISOString().split('T')[0];
-      if (!dailyScores[date]) {
-        dailyScores[date] = { total: 0, count: 0 };
-      }
-      dailyScores[date].total += parseFloat(evaluation.overall_evaluation_score);
-      dailyScores[date].count += 1;
+  // Filter out duplicates by id and ensure valid scores
+  const uniqueEvaluations = evaluations.filter((evaluation, index, arr) => {
+    return evaluation.overall_evaluation_score !== null && 
+           evaluation.overall_evaluation_score !== undefined &&
+           !isNaN(parseFloat(evaluation.overall_evaluation_score)) &&
+           evaluation.evaluated_at &&
+           arr.findIndex(e => e.id === evaluation.id) === index; // Remove duplicates by id
+  });
+
+  uniqueEvaluations.forEach(evaluation => {
+    const date = new Date(evaluation.evaluated_at).toISOString().split('T')[0];
+    if (!dailyScores[date]) {
+      dailyScores[date] = { total: 0, count: 0 };
     }
+    dailyScores[date].total += parseFloat(evaluation.overall_evaluation_score);
+    dailyScores[date].count += 1;
   });
 
   return Object.entries(dailyScores)
@@ -248,8 +255,16 @@ function generateScoreDistribution(evaluations: any[]): Array<{ scoreRange: stri
     { range: '<5', min: 0, max: 5 }
   ];
 
+  // Filter out duplicates by id and ensure valid scores
+  const uniqueEvaluations = evaluations.filter((evaluation, index, arr) => {
+    return evaluation.overall_evaluation_score !== null && 
+           evaluation.overall_evaluation_score !== undefined &&
+           !isNaN(parseFloat(evaluation.overall_evaluation_score)) &&
+           arr.findIndex(e => e.id === evaluation.id) === index; // Remove duplicates by id
+  });
+
   const distribution = ranges.map(({ range, min, max }) => {
-    const count = evaluations.filter(e => {
+    const count = uniqueEvaluations.filter(e => {
       const score = parseFloat(e.overall_evaluation_score);
       if (isNaN(score)) return false;
       if (range === '<5') return score < 5;
@@ -268,7 +283,13 @@ function generateScoreDistribution(evaluations: any[]): Array<{ scoreRange: stri
 function generateDailySentimentTrends(evaluations: any[]): Array<{ date: string; positive: number; neutral: number; negative: number }> {
   const dailySentiment: { [key: string]: { positive: number; neutral: number; negative: number } } = {};
 
-  evaluations.forEach(evaluation => {
+  // Filter out duplicates by id and ensure valid dates
+  const uniqueEvaluations = evaluations.filter((evaluation, index, arr) => {
+    return evaluation.evaluated_at &&
+           arr.findIndex(e => e.id === evaluation.id) === index; // Remove duplicates by id
+  });
+
+  uniqueEvaluations.forEach(evaluation => {
     const date = new Date(evaluation.evaluated_at).toISOString().split('T')[0];
     if (!dailySentiment[date]) {
       dailySentiment[date] = { positive: 0, neutral: 0, negative: 0 };
@@ -302,15 +323,22 @@ function generateDailySentimentTrends(evaluations: any[]): Array<{ date: string;
 function generateReviewReasons(evaluations: any[]): Array<{ reason: string; count: number }> {
   const reviewReasons: { [key: string]: number } = {};
 
-  evaluations
-    .filter(e => e.human_review_required && e.review_reason)
+  // Filter out duplicates by id first, then filter for review requirements
+  const uniqueEvaluations = evaluations.filter((evaluation, index, arr) => {
+    return arr.findIndex(e => e.id === evaluation.id) === index; // Remove duplicates by id
+  });
+
+  uniqueEvaluations
+    // Stricter filter: ensure review_reason is a non-empty string after trimming
+    .filter(e => e.human_review_required && typeof e.review_reason === 'string' && e.review_reason.trim() !== '')
     .forEach(evaluation => {
-      const reason = evaluation.review_reason;
+      const reason = evaluation.review_reason.trim();
       reviewReasons[reason] = (reviewReasons[reason] || 0) + 1;
     });
 
   return Object.entries(reviewReasons)
     .map(([reason, count]) => ({ reason, count }))
+    .filter(item => item.reason && item.reason !== 'null' && item.reason.trim() !== '') // Final guard against invalid reasons
     .sort((a, b) => b.count - a.count) // Sort by count descending
     .slice(0, 10); // Limit to top 10 reasons
 }
