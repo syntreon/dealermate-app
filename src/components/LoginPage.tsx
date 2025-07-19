@@ -42,6 +42,7 @@ const AdminSidebar = () => {
     <Sidebar className="border-r border-border bg-card shadow-sm">
       <SidebarHeader className="p-7">
         <div className="flex items-center justify-between">
+          {/* Reduced font size for DealerMate AI */}
           <span className="text-xl font-bold tracking-tight text-primary leading-tight">DealerMate AI</span>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />

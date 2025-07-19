@@ -60,9 +60,17 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
   const [preferences, setPreferences] = useState(() => {
     // Check if user has preferences property, otherwise use defaults
     // This handles the TypeScript error by properly checking for the property
-    return user && 'preferences' in user && user.preferences 
-      ? (user as UserWithPreferences).preferences 
-      : defaultPreferences;
+    const userPrefs = (user && 'preferences' in user && user.preferences) || {};
+    return {
+      notifications: {
+        ...defaultPreferences.notifications,
+        ...(userPrefs as any).notifications,
+      },
+      displaySettings: {
+        ...defaultPreferences.displaySettings,
+        ...(userPrefs as any).displaySettings,
+      },
+    };
   });
   
   // Setup react-hook-form with zod validation
@@ -87,9 +95,17 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
 
   // Add a useEffect to reset the form if the user prop changes
   React.useEffect(() => {
-    const newPreferences = user && 'preferences' in user && user.preferences 
-      ? (user as UserWithPreferences).preferences 
-      : defaultPreferences;
+    const userPrefs = (user && 'preferences' in user && user.preferences) || {};
+    const newPreferences = {
+      notifications: {
+        ...defaultPreferences.notifications,
+        ...(userPrefs as any).notifications,
+      },
+      displaySettings: {
+        ...defaultPreferences.displaySettings,
+        ...(userPrefs as any).displaySettings,
+      },
+    };
 
     form.reset({
       email: newPreferences.notifications.email,

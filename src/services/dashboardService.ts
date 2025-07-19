@@ -189,23 +189,36 @@ export const DashboardService = {
    */
   getAgentStatus: async (clientId?: string | null): Promise<AgentStatus> => {
     try {
+      // Create a query but don't execute it yet
       let query = supabase.from('agent_status').select('*');
       
+      // Add appropriate filters based on clientId
       if (clientId) {
+        // For specific client status
         query = query.eq('client_id', clientId);
       } else {
         // For platform-wide status, get the most recent global status (null client_id)
         query = query.is('client_id', null);
       }
 
-      const { data, error } = await query.single();
+      // Add ordering to get the most recent status first
+      query = query.order('last_updated', { ascending: false });
+      
+      // Execute the query with proper headers
+      const { data, error } = await query.limit(1).maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      // Handle specific errors
+      if (error) {
+        console.warn('Agent status query error:', error);
+        // Only throw if it's not a "not found" error
+        if (error.code !== 'PGRST116') {
+          throw error;
+        }
       }
 
+      // If no data found, return default status
       if (!data) {
-        // Return default status if no record found
+        console.log('No agent status found, using default');
         return {
           status: 'active',
           lastUpdated: new Date(),
@@ -213,6 +226,7 @@ export const DashboardService = {
         };
       }
 
+      // Transform the data to match our interface
       return {
         status: data.status as 'active' | 'inactive' | 'maintenance',
         lastUpdated: new Date(data.last_updated),

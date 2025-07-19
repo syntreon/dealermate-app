@@ -17,9 +17,9 @@ const Analytics = () => {
       <div className="flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center">
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-            <h1 className="text-3xl font-bold text-[#1F2937] mb-2 sm:mb-0">Analytics</h1>
+            <h1 className="text-3xl font-bold text-card-foreground mb-2 sm:mb-0">Analytics</h1>
           </div>
-          <p className="text-[#6B7280]">Detailed analytics and insights for your call system.</p>
+          <p className="text-muted-foreground">Detailed analytics and insights for your call system.</p>
         </div>
         <DateRangeFilter
           className="mt-4 sm:mt-0"
