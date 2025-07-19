@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import Logo from "@/components/Logo";
 
 // This array is used for both sidebar and mobile bottom nav
 const navItems = [
@@ -43,8 +44,8 @@ const DesktopSidebar = () => {
   return (
     <Sidebar className="border-r border-border bg-card shadow-sm">
       <SidebarHeader className="p-7">
-        {/* Show DealerMate AI for both regular and admin sidebar */}
-        <span className="text-2xl font-bold tracking-tight text-primary">DealerMate AI</span>
+        {/* Using the Logo component for consistent branding */}
+        <Logo />
       </SidebarHeader>
 
       <SidebarContent>

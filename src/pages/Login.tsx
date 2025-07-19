@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -77,10 +76,10 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-zinc-950 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-purple/10 rounded-full blur-[150px] transform -translate-y-1/2" />
-        <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 bg-purple/10 rounded-full blur-[150px] transform translate-y-1/2" />
+        <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-primary/10 rounded-full blur-[150px] transform -translate-y-1/2" />
+        <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 bg-primary/10 rounded-full blur-[150px] transform translate-y-1/2" />
       </div>
       
       <Card className="w-full max-w-md glass-morphism animate-slideIn">
@@ -89,7 +88,7 @@ const Login = () => {
             <Logo />
           </div>
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription className="text-muted-foreground">
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
@@ -110,17 +109,12 @@ const Login = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 focus:border-purple"
+                className="bg-card border-border focus:border-primary"
                 disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Button variant="link" size="sm" className="text-zinc-400 hover:text-purple h-auto p-0">
-                  Forgot password?
-                </Button>
-              </div>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -128,15 +122,20 @@ const Login = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 focus:border-purple"
+                className="bg-card border-border focus:border-primary"
                 disabled={isLoading}
               />
+              <div className="flex justify-end">
+                <Button variant="link" size="sm" className="text-muted-foreground hover:text-primary h-auto p-0">
+                  Forgot password?
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <Button 
-            className="w-full bg-purple hover:bg-purple-dark text-white" 
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
             disabled={isLoading}
             onClick={handleSubmit}
           >

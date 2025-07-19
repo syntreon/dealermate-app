@@ -24,6 +24,7 @@ import {
   useSidebar
 } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
+import Logo from '@/components/Logo';
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Admin Dashboard', path: '/admin/dashboard' },
@@ -42,7 +43,7 @@ const AdminSidebar = () => {
     <Sidebar className="border-r border-border bg-card shadow-sm">
       <SidebarHeader className="p-7">
         <div className="flex items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-primary leading-tight">DealerMate AI</span>
+          <Logo />
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">Admin</span>
