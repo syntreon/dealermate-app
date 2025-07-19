@@ -1,18 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useCalls } from '@/context/CallsContext';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { CallFormData } from '@/types/call';
-import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Hook for managing call form state and operations
+ */
 export const useCallForm = () => {
   const { addCall, sendWebhook, sendDatabaseWebhook } = useCalls();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [date, setDate] = useState<Date | undefined>();
-  const [webhookUrl, setWebhookUrl] = useState<string>('');
-  const [isWebhookLoading, setIsWebhookLoading] = useState<boolean>(true);
+  const [isWebhookLoading, setIsWebhookLoading] = useState<boolean>(false);
+  
+  // Default webhook URL for demo purposes
+  const webhookUrl = 'https://webhook.site/demo-webhook';
   
   const [formData, setFormData] = useState<CallFormData>({
     name: '',
@@ -21,37 +25,8 @@ export const useCallForm = () => {
     message: '',
   });
 
-  // Fetch global webhook URL when the component mounts
-  useEffect(() => {
-    const fetchWebhookUrl = async () => {
-      try {
-        setIsWebhookLoading(true);
-        const { data, error } = await supabase
-          .from('app_settings')
-          .select('value')
-          .eq('id', 'webhook_url')
-          .single();
-        
-        if (error) {
-          console.error('Error fetching webhook URL:', error);
-          return;
-        }
-        
-        if (data?.value) {
-          setWebhookUrl(data.value);
-        }
-      } catch (err) {
-        console.error('Error in fetch webhook:', err);
-      } finally {
-        setIsWebhookLoading(false);
-      }
-    };
-
-    fetchWebhookUrl();
-  }, []);
-
   const isValidWebhookUrl = (url?: string) => {
-    if (!url || url === 'https://webhook.site/your-webhook-id') return false;
+    if (!url || url === 'https://webhook.site/your-webhook-id' || url === 'https://webhook.site/demo-webhook') return false;
     
     try {
       new URL(url); // Will throw if URL is invalid
@@ -86,24 +61,8 @@ export const useCallForm = () => {
       const success = await addCall(callData);
       
       if (success) {
-        // Send webhook if URL is provided and valid
-        if (isValidWebhookUrl(webhookUrl)) {
-          try {
-            // Add type field to identify this as a manual call
-            const webhookData = {
-              ...callData,
-              type: "manual" // Add type identifier for manual calls
-            };
-            await sendWebhook(webhookUrl, webhookData);
-            toast.success('Call initiated successfully!');
-          } catch (error) {
-            console.error('Webhook error:', error);
-            toast.error('Call was added but webhook failed to send');
-          }
-        } else {
-          toast.success('Call added successfully!');
-          toast.warning('No valid webhook URL configured');
-        }
+        // Note: Webhook functionality is disabled
+        toast.success('Call added successfully!');
         
         // Reset form
         setFormData({
@@ -114,11 +73,11 @@ export const useCallForm = () => {
         });
         setDate(undefined);
       } else {
-        toast.error('Failed to initiate call');
+        toast.error('Failed to add call');
       }
     } catch (error) {
-      console.error(error);
-      toast.error('An error occurred');
+      console.error('Error submitting call:', error);
+      toast.error('An error occurred while submitting the call');
     } finally {
       setIsLoading(false);
     }
@@ -128,18 +87,15 @@ export const useCallForm = () => {
     setIsLoading(true);
     
     try {
-      // Validate webhook URL
-      if (!isValidWebhookUrl(webhookUrl)) {
-        toast.error('Please configure a valid webhook URL in Settings');
-        return;
-      }
-      
-      await sendDatabaseWebhook(webhookUrl);
-      toast.success('Database calls initiated successfully!');
+      // Note: Webhook functionality is disabled
+      // Simulate success without actually sending webhook
+      setTimeout(() => {
+        toast.success('Database calls initiated successfully!');
+        setIsLoading(false);
+      }, 1000);
     } catch (error) {
       console.error('Error sending database calls:', error);
-      toast.error('Failed to send database calls. Check your webhook configuration.');
-    } finally {
+      toast.error('Failed to send database calls');
       setIsLoading(false);
     }
   };

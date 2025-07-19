@@ -21,11 +21,15 @@ import { Separator } from "@/components/ui/separator";
 // This array is used for both sidebar and mobile bottom nav
 const navItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
-  { icon: Phone, label: 'Call', path: '/call' },
   { icon: FileText, label: 'Logs', path: '/logs' },
   { icon: User, label: 'Leads', path: '/leads' },
   { icon: BarChart, label: 'Analytics', path: '/analytics' },
   { icon: Settings, label: 'Settings', path: '/settings' },
+];
+
+// Hidden items that are accessible via direct URL but not shown in navigation
+const hiddenRoutes = [
+  { path: '/call', label: 'Outbound Call' },
 ];
 
 // Desktop sidebar component
