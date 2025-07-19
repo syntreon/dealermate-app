@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { 
-  ArrowLeft, 
-  Building2, 
-  Edit, 
-  Trash2, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Building2,
+  Edit,
+  Trash2,
+  CheckCircle,
   XCircle,
   Phone,
   Mail,
@@ -34,17 +34,17 @@ const ClientDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [client, setClient] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+
   useEffect(() => {
     const loadClient = async () => {
       if (!id) return;
-      
+
       setIsLoading(true);
       try {
         const data = await AdminService.getClientById(id);
@@ -69,23 +69,23 @@ const ClientDetails = () => {
         setIsLoading(false);
       }
     };
-    
+
     loadClient();
   }, [id, navigate, toast]);
-  
+
   const handleEdit = () => {
     setIsFormOpen(true);
   };
-  
+
   const handleDelete = () => {
     setDeleteDialogOpen(true);
   };
-  
+
   const confirmDelete = async () => {
     if (!client) return;
-    
+
     try {
-      await AdminService.deleteClient(client.id);
+      await AdminService.deleteClientWithAudit(client.id);
       toast({
         title: 'Client Deleted',
         description: `${client.name} has been deleted successfully.`,
@@ -102,12 +102,12 @@ const ClientDetails = () => {
       setDeleteDialogOpen(false);
     }
   };
-  
+
   const handleActivate = async () => {
     if (!client) return;
-    
+
     try {
-      const updatedClient = await AdminService.activateClient(client.id);
+      const updatedClient = await AdminService.activateClientWithAudit(client.id);
       setClient(updatedClient);
       toast({
         title: 'Client Activated',
@@ -122,12 +122,12 @@ const ClientDetails = () => {
       });
     }
   };
-  
+
   const handleDeactivate = async () => {
     if (!client) return;
-    
+
     try {
-      const updatedClient = await AdminService.deactivateClient(client.id);
+      const updatedClient = await AdminService.deactivateClientWithAudit(client.id);
       setClient(updatedClient);
       toast({
         title: 'Client Deactivated',
@@ -142,13 +142,13 @@ const ClientDetails = () => {
       });
     }
   };
-  
+
   const handleFormSubmit = async (data: any) => {
     if (!client) return;
-    
+
     setIsSubmitting(true);
     try {
-      const updatedClient = await AdminService.updateClient(client.id, data);
+      const updatedClient = await AdminService.updateClientWithAudit(client.id, data);
       setClient(updatedClient);
       toast({
         title: 'Client Updated',
@@ -166,7 +166,7 @@ const ClientDetails = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   const getStatusBadge = (status: Client['status']) => {
     switch (status) {
       case 'active':
@@ -179,7 +179,7 @@ const ClientDetails = () => {
         return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -197,7 +197,7 @@ const ClientDetails = () => {
       </div>
     );
   }
-  
+
   if (!client) {
     return (
       <div className="space-y-6">
@@ -218,7 +218,7 @@ const ClientDetails = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Header with back button */}
@@ -228,7 +228,7 @@ const ClientDetails = () => {
           Back to Clients
         </Button>
       </div>
-      
+
       {/* Client header with actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-3">
@@ -243,7 +243,7 @@ const ClientDetails = () => {
             </p>
           </div>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           {client.status !== 'active' && (
             <Button variant="outline" size="sm" onClick={handleActivate} className="text-green-600">
@@ -251,26 +251,26 @@ const ClientDetails = () => {
               Activate
             </Button>
           )}
-          
+
           {client.status !== 'inactive' && (
             <Button variant="outline" size="sm" onClick={handleDeactivate} className="text-red-600">
               <XCircle className="h-4 w-4 mr-2" />
               Deactivate
             </Button>
           )}
-          
+
           <Button variant="outline" size="sm" onClick={handleEdit}>
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>
-          
+
           <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600">
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </Button>
         </div>
       </div>
-      
+
       {/* Client details tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
@@ -279,7 +279,7 @@ const ClientDetails = () => {
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
-        
+
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* Metrics */}
@@ -295,7 +295,7 @@ const ClientDetails = () => {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Leads</CardTitle>
@@ -307,7 +307,7 @@ const ClientDetails = () => {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Avg Call Duration</CardTitle>
@@ -321,7 +321,7 @@ const ClientDetails = () => {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Conversion Rate</CardTitle>
@@ -338,7 +338,7 @@ const ClientDetails = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Contact Information */}
           <Card>
             <CardHeader>
@@ -354,7 +354,7 @@ const ClientDetails = () => {
                       <p className="text-muted-foreground">{client.contact_person || 'Not specified'}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -370,7 +370,7 @@ const ClientDetails = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -387,7 +387,7 @@ const ClientDetails = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -398,7 +398,7 @@ const ClientDetails = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -408,7 +408,7 @@ const ClientDetails = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -425,7 +425,7 @@ const ClientDetails = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Billing Tab */}
         <TabsContent value="billing" className="space-y-6">
           <Card>
@@ -444,7 +444,7 @@ const ClientDetails = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -454,7 +454,7 @@ const ClientDetails = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -465,7 +465,7 @@ const ClientDetails = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <Percent className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -476,7 +476,7 @@ const ClientDetails = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -486,15 +486,15 @@ const ClientDetails = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Estimated Monthly Profit</p>
                       <p className="text-muted-foreground">
                         {formatCurrency(
-                          client.monthly_billing_amount_cad - 
-                          (client.average_monthly_ai_cost_usd + client.average_monthly_misc_cost_usd) * 1.35 - 
+                          client.monthly_billing_amount_cad -
+                          (client.average_monthly_ai_cost_usd + client.average_monthly_misc_cost_usd) * 1.35 -
                           (client.monthly_billing_amount_cad * client.partner_split_percentage / 100),
                           'CAD'
                         )}
@@ -509,7 +509,7 @@ const ClientDetails = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
           <Card>
@@ -527,7 +527,7 @@ const ClientDetails = () => {
                     </pre>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-3">
                   <BarChart className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
@@ -538,8 +538,8 @@ const ClientDetails = () => {
                           {feature}
                         </Badge>
                       )) || (
-                        <p className="text-muted-foreground">No features configured</p>
-                      )}
+                          <p className="text-muted-foreground">No features configured</p>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -547,7 +547,7 @@ const ClientDetails = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-6">
           <Card>
@@ -566,7 +566,7 @@ const ClientDetails = () => {
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {/* Edit Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
@@ -578,7 +578,7 @@ const ClientDetails = () => {
           />
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

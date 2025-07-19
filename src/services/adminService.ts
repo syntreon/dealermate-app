@@ -17,6 +17,7 @@ import {
 } from '@/types/admin';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { AuditService } from './auditService';
 
 // Database utility functions
 const handleDatabaseError = (error: any): DatabaseError => {
@@ -28,6 +29,17 @@ const handleDatabaseError = (error: any): DatabaseError => {
   dbError.hint = error.hint;
   
   return dbError;
+};
+
+// Get current user ID for audit logging
+const getCurrentUserId = async (): Promise<string | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
 };
 
 const transformClient = (row: Database['public']['Tables']['clients']['Row']): Client => {
@@ -219,7 +231,7 @@ export const AdminService = {
     }
   },
 
-  createClient: async (data: CreateClientData): Promise<Client> => {
+  createClient: async (data: CreateClientData, userId?: string): Promise<Client> => {
     try {
       const { data: newClient, error } = await supabase
         .from('clients')
@@ -250,14 +262,32 @@ export const AdminService = {
       const client = transformClient(newClient);
       client.metrics = await calculateClientMetrics(client.id);
       
+      // Log audit event
+      if (userId) {
+        try {
+          await AuditService.logClientAction(
+            userId,
+            'create',
+            client.id,
+            undefined,
+            { name: client.name, status: client.status, type: client.type }
+          );
+        } catch (auditError) {
+          console.error('Failed to log audit event:', auditError);
+        }
+      }
+      
       return client;
     } catch (error) {
       throw handleDatabaseError(error);
     }
   },
 
-  updateClient: async (id: string, data: UpdateClientData): Promise<Client> => {
+  updateClient: async (id: string, data: UpdateClientData, userId?: string): Promise<Client> => {
     try {
+      // Get the old client data for audit logging
+      const oldClient = userId ? await AdminService.getClientById(id) : null;
+      
       const updateData: any = {};
       
       // Only include defined fields in the update
@@ -281,14 +311,32 @@ export const AdminService = {
       const client = transformClient(updatedClient);
       client.metrics = await calculateClientMetrics(client.id);
       
+      // Log audit event
+      if (userId && oldClient) {
+        try {
+          await AuditService.logClientAction(
+            userId,
+            'update',
+            client.id,
+            { name: oldClient.name, status: oldClient.status, type: oldClient.type },
+            { name: client.name, status: client.status, type: client.type }
+          );
+        } catch (auditError) {
+          console.error('Failed to log audit event:', auditError);
+        }
+      }
+      
       return client;
     } catch (error) {
       throw handleDatabaseError(error);
     }
   },
 
-  deleteClient: async (id: string): Promise<void> => {
+  deleteClient: async (id: string, userId?: string): Promise<void> => {
     try {
+      // Get the client data for audit logging before deletion
+      const client = userId ? await AdminService.getClientById(id) : null;
+      
       const { error } = await supabase
         .from('clients')
         .delete()
@@ -297,28 +345,43 @@ export const AdminService = {
       if (error) {
         throw handleDatabaseError(error);
       }
+      
+      // Log audit event
+      if (userId && client) {
+        try {
+          await AuditService.logClientAction(
+            userId,
+            'delete',
+            id,
+            { name: client.name, status: client.status, type: client.type },
+            undefined
+          );
+        } catch (auditError) {
+          console.error('Failed to log audit event:', auditError);
+        }
+      }
     } catch (error) {
       throw handleDatabaseError(error);
     }
   },
 
-  activateClient: async (id: string): Promise<Client> => {
-    return AdminService.updateClient(id, { status: 'active' });
+  activateClient: async (id: string, userId?: string): Promise<Client> => {
+    return AdminService.updateClient(id, { status: 'active' }, userId);
   },
 
-  deactivateClient: async (id: string): Promise<Client> => {
-    return AdminService.updateClient(id, { status: 'inactive' });
+  deactivateClient: async (id: string, userId?: string): Promise<Client> => {
+    return AdminService.updateClient(id, { status: 'inactive' }, userId);
   },
 
-  setClientToTrial: async (id: string): Promise<Client> => {
-    return AdminService.updateClient(id, { status: 'trial' });
+  setClientToTrial: async (id: string, userId?: string): Promise<Client> => {
+    return AdminService.updateClient(id, { status: 'trial' }, userId);
   },
 
-  churnClient: async (id: string): Promise<Client> => {
-    return AdminService.updateClient(id, { status: 'churned' });
+  churnClient: async (id: string, userId?: string): Promise<Client> => {
+    return AdminService.updateClient(id, { status: 'churned' }, userId);
   },
 
-  bulkUpdateClients: async (operation: BulkOperation): Promise<BulkOperationResult> => {
+  bulkUpdateClients: async (operation: BulkOperation, userId?: string): Promise<BulkOperationResult> => {
     try {
       const results: BulkOperationResult = {
         success: true,
@@ -331,17 +394,17 @@ export const AdminService = {
         try {
           switch (operation.action) {
             case 'activate':
-              await AdminService.updateClient(id, { status: 'active' });
+              await AdminService.updateClient(id, { status: 'active' }, userId);
               break;
             case 'deactivate':
-              await AdminService.updateClient(id, { status: 'inactive' });
+              await AdminService.updateClient(id, { status: 'inactive' }, userId);
               break;
             case 'delete':
-              await AdminService.deleteClient(id);
+              await AdminService.deleteClient(id, userId);
               break;
             case 'update':
               if (operation.data) {
-                await AdminService.updateClient(id, operation.data);
+                await AdminService.updateClient(id, operation.data, userId);
               }
               break;
           }
@@ -356,6 +419,21 @@ export const AdminService = {
       }
 
       results.success = results.failed === 0;
+      
+      // Log bulk operation audit event
+      if (userId) {
+        try {
+          await AuditService.logBulkOperation(
+            userId,
+            'clients',
+            operation.action,
+            operation.ids
+          );
+        } catch (auditError) {
+          console.error('Failed to log bulk operation audit event:', auditError);
+        }
+      }
+      
       return results;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -450,12 +528,28 @@ export const AdminService = {
     }
   },
 
-  createUser: async (data: CreateUserData): Promise<User> => {
+  createUser: async (data: CreateUserData, createdBy?: string): Promise<User> => {
     try {
-      const { data: newUser, error } = await supabase
+      // Generate a temporary password (user should reset it)
+      const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+      
+      // Create the auth user and profile using the database function
+      const { data: userId, error: authError } = await supabase.rpc('create_user_with_auth', {
+        user_email: data.email,
+        user_password: tempPassword,
+        user_name: data.full_name,
+        user_phone: '', // Optional phone field
+        user_is_admin: data.role === 'admin' || data.role === 'owner'
+      });
+
+      if (authError) {
+        throw handleDatabaseError(authError);
+      }
+
+      // Now update the user record with our additional fields
+      const { data: updatedUser, error: updateError } = await supabase
         .from('users')
-        .insert({
-          email: data.email,
+        .update({
           full_name: data.full_name,
           role: data.role,
           client_id: data.client_id || null,
@@ -472,21 +566,43 @@ export const AdminService = {
             }
           }
         })
+        .eq('id', userId)
         .select()
         .single();
 
-      if (error) {
-        throw handleDatabaseError(error);
+      if (updateError) {
+        throw handleDatabaseError(updateError);
       }
 
-      return transformUser(newUser);
+      const user = transformUser(updatedUser);
+      
+      // Log audit event
+      if (createdBy) {
+        try {
+          await AuditService.logUserAction(
+            createdBy,
+            'create',
+            user.id,
+            undefined,
+            { email: user.email, role: user.role, full_name: user.full_name },
+            user.client_id || undefined
+          );
+        } catch (auditError) {
+          console.error('Failed to log audit event:', auditError);
+        }
+      }
+
+      return user;
     } catch (error) {
       throw handleDatabaseError(error);
     }
   },
 
-  updateUser: async (id: string, data: UpdateUserData): Promise<User> => {
+  updateUser: async (id: string, data: UpdateUserData, updatedBy?: string): Promise<User> => {
     try {
+      // Get the old user data for audit logging
+      const oldUser = updatedBy ? await AdminService.getUserById(id) : null;
+      
       const updateData: any = {};
       
       // Only include defined fields in the update
@@ -507,14 +623,35 @@ export const AdminService = {
         throw handleDatabaseError(error);
       }
 
-      return transformUser(updatedUser);
+      const user = transformUser(updatedUser);
+      
+      // Log audit event
+      if (updatedBy && oldUser) {
+        try {
+          await AuditService.logUserAction(
+            updatedBy,
+            'update',
+            user.id,
+            { email: oldUser.email, role: oldUser.role, full_name: oldUser.full_name },
+            { email: user.email, role: user.role, full_name: user.full_name },
+            user.client_id || undefined
+          );
+        } catch (auditError) {
+          console.error('Failed to log audit event:', auditError);
+        }
+      }
+
+      return user;
     } catch (error) {
       throw handleDatabaseError(error);
     }
   },
 
-  deleteUser: async (id: string): Promise<void> => {
+  deleteUser: async (id: string, deletedBy?: string): Promise<void> => {
     try {
+      // Get the user data for audit logging before deletion
+      const user = deletedBy ? await AdminService.getUserById(id) : null;
+      
       const { error } = await supabase
         .from('users')
         .delete()
@@ -523,12 +660,28 @@ export const AdminService = {
       if (error) {
         throw handleDatabaseError(error);
       }
+      
+      // Log audit event
+      if (deletedBy && user) {
+        try {
+          await AuditService.logUserAction(
+            deletedBy,
+            'delete',
+            id,
+            { email: user.email, role: user.role, full_name: user.full_name },
+            undefined,
+            user.client_id || undefined
+          );
+        } catch (auditError) {
+          console.error('Failed to log audit event:', auditError);
+        }
+      }
     } catch (error) {
       throw handleDatabaseError(error);
     }
   },
 
-  bulkUpdateUsers: async (operation: BulkOperation): Promise<BulkOperationResult> => {
+  bulkUpdateUsers: async (operation: BulkOperation, userId?: string): Promise<BulkOperationResult> => {
     try {
       const results: BulkOperationResult = {
         success: true,
@@ -541,11 +694,11 @@ export const AdminService = {
         try {
           switch (operation.action) {
             case 'delete':
-              await AdminService.deleteUser(id);
+              await AdminService.deleteUser(id, userId);
               break;
             case 'update':
               if (operation.data) {
-                await AdminService.updateUser(id, operation.data);
+                await AdminService.updateUser(id, operation.data, userId);
               }
               break;
           }
@@ -560,6 +713,21 @@ export const AdminService = {
       }
 
       results.success = results.failed === 0;
+      
+      // Log bulk operation audit event
+      if (userId) {
+        try {
+          await AuditService.logBulkOperation(
+            userId,
+            'users',
+            operation.action,
+            operation.ids
+          );
+        } catch (auditError) {
+          console.error('Failed to log bulk operation audit event:', auditError);
+        }
+      }
+      
       return results;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -768,5 +936,56 @@ export const AdminService = {
     } catch (error) {
       throw handleDatabaseError(error);
     }
+  },
+
+  // Wrapper functions that automatically include audit logging
+  createClientWithAudit: async (data: CreateClientData): Promise<Client> => {
+    const userId = await getCurrentUserId();
+    return AdminService.createClient(data, userId || undefined);
+  },
+
+  updateClientWithAudit: async (id: string, data: UpdateClientData): Promise<Client> => {
+    const userId = await getCurrentUserId();
+    return AdminService.updateClient(id, data, userId || undefined);
+  },
+
+  deleteClientWithAudit: async (id: string): Promise<void> => {
+    const userId = await getCurrentUserId();
+    return AdminService.deleteClient(id, userId || undefined);
+  },
+
+  activateClientWithAudit: async (id: string): Promise<Client> => {
+    const userId = await getCurrentUserId();
+    return AdminService.activateClient(id, userId || undefined);
+  },
+
+  deactivateClientWithAudit: async (id: string): Promise<Client> => {
+    const userId = await getCurrentUserId();
+    return AdminService.deactivateClient(id, userId || undefined);
+  },
+
+  createUserWithAudit: async (data: CreateUserData): Promise<User> => {
+    const userId = await getCurrentUserId();
+    return AdminService.createUser(data, userId || undefined);
+  },
+
+  updateUserWithAudit: async (id: string, data: UpdateUserData): Promise<User> => {
+    const userId = await getCurrentUserId();
+    return AdminService.updateUser(id, data, userId || undefined);
+  },
+
+  deleteUserWithAudit: async (id: string): Promise<void> => {
+    const userId = await getCurrentUserId();
+    return AdminService.deleteUser(id, userId || undefined);
+  },
+
+  bulkUpdateClientsWithAudit: async (operation: BulkOperation): Promise<BulkOperationResult> => {
+    const userId = await getCurrentUserId();
+    return AdminService.bulkUpdateClients(operation, userId || undefined);
+  },
+
+  bulkUpdateUsersWithAudit: async (operation: BulkOperation): Promise<BulkOperationResult> => {
+    const userId = await getCurrentUserId();
+    return AdminService.bulkUpdateUsers(operation, userId || undefined);
   }
 };

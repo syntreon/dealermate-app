@@ -62,10 +62,10 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
                 <Button 
                   variant="outline" 
                   className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
-                  onClick={() => navigate('/admin/settings')}
+                  onClick={() => navigate('/admin/dashboard')}
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Admin Settings Panel
+                  Admin Panel
                 </Button>
               </div>
               

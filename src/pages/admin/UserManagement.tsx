@@ -70,7 +70,7 @@ const UserManagement = () => {
     if (!userToDelete) return;
 
     try {
-      await AdminService.deleteUser(userToDelete.id);
+      await AdminService.deleteUserWithAudit(userToDelete.id);
       setUsers(users.filter(u => u.id !== userToDelete.id));
       toast({
         title: 'User Deleted',
@@ -94,7 +94,7 @@ const UserManagement = () => {
     try {
       if (selectedUser) {
         // Update existing user
-        const updatedUser = await AdminService.updateUser(selectedUser.id, data);
+        const updatedUser = await AdminService.updateUserWithAudit(selectedUser.id, data);
         setUsers(users.map(u => u.id === selectedUser.id ? updatedUser : u));
         toast({
           title: 'User Updated',
@@ -102,7 +102,7 @@ const UserManagement = () => {
         });
       } else {
         // Create new user
-        const newUser = await AdminService.createUser(data as CreateUserData);
+        const newUser = await AdminService.createUserWithAudit(data as CreateUserData);
         setUsers([...users, newUser]);
         toast({
           title: 'User Created',

@@ -19,5 +19,9 @@ export type {
   PaginationOptions,
   DatabaseError,
   BulkOperation,
-  BulkOperationResult
+  BulkOperationResult,
+  CreateClientData,
+  UpdateClientData,
+  CreateUserData,
+  UpdateUserData
 } from '@/types/admin';

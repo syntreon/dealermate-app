@@ -66,7 +66,7 @@ const ClientManagement = () => {
     if (!clientToDelete) return;
 
     try {
-      await AdminService.deleteClient(clientToDelete.id);
+      await AdminService.deleteClientWithAudit(clientToDelete.id);
       setClients(clients.filter(c => c.id !== clientToDelete.id));
       toast({
         title: 'Client Deleted',
@@ -87,7 +87,7 @@ const ClientManagement = () => {
 
   const handleActivateClient = async (client: Client) => {
     try {
-      const updatedClient = await AdminService.activateClient(client.id);
+      const updatedClient = await AdminService.activateClientWithAudit(client.id);
       setClients(clients.map(c => c.id === client.id ? updatedClient : c));
       toast({
         title: 'Client Activated',
@@ -105,7 +105,7 @@ const ClientManagement = () => {
 
   const handleDeactivateClient = async (client: Client) => {
     try {
-      const updatedClient = await AdminService.deactivateClient(client.id);
+      const updatedClient = await AdminService.deactivateClientWithAudit(client.id);
       setClients(clients.map(c => c.id === client.id ? updatedClient : c));
       toast({
         title: 'Client Deactivated',
@@ -126,7 +126,7 @@ const ClientManagement = () => {
     try {
       if (selectedClient) {
         // Update existing client
-        const updatedClient = await AdminService.updateClient(selectedClient.id, data);
+        const updatedClient = await AdminService.updateClientWithAudit(selectedClient.id, data);
         setClients(clients.map(c => c.id === selectedClient.id ? updatedClient : c));
         toast({
           title: 'Client Updated',
@@ -134,7 +134,7 @@ const ClientManagement = () => {
         });
       } else {
         // Create new client
-        const newClient = await AdminService.createClient(data as CreateClientData);
+        const newClient = await AdminService.createClientWithAudit(data as CreateClientData);
         setClients([...clients, newClient]);
         toast({
           title: 'Client Created',
