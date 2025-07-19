@@ -119,7 +119,7 @@ const Leads: React.FC = () => {
           <p className="text-muted-foreground">Manage and track leads generated from calls</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2 self-start sm:self-center">
+        <div className="flex gap-2 self-start">
           {/* Client selector for admin users */}
           {user && canViewSensitiveInfo(user) && (
             <ClientSelector
@@ -134,6 +134,7 @@ const Leads: React.FC = () => {
             variant="outline" 
             size="sm" 
             onClick={() => setIsExportOpen(true)}
+            className="hidden sm:inline-flex"
           >
             <Download className="h-4 w-4 mr-2" /> 
             Export

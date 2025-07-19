@@ -257,7 +257,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
           </div>
 
           {/* Export Button */}
-          <Button variant="outline" size="sm" onClick={onExportLeads} className="w-full md:w-auto">
+          <Button variant="outline" size="sm" onClick={onExportLeads} className="w-full md:w-auto hidden md:inline-flex">
             <Download className="h-4 w-4 mr-2" />
             Export Leads
           </Button>
@@ -323,7 +323,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                           {lead.full_name}
                         </div>
                         {/* For admin view: show client name */}
-                        {canViewSensitiveInfo(user) ? (
+                        {user && canViewSensitiveInfo(user) ? (
                           <div className="text-xs text-foreground/60 mt-0.5 flex items-center">
                             <User className="h-3 w-3 mr-1" />
                             <span>Client: {lead.client_name || 'Unknown'}</span>
