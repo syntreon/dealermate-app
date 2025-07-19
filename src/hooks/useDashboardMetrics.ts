@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { DashboardMetrics, SystemMessage, AgentStatus } from '@/types/dashboard';
-import { SystemStatusService } from '@/services/systemStatusService';
+import { DashboardMetrics } from '@/types/dashboard';
+import { DashboardService } from '@/services/dashboardService';
 
 export const useDashboardMetrics = (clientId?: string) => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -15,99 +15,25 @@ export const useDashboardMetrics = (clientId?: string) => {
       setError(null);
       
       try {
-        // In a real implementation, this would be an API call
-        // For now, we'll simulate an API call with a timeout and mock data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         // Determine if user is admin/owner (can see all data) or regular user (client-specific data)
         const isAdminUser = user && (
           user.client_id === null && 
-          (user.role === 'admin' || user.role === 'owner' || user.is_admin)
+          (user.role === 'admin' || user.role === 'owner')
         );
         
-        // Mock data - different values for admin vs client users
-        let mockMetrics: DashboardMetrics;
+        // Use the appropriate client ID based on user role
+        const effectiveClientId = isAdminUser ? null : (user?.client_id || null);
         
-        if (isAdminUser) {
-          // Admin/Owner sees aggregated data from ALL clients
-          mockMetrics = {
-            totalCalls: 1247, // Higher numbers for all clients combined
-            averageHandleTime: '3m 12s',
-            callsTransferred: 189,
-            totalLeads: 324,
-            callsGrowth: 18,
-            timeGrowth: -3,
-            transferGrowth: 12,
-            leadsGrowth: 22,
-            agentStatus: {
-              status: 'active',
-              lastUpdated: new Date(),
-              message: 'All systems operational - Platform-wide status'
-            },
-            systemMessages: [
-              {
-                id: '1',
-                type: 'info',
-                message: 'Platform maintenance scheduled for tonight at 2:00 AM EST',
-                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
-              },
-              {
-                id: '2',
-                type: 'success',
-                message: 'New multi-client analytics dashboard is now available',
-                timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-                expiresAt: null
-              },
-              {
-                id: '3',
-                type: 'warning',
-                message: 'Client ABC Corp approaching monthly call limit',
-                timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-                expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000)
-              }
-            ]
-          };
-        } else {
-          // Regular client user sees only their client's data
-          mockMetrics = {
-            totalCalls: 156,
-            averageHandleTime: '2m 45s',
-            callsTransferred: 23,
-            totalLeads: 42,
-            callsGrowth: 12,
-            timeGrowth: -5,
-            transferGrowth: 8,
-            leadsGrowth: 15,
-            agentStatus: {
-              status: 'active',
-              lastUpdated: new Date(),
-              message: 'All systems operational'
-            },
-            systemMessages: [
-              {
-                id: '1',
-                type: 'info',
-                message: 'System maintenance scheduled for tonight at 2:00 AM EST',
-                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
-              },
-              {
-                id: '2',
-                type: 'success',
-                message: 'New lead capture feature is now available',
-                timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-                expiresAt: null
-              }
-            ]
-          };
-        }
+        console.log('Dashboard Metrics - User Role:', user?.role, 'Client ID:', user?.client_id, 'Is Admin:', isAdminUser, 'Effective Client ID:', effectiveClientId);
         
-        console.log('Dashboard Metrics - User Role:', user?.role, 'Client ID:', user?.client_id, 'Is Admin:', isAdminUser);
-        console.log('Fetched metrics:', mockMetrics);
+        // Fetch real metrics from database
+        const dashboardMetrics = await DashboardService.getDashboardMetrics(effectiveClientId);
         
-        setMetrics(mockMetrics);
+        console.log('Fetched metrics:', dashboardMetrics);
+        
+        setMetrics(dashboardMetrics);
       } catch (err) {
+        console.error('Error fetching dashboard metrics:', err);
         setError(err instanceof Error ? err : new Error('Failed to fetch dashboard metrics'));
       } finally {
         setIsLoading(false);
@@ -124,7 +50,7 @@ export const useDashboardMetrics = (clientId?: string) => {
       setIsLoading(false);
     }
     
-  }, [user?.id, user?.role, user?.client_id, clientId, isAuthLoading]); // Add isAuthLoading to dependencies
+  }, [user?.id, user?.role, user?.client_id, clientId, isAuthLoading]);
 
   return { metrics, isLoading, error };
 };

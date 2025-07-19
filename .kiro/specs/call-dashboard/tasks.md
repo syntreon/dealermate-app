@@ -113,7 +113,10 @@
     - Add notes management
     - _Requirements: 4.2, 4.3_
 
-  - [ ] 5.3 Add lead export functionality
+  - [x] 5.3 Add lead export functionality
+
+
+
     - Implement export in CSV and Excel formats
     - Add export options dialog
     - _Requirements: 4.4_
@@ -232,7 +235,9 @@
     - Add data transformation utilities
     - _Requirements: 1.5_
 
-  - [ ] 8.5 Build admin service
+  - [x] 8.5 Build admin service
+
+
 
 
     - Implement client and user management functions

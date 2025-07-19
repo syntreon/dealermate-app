@@ -1,5 +1,5 @@
-import React from 'react';
-import { useCalls, Call } from '@/context/CallsContext';
+import React, { useState, useEffect } from 'react';
+import { Call } from '@/context/CallsContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Phone, Clock, Calendar, MessageSquare, CheckCircle, XCircle, SendHorizontal, RefreshCw } from 'lucide-react';
@@ -7,22 +7,54 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import { useNavigate } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
+
 import MetricsSummaryCards from '@/components/dashboard/MetricsSummaryCards';
 import useDashboardMetrics from '@/hooks/useDashboardMetrics';
 import { CallActivityTimeline } from '@/components/dashboard/CallActivityTimeline';
+import { CallsService, CallStats } from '@/services/callsService';
 
 const Dashboard = () => {
-  const { calls, stats } = useCalls();
-  const { networkErrorDetected, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+
+  // State for real data
+  const [calls, setCalls] = useState<Call[]>([]);
+  const [stats, setStats] = useState<CallStats>({ totalCalls: 0, sent: 0, answered: 0, failed: 0 });
+  const [loadingCalls, setLoadingCalls] = useState(true);
 
   // Get client ID from user if available
   const clientId = user?.client_id || undefined;
 
   // Use our custom hook to fetch dashboard metrics
   const { metrics, isLoading, error } = useDashboardMetrics(clientId);
+
+  // Fetch calls and stats
+  useEffect(() => {
+    const fetchCallsData = async () => {
+      if (!user) return;
+      
+      setLoadingCalls(true);
+      try {
+        // Determine effective client ID based on user role
+        const isAdminUser = user.client_id === null && (user.role === 'admin' || user.role === 'owner');
+        const effectiveClientId = isAdminUser ? undefined : user.client_id || undefined;
+
+        const [recentCalls, callStats] = await Promise.all([
+          CallsService.getRecentCalls(5, effectiveClientId),
+          CallsService.getCallStats(effectiveClientId)
+        ]);
+
+        setCalls(recentCalls);
+        setStats(callStats);
+      } catch (error) {
+        console.error('Error fetching calls data:', error);
+      } finally {
+        setLoadingCalls(false);
+      }
+    };
+
+    fetchCallsData();
+  }, [user]);
 
   const chartData = [
     { name: 'Sent', value: stats.sent, color: '#a78bfa' }, // Lighter purple for better contrast
@@ -97,21 +129,10 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-[#1F2937] mb-2 sm:mb-0">Dashboard</h1>
             <ComingSoonBadge />
           </div>
-          <p className="text-[#6B7280]">Overview of your AI call system performance. (Mock Data)</p> {/* Improved contrast */}
+          <p className="text-[#6B7280]">Overview of your AI call system performance.</p> {/* Improved contrast */}
         </div>
 
         <div className="flex gap-3 mt-4 sm:mt-0"> {/* Increased button spacing and added top margin on mobile */}
-          {networkErrorDetected && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleForceRefresh}
-              className="animate-pulse"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-            </Button>
-          )}
-
           <Button
             onClick={handleNewCall}
             className="bg-primary hover:bg-primary/90 text-white px-4 py-2" /* Added more padding */
@@ -154,7 +175,7 @@ const Dashboard = () => {
             <CardTitle className="text-lg font-medium">Call Distribution</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
-            {stats.totalCalls > 0 ? (
+            {!loadingCalls && stats.totalCalls > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
@@ -187,6 +208,11 @@ const Dashboard = () => {
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
+            ) : loadingCalls ? (
+              <div className="h-[200px] flex items-center justify-center text-gray-500">
+                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                <p>Loading call data...</p>
+              </div>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-gray-500">
                 <p>No call data available yet</p>
@@ -200,7 +226,7 @@ const Dashboard = () => {
             <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            {calls.length > 0 ? (
+            {!loadingCalls && calls.length > 0 ? (
               <div className="space-y-4">
                 {calls.slice(0, 5).map((call) => (
                   <div
@@ -240,6 +266,11 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : loadingCalls ? (
+              <div className="h-40 flex items-center justify-center text-gray-500">
+                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                <p>Loading recent activity...</p>
               </div>
             ) : (
               <div className="h-40 flex items-center justify-center text-gray-500">
