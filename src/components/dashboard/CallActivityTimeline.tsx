@@ -103,7 +103,7 @@ export function CallActivityTimeline() {
 
   return (
     <Card className="col-span-12 lg:col-span-8">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="flex flex-col gap-4 pb-2 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <CardTitle>Call Activity Timeline</CardTitle>
           <div className="flex items-center gap-2">
