@@ -2,7 +2,6 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Phone, Settings, LogOut, FileText, BarChart, User, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Logo from './Logo';
 import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -44,7 +43,8 @@ const DesktopSidebar = () => {
   return (
     <Sidebar className="border-r border-border bg-card shadow-sm">
       <SidebarHeader className="p-7">
-        <Logo />
+        {/* Show DealerMate AI for both regular and admin sidebar */}
+        <span className="text-2xl font-bold tracking-tight text-primary">DealerMate AI</span>
       </SidebarHeader>
 
       <SidebarContent>

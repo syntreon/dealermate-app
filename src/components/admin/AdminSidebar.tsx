@@ -11,7 +11,6 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Logo from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -43,7 +42,8 @@ const AdminSidebar = () => {
     <Sidebar className="border-r border-border bg-card shadow-sm">
       <SidebarHeader className="p-7">
         <div className="flex items-center justify-between">
-          <Logo />
+          {/* Reduced font size for DealerMate AI */}
+          <span className="text-xl font-bold tracking-tight text-primary leading-tight">DealerMate AI</span>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">Admin</span>
