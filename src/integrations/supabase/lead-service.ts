@@ -26,6 +26,7 @@ export type Lead = {
   call_time?: string;
   custom_lead_data?: any;
   sent_to?: string;
+  sent_to_client_at?: string; // Timestamp when email was sent to client
   client_name?: string; // For admin view
 };
 
@@ -305,10 +306,19 @@ class LeadService {
   
   /**
    * Update lead status
+   * Ensures consistent case handling for status values
    */
   public async updateLeadStatus(id: string, status: Lead['status']): Promise<Lead> {
+    // Normalize status to ensure consistent case (using 'New' instead of 'new')
+    let normalizedStatus = status;
+    
+    // If status is 'new', capitalize it to 'New' for consistency
+    if (status?.toLowerCase() === 'new') {
+      normalizedStatus = 'New';
+    }
+    
     // Map status to lead_status to match the database schema
-    return this.updateLead(id, { lead_status: status });
+    return this.updateLead(id, { lead_status: normalizedStatus });
   }
   
   /**

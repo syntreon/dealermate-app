@@ -6,11 +6,13 @@ export interface Lead {
   phoneNumber: string;
   email: string | null;
   status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'closed_won' | 'closed_lost';
-  source: 'website' | 'direct_call' | 'referral' | 'social_media' | 'other';
+  source: 'website' | 'direct_call' | 'referral' | 'social_media' | 'other' | 'ai_agent';
   callId: string;
   clientId: string;
   createdAt: string;
   notes?: string;
+  sent_to?: string;
+  sent_to_client_at?: string;
 }
 
 interface LeadStats {

@@ -82,13 +82,15 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   // Filter and sort leads
   const filteredAndSortedLeads = leads
     .filter(lead => {
-      // Apply status filter
-      if (selectedStatus !== 'all' && lead.status !== selectedStatus) {
+      // Apply status filter - case insensitive comparison
+      if (selectedStatus !== 'all' && 
+          lead.status.toLowerCase() !== selectedStatus.toLowerCase()) {
         return false;
       }
       
-      // Apply source filter
-      if (selectedSource !== 'all' && lead.source !== selectedSource) {
+      // Apply source filter - case insensitive comparison
+      if (selectedSource !== 'all' && 
+          lead.source.toLowerCase() !== selectedSource.toLowerCase()) {
         return false;
       }
       
@@ -149,7 +151,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
       'lost': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Lost' }
     };
 
-    const config = statusConfig[normalizedStatus] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
+    // Use normalized status for lookup to ensure case-insensitivity
+    const config = statusConfig[normalizedStatus] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: status || 'Unknown' };
 
     return (
       <Badge className={cn('px-3 py-1 rounded-full text-xs font-medium border', config.color)}>

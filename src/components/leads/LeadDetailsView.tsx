@@ -480,6 +480,43 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                     </div>
                                 </CardContent>
                             </Card>
+                            
+                            {/* Updates Card */}
+                            <Card className="mt-6">
+                                <CardHeader>
+                                    <CardTitle className="text-base">Updates</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {(lead.sent_to || lead.sent_to_client_at) ? (
+                                        <div className="space-y-4">
+                                            {lead.sent_to && (
+                                                <div className="flex items-center gap-3">
+                                                    <Mail className="h-5 w-5 text-muted-foreground" />
+                                                    <div>
+                                                        <p className="text-sm text-muted-foreground">Email sent to</p>
+                                                        <p className="font-medium">{lead.sent_to}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {lead.sent_to_client_at && (
+                                                <div className="flex items-center gap-3">
+                                                    <Clock className="h-5 w-5 text-muted-foreground" />
+                                                    <div>
+                                                        <p className="text-sm text-muted-foreground">Sent at</p>
+                                                        <p className="font-medium">
+                                                            {format(new Date(lead.sent_to_client_at), 'MMM d, yyyy h:mm a')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4 text-muted-foreground">
+                                            <p>No updates available</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </div>
                     </TabsContent>
 
