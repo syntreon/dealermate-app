@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import LeadAnalytics from '@/components/analytics/LeadAnalytics';
 import CallAnalytics from '@/components/analytics/CallAnalytics';
+import QualityAnalytics from '@/components/analytics/QualityAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { useDateRange } from '@/hooks/useDateRange';
 
@@ -30,9 +31,10 @@ const Analytics = () => {
       </div>
 
       <Tabs defaultValue="leads" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 mb-8">
+        <TabsList className="grid grid-cols-4 mb-8">
           <TabsTrigger value="calls">Call Analytics</TabsTrigger>
           <TabsTrigger value="leads">Lead Analytics</TabsTrigger>
+          <TabsTrigger value="quality">Quality Analytics</TabsTrigger>
           <TabsTrigger value="costs">Cost Analytics</TabsTrigger>
         </TabsList>
 
@@ -42,6 +44,10 @@ const Analytics = () => {
 
         <TabsContent value="leads">
           <LeadAnalytics />
+        </TabsContent>
+
+        <TabsContent value="quality">
+          <QualityAnalytics startDate={dateFilters.start} endDate={dateFilters.end} />
         </TabsContent>
 
         <TabsContent value="costs">
