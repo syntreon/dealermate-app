@@ -138,7 +138,7 @@ const Settings = () => {
               {/* Admin panel button */}
               {canViewSensitiveInfo(user as unknown as User) && (
                 <button
-                  onClick={() => navigate('/admin/settings')}
+                  onClick={() => navigate('/admin/dashboard')}
                   className="flex items-center gap-2 p-3 rounded-md text-left transition-colors hover:bg-gray-50 text-gray-700 mt-2 border-t border-gray-200 pt-4"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
