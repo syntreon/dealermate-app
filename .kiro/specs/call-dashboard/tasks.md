@@ -113,7 +113,8 @@
     - Add notes management
     - _Requirements: 4.2, 4.3_
 
-  - [x] 5.3 Add lead export functionality
+  - [ ] 5.3 Add lead export functionality
+
 
 
 

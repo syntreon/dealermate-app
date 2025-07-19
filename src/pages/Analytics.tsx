@@ -3,12 +3,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import LeadAnalytics from '@/components/analytics/LeadAnalytics';
+import CallAnalytics from '@/components/analytics/CallAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { useDateRange } from '@/hooks/useDateRange';
 
 const Analytics = () => {
-  const [activeTab, setActiveTab] = useState('leads');
+  const [activeTab, setActiveTab] = useState('calls');
   const { dateRange, setDateRange, startDate, endDate } = useDateRange();
+  const [dateFilters, setDateFilters] = useState<{ start?: string; end?: string }>({});
 
   return (
     <div className="space-y-8 pb-8">
@@ -19,10 +21,10 @@ const Analytics = () => {
           </div>
           <p className="text-[#6B7280]">Detailed analytics and insights for your call system.</p>
         </div>
-        <DateRangeFilter 
+        <DateRangeFilter
           className="mt-4 sm:mt-0"
           onRangeChange={(start, end) => {
-            // This will be passed to child components
+            setDateFilters({ start: start || undefined, end: end || undefined });
           }}
         />
       </div>
@@ -33,22 +35,15 @@ const Analytics = () => {
           <TabsTrigger value="leads">Lead Analytics</TabsTrigger>
           <TabsTrigger value="costs">Cost Analytics</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="calls">
-          <Card>
-            <CardContent className="pt-6 flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <ComingSoonBadge />
-                <p className="mt-4 text-gray-600">Call analytics will be available soon.</p>
-              </div>
-            </CardContent>
-          </Card>
+          <CallAnalytics startDate={dateFilters.start} endDate={dateFilters.end} />
         </TabsContent>
-        
+
         <TabsContent value="leads">
           <LeadAnalytics />
         </TabsContent>
-        
+
         <TabsContent value="costs">
           <Card>
             <CardContent className="pt-6 flex items-center justify-center min-h-[400px]">
