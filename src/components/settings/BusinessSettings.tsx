@@ -12,7 +12,7 @@ interface BusinessSettingsProps {
 interface BusinessData {
   id: string;
   name: string;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'trial' | 'churned';
   contact_person: string | null;
   contact_email: string | null;
   phone_number: string | null;
@@ -131,7 +131,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
             variant="outline" 
             className={`
               ${businessData.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' : 
-                businessData.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 
+                businessData.status === 'trial' ? 'bg-blue-100 text-blue-700 border-blue-200' : 
+                businessData.status === 'churned' ? 'bg-gray-100 text-gray-700 border-gray-200' :
                 'bg-red-100 text-red-700 border-red-200'}
             `}
           >

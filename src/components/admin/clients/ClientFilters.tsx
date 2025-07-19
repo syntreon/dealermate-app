@@ -50,7 +50,7 @@ const ClientFilters: React.FC<ClientFiltersProps> = ({
   const handleStatusChange = (value: string) => {
     onFilterChange({
       ...filters,
-      status: value as 'active' | 'inactive' | 'pending' | 'all',
+      status: value as 'active' | 'inactive' | 'trial' | 'churned' | 'all',
     });
   };
 
@@ -96,7 +96,8 @@ const ClientFilters: React.FC<ClientFiltersProps> = ({
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="trial">Trial</SelectItem>
+            <SelectItem value="churned">Churned</SelectItem>
           </SelectContent>
         </Select>
 

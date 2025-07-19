@@ -12,7 +12,7 @@ interface ClientSettingsProps {
 interface ClientData {
   id: string;
   name: string;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'trial' | 'churned';
   type: string;
   subscription_plan: string;
   contact_person: string | null;
@@ -133,7 +133,8 @@ export const ClientSettings: React.FC<ClientSettingsProps> = ({ clientId, isAdmi
             variant="outline" 
             className={`
               ${clientData.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' : 
-                clientData.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 
+                clientData.status === 'trial' ? 'bg-blue-100 text-blue-700 border-blue-200' : 
+                clientData.status === 'churned' ? 'bg-gray-100 text-gray-700 border-gray-200' :
                 'bg-red-100 text-red-700 border-red-200'}
             `}
           >

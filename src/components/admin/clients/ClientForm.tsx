@@ -28,18 +28,17 @@ import { Client, CreateClientData, UpdateClientData } from '@/types/admin';
 const clientFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   type: z.string().min(1, 'Type is required'),
-  subscription_plan: z.string().min(1, 'Subscription plan is required'),
+  subscription_plan: z.enum(['free trial', 'basic', 'Pro', 'Custom'], {
+    required_error: 'Subscription plan is required',
+  }),
   contact_person: z.string().optional(),
   contact_email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone_number: z.string().optional(),
   billing_address: z.string().optional(),
   monthly_billing_amount_cad: z.coerce.number().min(0, 'Amount must be positive'),
-  average_monthly_ai_cost_usd: z.coerce.number().min(0, 'Amount must be positive'),
-  average_monthly_misc_cost_usd: z.coerce.number().min(0, 'Amount must be positive'),
-  partner_split_percentage: z.coerce.number().min(0, 'Percentage must be positive').max(100, 'Percentage cannot exceed 100'),
   finders_fee_cad: z.coerce.number().min(0, 'Amount must be positive'),
   slug: z.string().min(2, 'Slug must be at least 2 characters').regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
-  status: z.enum(['active', 'inactive', 'pending']).optional(),
+  status: z.enum(['active', 'inactive', 'trial', 'churned']).optional(),
 });
 
 type ClientFormValues = z.infer<typeof clientFormSchema>;
@@ -65,15 +64,12 @@ const ClientForm: React.FC<ClientFormProps> = ({
     defaultValues: {
       name: client?.name || '',
       type: client?.type || '',
-      subscription_plan: client?.subscription_plan || '',
+      subscription_plan: client?.subscription_plan || 'free trial',
       contact_person: client?.contact_person || '',
       contact_email: client?.contact_email || '',
       phone_number: client?.phone_number || '',
       billing_address: client?.billing_address || '',
       monthly_billing_amount_cad: client?.monthly_billing_amount_cad || 0,
-      average_monthly_ai_cost_usd: client?.average_monthly_ai_cost_usd || 0,
-      average_monthly_misc_cost_usd: client?.average_monthly_misc_cost_usd || 0,
-      partner_split_percentage: client?.partner_split_percentage || 0,
       finders_fee_cad: client?.finders_fee_cad || 0,
       slug: client?.slug || '',
       status: client?.status,
@@ -163,10 +159,10 @@ const ClientForm: React.FC<ClientFormProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Basic">Basic</SelectItem>
-                          <SelectItem value="Standard">Standard</SelectItem>
-                          <SelectItem value="Premium">Premium</SelectItem>
-                          <SelectItem value="Enterprise">Enterprise</SelectItem>
+                          <SelectItem value="free trial">Free Trial</SelectItem>
+                          <SelectItem value="basic">Basic</SelectItem>
+                          <SelectItem value="Pro">Pro</SelectItem>
+                          <SelectItem value="Custom">Custom</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -207,7 +203,8 @@ const ClientForm: React.FC<ClientFormProps> = ({
                           <SelectContent>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="trial">Trial</SelectItem>
+                            <SelectItem value="churned">Churned</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -300,48 +297,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
                 
                 <FormField
                   control={form.control}
-                  name="average_monthly_ai_cost_usd"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Average Monthly AI Cost (USD)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="average_monthly_misc_cost_usd"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Average Monthly Misc Cost (USD)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="partner_split_percentage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Partner Split Percentage</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" max="100" step="1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
                   name="finders_fee_cad"
                   render={({ field }) => (
                     <FormItem>
@@ -354,6 +309,31 @@ const ClientForm: React.FC<ClientFormProps> = ({
                   )}
                 />
               </div>
+              
+              {isEditing && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                  <div className="space-y-2">
+                    <FormLabel>Average Monthly AI Cost (USD)</FormLabel>
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                      ${client?.average_monthly_ai_cost_usd?.toFixed(2) || '0.00'} (Calculated)
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <FormLabel>Average Monthly Misc Cost (USD)</FormLabel>
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                      ${client?.average_monthly_misc_cost_usd?.toFixed(2) || '0.00'} (Calculated)
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <FormLabel>Partner Split Percentage</FormLabel>
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                      {client?.partner_split_percentage || 0}% (Backend Managed)
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-end gap-4">

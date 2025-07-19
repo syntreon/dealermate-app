@@ -271,27 +271,204 @@ export type Database = {
           created_at: string
           email: string
           id: string
-          is_admin: boolean
-          name: string
-          phone: string | null
+          full_name: string
+          role: string
+          client_id: string | null
+          last_login_at: string | null
+          preferences: Json | null
         }
         Insert: {
           created_at?: string
           email: string
           id: string
-          is_admin?: boolean
-          name: string
-          phone?: string | null
+          full_name: string
+          role: string
+          client_id?: string | null
+          last_login_at?: string | null
+          preferences?: Json | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
-          is_admin?: boolean
-          name?: string
-          phone?: string | null
+          full_name?: string
+          role?: string
+          client_id?: string | null
+          last_login_at?: string | null
+          preferences?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      agent_status: {
+        Row: {
+          id: string
+          client_id: string | null
+          status: string
+          message: string | null
+          last_updated: string
+          updated_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          client_id?: string | null
+          status: string
+          message?: string | null
+          last_updated?: string
+          updated_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string | null
+          status?: string
+          message?: string | null
+          last_updated?: string
+          updated_by?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_status_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_status_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      system_messages: {
+        Row: {
+          id: string
+          client_id: string | null
+          type: string
+          message: string
+          timestamp: string
+          expires_at: string | null
+          created_by: string
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id?: string | null
+          type: string
+          message: string
+          timestamp?: string
+          expires_at?: string | null
+          created_by: string
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string | null
+          type?: string
+          message?: string
+          timestamp?: string
+          expires_at?: string | null
+          created_by?: string
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_messages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_messages_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      audit_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          client_id: string | null
+          action: string
+          table_name: string
+          record_id: string | null
+          old_values: Json | null
+          new_values: Json | null
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          client_id?: string | null
+          action: string
+          table_name: string
+          record_id?: string | null
+          old_values?: Json | null
+          new_values?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          client_id?: string | null
+          action?: string
+          table_name?: string
+          record_id?: string | null
+          old_values?: Json | null
+          new_values?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

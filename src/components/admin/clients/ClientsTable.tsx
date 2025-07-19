@@ -54,8 +54,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
       case 'inactive':
         return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'trial':
+        return <Badge className="bg-blue-100 text-blue-800">Trial</Badge>;
+      case 'churned':
+        return <Badge className="bg-gray-100 text-gray-800">Churned</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
     }

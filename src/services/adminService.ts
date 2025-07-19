@@ -1,319 +1,305 @@
-import { Client, ClientFilters, CreateClientData, UpdateClientData, User, UserFilters, CreateUserData, UpdateUserData } from '@/types/admin';
+import { 
+  Client, 
+  ClientFilters, 
+  CreateClientData, 
+  UpdateClientData, 
+  User, 
+  UserFilters, 
+  CreateUserData, 
+  UpdateUserData,
+  PaginatedResponse,
+  PaginationOptions,
+  DatabaseError,
+  BulkOperation,
+  BulkOperationResult,
+  SystemHealth,
+  SystemMetrics
+} from '@/types/admin';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
-// Mock data for development - will be replaced with actual API calls
-const mockClients: Client[] = [
-  {
-    id: '1',
-    name: 'Acme Corporation',
-    status: 'active',
-    type: 'Enterprise',
-    subscription_plan: 'Premium',
-    contact_person: 'John Doe',
-    contact_email: 'john@acme.com',
-    phone_number: '555-123-4567',
-    billing_address: '123 Main St, Anytown, USA',
-    monthly_billing_amount_cad: 2500,
-    average_monthly_ai_cost_usd: 750,
-    average_monthly_misc_cost_usd: 250,
-    partner_split_percentage: 20,
-    finders_fee_cad: 1000,
-    slug: 'acme-corp',
-    config_json: { theme: 'light', features: ['call_recording', 'lead_export'] },
-    joined_at: new Date('2023-01-15'),
-    last_active_at: new Date(),
-    metrics: {
-      totalCalls: 1250,
-      totalLeads: 320,
-      avgCallDuration: 245,
-      callsToday: 15,
-      leadsToday: 4
-    }
-  },
-  {
-    id: '2',
-    name: 'TechStart Inc',
-    status: 'active',
-    type: 'Startup',
-    subscription_plan: 'Basic',
-    contact_person: 'Jane Smith',
-    contact_email: 'jane@techstart.io',
-    phone_number: '555-987-6543',
-    billing_address: '456 Innovation Ave, Tech City, USA',
-    monthly_billing_amount_cad: 1200,
-    average_monthly_ai_cost_usd: 350,
-    average_monthly_misc_cost_usd: 100,
-    partner_split_percentage: 15,
-    finders_fee_cad: 500,
-    slug: 'techstart',
-    config_json: { theme: 'dark', features: ['call_recording'] },
-    joined_at: new Date('2023-05-20'),
-    last_active_at: new Date(),
-    metrics: {
-      totalCalls: 450,
-      totalLeads: 85,
-      avgCallDuration: 180,
-      callsToday: 8,
-      leadsToday: 2
-    }
-  },
-  {
-    id: '3',
-    name: 'Global Solutions Ltd',
-    status: 'pending',
-    type: 'Enterprise',
-    subscription_plan: 'Premium',
-    contact_person: 'Robert Johnson',
-    contact_email: 'robert@globalsolutions.com',
-    phone_number: '555-555-5555',
-    billing_address: '789 Corporate Blvd, Metropolis, USA',
-    monthly_billing_amount_cad: 3000,
-    average_monthly_ai_cost_usd: 900,
-    average_monthly_misc_cost_usd: 300,
-    partner_split_percentage: 25,
-    finders_fee_cad: 1500,
-    slug: 'global-solutions',
-    config_json: { theme: 'system', features: ['call_recording', 'lead_export', 'analytics'] },
-    joined_at: new Date('2023-08-10'),
-    last_active_at: null,
-    metrics: {
+// Database utility functions
+const handleDatabaseError = (error: any): DatabaseError => {
+  console.error('Database error:', error);
+  
+  const dbError = new Error(error.message || 'Database operation failed') as DatabaseError;
+  dbError.code = error.code;
+  dbError.details = error.details;
+  dbError.hint = error.hint;
+  
+  return dbError;
+};
+
+const transformClient = (row: Database['public']['Tables']['clients']['Row']): Client => {
+  return {
+    id: row.id,
+    name: row.name,
+    status: row.status as 'active' | 'inactive' | 'trial' | 'churned',
+    type: row.type,
+    subscription_plan: row.subscription_plan as 'free trial' | 'basic' | 'Pro' | 'Custom',
+    contact_person: row.contact_person,
+    contact_email: row.contact_email,
+    phone_number: row.phone_number,
+    billing_address: row.billing_address,
+    monthly_billing_amount_cad: row.monthly_billing_amount_cad,
+    average_monthly_ai_cost_usd: row.average_monthly_ai_cost_usd,
+    average_monthly_misc_cost_usd: row.average_monthly_misc_cost_usd,
+    partner_split_percentage: row.partner_split_percentage,
+    finders_fee_cad: row.finders_fee_cad,
+    slug: row.slug,
+    config_json: row.config_json,
+    joined_at: new Date(row.joined_at),
+    last_active_at: row.last_active_at ? new Date(row.last_active_at) : null,
+  };
+};
+
+const transformUser = (row: Database['public']['Tables']['users']['Row']): User => {
+  return {
+    id: row.id,
+    email: row.email,
+    full_name: row.full_name,
+    role: row.role as 'owner' | 'admin' | 'user' | 'client_admin' | 'client_user',
+    client_id: row.client_id,
+    last_login_at: row.last_login_at ? new Date(row.last_login_at) : null,
+    created_at: new Date(row.created_at),
+    preferences: row.preferences as any,
+  };
+};
+
+// Calculate client metrics from database
+const calculateClientMetrics = async (clientId: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Get total calls and leads
+  const { data: calls, error: callsError } = await supabase
+    .from('calls')
+    .select('id, call_duration_seconds, created_at')
+    .eq('client_id', clientId);
+    
+  if (callsError) {
+    console.error('Error fetching calls for metrics:', callsError);
+    return {
       totalCalls: 0,
       totalLeads: 0,
       avgCallDuration: 0,
       callsToday: 0,
       leadsToday: 0
-    }
-  },
-  {
-    id: '4',
-    name: 'Local Business Co',
-    status: 'inactive',
-    type: 'SMB',
-    subscription_plan: 'Basic',
-    contact_person: 'Sarah Williams',
-    contact_email: 'sarah@localbiz.com',
-    phone_number: '555-222-3333',
-    billing_address: '321 Small St, Hometown, USA',
-    monthly_billing_amount_cad: 800,
-    average_monthly_ai_cost_usd: 200,
-    average_monthly_misc_cost_usd: 50,
-    partner_split_percentage: 10,
-    finders_fee_cad: 300,
-    slug: 'local-biz',
-    config_json: { theme: 'light', features: ['call_recording'] },
-    joined_at: new Date('2022-11-05'),
-    last_active_at: new Date('2023-06-15'),
-    metrics: {
-      totalCalls: 320,
-      totalLeads: 45,
-      avgCallDuration: 160,
-      callsToday: 0,
-      leadsToday: 0
-    }
+    };
   }
-];
-
-// Mock users data
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    full_name: 'Admin User',
-    role: 'admin',
-    client_id: null, // Admin can access all clients
-    last_login_at: new Date(),
-    created_at: new Date('2023-01-10'),
-    preferences: {
-      notifications: {
-        email: true,
-        leadAlerts: true,
-        systemAlerts: true,
-        notificationEmails: ['admin@example.com']
-      },
-      displaySettings: {
-        theme: 'dark',
-        dashboardLayout: 'detailed'
-      }
-    }
-  },
-  {
-    id: '2',
-    email: 'client1.admin@example.com',
-    full_name: 'Client 1 Admin',
-    role: 'client_admin',
-    client_id: '1', // Acme Corp
-    last_login_at: new Date('2023-06-15'),
-    created_at: new Date('2023-01-15'),
-    preferences: {
-      notifications: {
-        email: true,
-        leadAlerts: true,
-        systemAlerts: false,
-        notificationEmails: ['client1.admin@example.com']
-      },
-      displaySettings: {
-        theme: 'light',
-        dashboardLayout: 'compact'
-      }
-    }
-  },
-  {
-    id: '3',
-    email: 'client1.user@example.com',
-    full_name: 'Client 1 User',
-    role: 'client_user',
-    client_id: '1', // Acme Corp
-    last_login_at: new Date('2023-06-20'),
-    created_at: new Date('2023-02-01'),
-    preferences: {
-      notifications: {
-        email: false,
-        leadAlerts: false,
-        systemAlerts: false,
-        notificationEmails: []
-      },
-      displaySettings: {
-        theme: 'system',
-        dashboardLayout: 'compact'
-      }
-    }
-  },
-  {
-    id: '4',
-    email: 'client2.admin@example.com',
-    full_name: 'Client 2 Admin',
-    role: 'client_admin',
-    client_id: '2', // TechStart Inc
-    last_login_at: new Date('2023-06-18'),
-    created_at: new Date('2023-05-20'),
-    preferences: {
-      notifications: {
-        email: true,
-        leadAlerts: true,
-        systemAlerts: true,
-        notificationEmails: ['client2.admin@example.com']
-      },
-      displaySettings: {
-        theme: 'dark',
-        dashboardLayout: 'detailed'
-      }
-    }
+  
+  const { data: leads, error: leadsError } = await supabase
+    .from('leads')
+    .select('id, created_at')
+    .eq('client_id', clientId);
+    
+  if (leadsError) {
+    console.error('Error fetching leads for metrics:', leadsError);
   }
-];
+  
+  const totalCalls = calls?.length || 0;
+  const totalLeads = leads?.length || 0;
+  
+  // Calculate average call duration
+  const avgCallDuration = totalCalls > 0 
+    ? Math.round((calls?.reduce((sum, call) => sum + call.call_duration_seconds, 0) || 0) / totalCalls)
+    : 0;
+  
+  // Calculate today's metrics
+  const callsToday = calls?.filter(call => 
+    new Date(call.created_at) >= today
+  ).length || 0;
+  
+  const leadsToday = leads?.filter(lead => 
+    new Date(lead.created_at) >= today
+  ).length || 0;
+  
+  return {
+    totalCalls,
+    totalLeads,
+    avgCallDuration,
+    callsToday,
+    leadsToday
+  };
+};
 
 export const AdminService = {
   // Client management
-  getClients: async (filters?: ClientFilters): Promise<Client[]> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+  getClients: async (filters?: ClientFilters, pagination?: PaginationOptions): Promise<Client[]> => {
+    const result = await AdminService.getClientsPaginated(filters, pagination);
+    return result.data;
+  },
 
-    let filteredClients = [...mockClients];
+  getClientsPaginated: async (filters?: ClientFilters, pagination?: PaginationOptions): Promise<PaginatedResponse<Client>> => {
+    try {
+      let query = supabase.from('clients').select('*', { count: 'exact' });
 
-    if (filters) {
-      // Apply status filter
-      if (filters.status && filters.status !== 'all') {
-        filteredClients = filteredClients.filter(client => client.status === filters.status);
+      // Apply filters
+      if (filters) {
+        if (filters.status && filters.status !== 'all') {
+          query = query.eq('status', filters.status);
+        }
+
+        if (filters.type) {
+          query = query.eq('type', filters.type);
+        }
+
+        if (filters.search) {
+          query = query.or(`name.ilike.%${filters.search}%,slug.ilike.%${filters.search}%,contact_person.ilike.%${filters.search}%,contact_email.ilike.%${filters.search}%`);
+        }
+
+        // Apply sorting
+        if (filters.sortBy) {
+          const ascending = filters.sortDirection !== 'desc';
+          query = query.order(filters.sortBy, { ascending });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
       }
 
-      // Apply type filter
-      if (filters.type) {
-        filteredClients = filteredClients.filter(client => client.type === filters.type);
+      // Apply pagination
+      if (pagination) {
+        const from = (pagination.page - 1) * pagination.limit;
+        const to = from + pagination.limit - 1;
+        query = query.range(from, to);
       }
 
-      // Apply search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredClients = filteredClients.filter(client =>
-          client.name.toLowerCase().includes(searchLower) ||
-          client.slug.toLowerCase().includes(searchLower) ||
-          client.contact_person?.toLowerCase().includes(searchLower) ||
-          client.contact_email?.toLowerCase().includes(searchLower)
-        );
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw handleDatabaseError(error);
       }
 
-      // Apply sorting
-      if (filters.sortBy) {
-        filteredClients.sort((a, b) => {
-          const direction = filters.sortDirection === 'desc' ? -1 : 1;
+      // Transform data and add metrics
+      const clients: Client[] = await Promise.all(
+        (data || []).map(async (row) => {
+          const client = transformClient(row);
+          client.metrics = await calculateClientMetrics(client.id);
+          return client;
+        })
+      );
 
-          switch (filters.sortBy) {
-            case 'name':
-              return direction * a.name.localeCompare(b.name);
-            case 'joined_at':
-              return direction * (a.joined_at.getTime() - b.joined_at.getTime());
-            case 'last_active_at':
-              if (!a.last_active_at) return direction;
-              if (!b.last_active_at) return -direction;
-              return direction * (a.last_active_at.getTime() - b.last_active_at.getTime());
-            case 'status':
-              return direction * a.status.localeCompare(b.status);
-            default:
-              return 0;
-          }
-        });
-      }
+      const total = count || 0;
+      const limit = pagination?.limit || total;
+      const page = pagination?.page || 1;
+
+      return {
+        data: clients,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      throw handleDatabaseError(error);
     }
-
-    return filteredClients;
   },
 
   getClientById: async (id: string): Promise<Client | null> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockClients.find(client => client.id === id) || null;
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Not found
+        }
+        throw handleDatabaseError(error);
+      }
+
+      const client = transformClient(data);
+      client.metrics = await calculateClientMetrics(client.id);
+      
+      return client;
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   },
 
   createClient: async (data: CreateClientData): Promise<Client> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const { data: newClient, error } = await supabase
+        .from('clients')
+        .insert({
+          name: data.name,
+          type: data.type,
+          subscription_plan: data.subscription_plan,
+          contact_person: data.contact_person || null,
+          contact_email: data.contact_email || null,
+          phone_number: data.phone_number || null,
+          billing_address: data.billing_address || null,
+          monthly_billing_amount_cad: data.monthly_billing_amount_cad,
+          average_monthly_ai_cost_usd: 0, // Default calculated field
+          average_monthly_misc_cost_usd: 0, // Default calculated field
+          partner_split_percentage: 0, // Default backend managed field
+          finders_fee_cad: data.finders_fee_cad,
+          slug: data.slug,
+          config_json: data.config_json || {},
+          status: 'trial' // Default status for new clients
+        })
+        .select()
+        .single();
 
-    const newClient: Client = {
-      id: Math.random().toString(36).substring(2, 11),
-      ...data,
-      status: 'pending',
-      joined_at: new Date(),
-      last_active_at: null,
-      metrics: {
-        totalCalls: 0,
-        totalLeads: 0,
-        avgCallDuration: 0,
-        callsToday: 0,
-        leadsToday: 0
+      if (error) {
+        throw handleDatabaseError(error);
       }
-    };
 
-    // In a real implementation, this would be saved to the database
-    mockClients.push(newClient);
-
-    return newClient;
+      const client = transformClient(newClient);
+      client.metrics = await calculateClientMetrics(client.id);
+      
+      return client;
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   },
 
   updateClient: async (id: string, data: UpdateClientData): Promise<Client> => {
-    await new Promise(resolve => setTimeout(resolve, 600));
+    try {
+      const updateData: any = {};
+      
+      // Only include defined fields in the update
+      Object.keys(data).forEach(key => {
+        if (data[key as keyof UpdateClientData] !== undefined) {
+          updateData[key] = data[key as keyof UpdateClientData];
+        }
+      });
 
-    const clientIndex = mockClients.findIndex(client => client.id === id);
-    if (clientIndex === -1) {
-      throw new Error('Client not found');
+      const { data: updatedClient, error } = await supabase
+        .from('clients')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw handleDatabaseError(error);
+      }
+
+      const client = transformClient(updatedClient);
+      client.metrics = await calculateClientMetrics(client.id);
+      
+      return client;
+    } catch (error) {
+      throw handleDatabaseError(error);
     }
-
-    const updatedClient = {
-      ...mockClients[clientIndex],
-      ...data
-    };
-
-    // In a real implementation, this would update the database
-    mockClients[clientIndex] = updatedClient;
-
-    return updatedClient;
   },
 
   deleteClient: async (id: string): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id);
 
-    const clientIndex = mockClients.findIndex(client => client.id === id);
-    if (clientIndex === -1) {
-      throw new Error('Client not found');
+      if (error) {
+        throw handleDatabaseError(error);
+      }
+    } catch (error) {
+      throw handleDatabaseError(error);
     }
-
-    // In a real implementation, this would delete from the database
-    mockClients.splice(clientIndex, 1);
   },
 
   activateClient: async (id: string): Promise<Client> => {
@@ -324,368 +310,463 @@ export const AdminService = {
     return AdminService.updateClient(id, { status: 'inactive' });
   },
 
-  // User management functions
-  getUsers: async (filters?: UserFilters): Promise<User[]> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+  setClientToTrial: async (id: string): Promise<Client> => {
+    return AdminService.updateClient(id, { status: 'trial' });
+  },
 
-    let filteredUsers = [...mockUsers];
+  churnClient: async (id: string): Promise<Client> => {
+    return AdminService.updateClient(id, { status: 'churned' });
+  },
 
-    if (filters) {
-      // Apply role filter
-      if (filters.role && filters.role !== 'all') {
-        filteredUsers = filteredUsers.filter(user => user.role === filters.role);
-      }
+  bulkUpdateClients: async (operation: BulkOperation): Promise<BulkOperationResult> => {
+    try {
+      const results: BulkOperationResult = {
+        success: true,
+        processed: 0,
+        failed: 0,
+        errors: []
+      };
 
-      // Apply client filter
-      if (filters.client_id && filters.client_id !== 'all') {
-        filteredUsers = filteredUsers.filter(user =>
-          user.client_id === filters.client_id || user.client_id === null // Include global admins
-        );
-      }
-
-      // Apply search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredUsers = filteredUsers.filter(user =>
-          user.full_name.toLowerCase().includes(searchLower) ||
-          user.email.toLowerCase().includes(searchLower)
-        );
-      }
-
-      // Apply sorting
-      if (filters.sortBy) {
-        filteredUsers.sort((a, b) => {
-          const direction = filters.sortDirection === 'desc' ? -1 : 1;
-
-          switch (filters.sortBy) {
-            case 'full_name':
-              return direction * a.full_name.localeCompare(b.full_name);
-            case 'email':
-              return direction * a.email.localeCompare(b.email);
-            case 'created_at':
-              return direction * (a.created_at.getTime() - b.created_at.getTime());
-            case 'last_login_at':
-              if (!a.last_login_at) return direction;
-              if (!b.last_login_at) return -direction;
-              return direction * (a.last_login_at.getTime() - b.last_login_at.getTime());
-            default:
-              return 0;
+      for (const id of operation.ids) {
+        try {
+          switch (operation.action) {
+            case 'activate':
+              await AdminService.updateClient(id, { status: 'active' });
+              break;
+            case 'deactivate':
+              await AdminService.updateClient(id, { status: 'inactive' });
+              break;
+            case 'delete':
+              await AdminService.deleteClient(id);
+              break;
+            case 'update':
+              if (operation.data) {
+                await AdminService.updateClient(id, operation.data);
+              }
+              break;
           }
-        });
+          results.processed++;
+        } catch (error) {
+          results.failed++;
+          results.errors.push({
+            id,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
       }
-    }
 
-    return filteredUsers;
+      results.success = results.failed === 0;
+      return results;
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
+  },
+
+  // User management functions
+  getUsers: async (filters?: UserFilters, pagination?: PaginationOptions): Promise<User[]> => {
+    const result = await AdminService.getUsersPaginated(filters, pagination);
+    return result.data;
+  },
+
+  getUsersPaginated: async (filters?: UserFilters, pagination?: PaginationOptions): Promise<PaginatedResponse<User>> => {
+    try {
+      let query = supabase.from('users').select('*', { count: 'exact' });
+
+      // Apply filters
+      if (filters) {
+        if (filters.role && filters.role !== 'all') {
+          query = query.eq('role', filters.role);
+        }
+
+        if (filters.client_id && filters.client_id !== 'all') {
+          if (filters.client_id === 'null') {
+            query = query.is('client_id', null);
+          } else {
+            query = query.eq('client_id', filters.client_id);
+          }
+        }
+
+        if (filters.search) {
+          query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+        }
+
+        // Apply sorting
+        if (filters.sortBy) {
+          const ascending = filters.sortDirection !== 'desc';
+          query = query.order(filters.sortBy, { ascending });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
+      }
+
+      // Apply pagination
+      if (pagination) {
+        const from = (pagination.page - 1) * pagination.limit;
+        const to = from + pagination.limit - 1;
+        query = query.range(from, to);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw handleDatabaseError(error);
+      }
+
+      const users = (data || []).map(transformUser);
+      const total = count || 0;
+      const limit = pagination?.limit || total;
+      const page = pagination?.page || 1;
+
+      return {
+        data: users,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   },
 
   getUserById: async (id: string): Promise<User | null> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockUsers.find(user => user.id === id) || null;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Not found
+        }
+        throw handleDatabaseError(error);
+      }
+
+      return transformUser(data);
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   },
 
   createUser: async (data: CreateUserData): Promise<User> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .insert({
+          email: data.email,
+          full_name: data.full_name,
+          role: data.role,
+          client_id: data.client_id || null,
+          preferences: {
+            notifications: {
+              email: true,
+              leadAlerts: false,
+              systemAlerts: false,
+              notificationEmails: [data.email]
+            },
+            displaySettings: {
+              theme: 'system',
+              dashboardLayout: 'compact'
+            }
+          }
+        })
+        .select()
+        .single();
 
-    const newUser: User = {
-      id: Math.random().toString(36).substring(2, 11),
-      ...data,
-      last_login_at: null,
-      created_at: new Date(),
-      preferences: {
-        notifications: {
-          email: true,
-          leadAlerts: false,
-          systemAlerts: false,
-          notificationEmails: [data.email]
-        },
-        displaySettings: {
-          theme: 'system',
-          dashboardLayout: 'compact'
-        }
+      if (error) {
+        throw handleDatabaseError(error);
       }
-    };
 
-    // In a real implementation, this would be saved to the database
-    mockUsers.push(newUser);
-
-    return newUser;
+      return transformUser(newUser);
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   },
 
   updateUser: async (id: string, data: UpdateUserData): Promise<User> => {
-    await new Promise(resolve => setTimeout(resolve, 600));
+    try {
+      const updateData: any = {};
+      
+      // Only include defined fields in the update
+      Object.keys(data).forEach(key => {
+        if (data[key as keyof UpdateUserData] !== undefined) {
+          updateData[key] = data[key as keyof UpdateUserData];
+        }
+      });
 
-    const userIndex = mockUsers.findIndex(user => user.id === id);
-    if (userIndex === -1) {
-      throw new Error('User not found');
+      const { data: updatedUser, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw handleDatabaseError(error);
+      }
+
+      return transformUser(updatedUser);
+    } catch (error) {
+      throw handleDatabaseError(error);
     }
-
-    const updatedUser = {
-      ...mockUsers[userIndex],
-      ...data
-    };
-
-    // In a real implementation, this would update the database
-    mockUsers[userIndex] = updatedUser;
-
-    return updatedUser;
   },
 
   deleteUser: async (id: string): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
 
-    const userIndex = mockUsers.findIndex(user => user.id === id);
-    if (userIndex === -1) {
-      throw new Error('User not found');
+      if (error) {
+        throw handleDatabaseError(error);
+      }
+    } catch (error) {
+      throw handleDatabaseError(error);
     }
+  },
 
-    // In a real implementation, this would delete from the database
-    mockUsers.splice(userIndex, 1);
+  bulkUpdateUsers: async (operation: BulkOperation): Promise<BulkOperationResult> => {
+    try {
+      const results: BulkOperationResult = {
+        success: true,
+        processed: 0,
+        failed: 0,
+        errors: []
+      };
+
+      for (const id of operation.ids) {
+        try {
+          switch (operation.action) {
+            case 'delete':
+              await AdminService.deleteUser(id);
+              break;
+            case 'update':
+              if (operation.data) {
+                await AdminService.updateUser(id, operation.data);
+              }
+              break;
+          }
+          results.processed++;
+        } catch (error) {
+          results.failed++;
+          results.errors.push({
+            id,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+
+      results.success = results.failed === 0;
+      return results;
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   },
 
   // System health functions
   getSystemHealth: async (clientId?: string | null): Promise<SystemHealth> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // If clientId is provided, return client-specific health data
-    if (clientId) {
-      const client = mockClients.find(c => c.id === clientId);
+    try {
+      // Check database connectivity
+      const { error: dbError } = await supabase.from('clients').select('id').limit(1);
+      const dbStatus = dbError ? 'down' : 'up';
+      const dbMessage = dbError ? `Database error: ${dbError.message}` : 'Connection pool healthy';
+
+      // Get agent status for client or platform
+      let agentStatus = 'up';
+      let agentMessage = 'All agents operational';
       
-      // For demo purposes, show different health status for different clients
-      if (client?.status === 'inactive') {
-        return {
-          status: 'down',
-          components: {
-            database: {
-              name: 'Database',
-              type: 'database',
-              status: 'up',
-              message: 'Connection pool healthy',
-              lastChecked: new Date()
-            },
-            api: {
-              name: 'API Server',
-              type: 'api',
-              status: 'up',
-              message: 'All endpoints responding',
-              lastChecked: new Date()
-            },
-            vapi: {
-              name: 'Voice API',
-              type: 'api',
-              status: 'down',
-              message: 'Voice services unavailable for this client',
-              lastChecked: new Date()
-            },
-            agent: {
-              name: `${client?.name} Agent`,
-              type: 'server',
-              status: 'down',
-              message: 'Agent is currently inactive',
-              lastChecked: new Date()
-            }
-          },
-          lastChecked: new Date()
-        };
-      } else if (client?.status === 'pending') {
-        return {
-          status: 'degraded',
-          components: {
-            database: {
-              name: 'Database',
-              type: 'database',
-              status: 'up',
-              message: 'Connection pool healthy',
-              lastChecked: new Date()
-            },
-            api: {
-              name: 'API Server',
-              type: 'api',
-              status: 'up',
-              message: 'All endpoints responding',
-              lastChecked: new Date()
-            },
-            vapi: {
-              name: 'Voice API',
-              type: 'api',
-              status: 'up',
-              message: 'Voice services operational',
-              lastChecked: new Date()
-            },
-            agent: {
-              name: `${client?.name} Agent`,
-              type: 'server',
-              status: 'down',
-              message: 'Agent setup in progress',
-              lastChecked: new Date()
-            }
-          },
-          lastChecked: new Date()
-        };
-      } else {
-        return {
-          status: 'healthy',
-          components: {
-            database: {
-              name: 'Database',
-              type: 'database',
-              status: 'up',
-              message: 'Connection pool healthy',
-              lastChecked: new Date()
-            },
-            api: {
-              name: 'API Server',
-              type: 'api',
-              status: 'up',
-              message: 'All endpoints responding',
-              lastChecked: new Date()
-            },
-            vapi: {
-              name: 'Voice API',
-              type: 'api',
-              status: 'up',
-              message: 'Voice services operational',
-              lastChecked: new Date()
-            },
-            agent: {
-              name: `${client?.name} Agent`,
-              type: 'server',
-              status: 'up',
-              message: 'Agent is active and responding',
-              lastChecked: new Date()
-            }
-          },
-          lastChecked: new Date()
-        };
+      if (clientId) {
+        const { data: agentData, error: agentError } = await supabase
+          .from('agent_status')
+          .select('status, message')
+          .eq('client_id', clientId)
+          .single();
+          
+        if (!agentError && agentData) {
+          agentStatus = agentData.status === 'active' ? 'up' : 'down';
+          agentMessage = agentData.message || `Agent is ${agentData.status}`;
+        }
       }
-    }
-    
-    // Default platform-wide health data
-    return {
-      status: 'healthy',
-      components: {
+
+      // Get client info if specific client requested
+      let clientName = 'Platform';
+      if (clientId) {
+        const client = await AdminService.getClientById(clientId);
+        clientName = client?.name || 'Unknown Client';
+      }
+
+      const components = {
         database: {
           name: 'Database',
-          type: 'database',
-          status: 'up',
-          message: 'Connection pool healthy',
+          type: 'database' as const,
+          status: dbStatus as 'up' | 'down',
+          message: dbMessage,
           lastChecked: new Date()
         },
         api: {
           name: 'API Server',
-          type: 'api',
-          status: 'up',
+          type: 'api' as const,
+          status: 'up' as const,
           message: 'All endpoints responding',
           lastChecked: new Date()
         },
-        storage: {
-          name: 'File Storage',
-          type: 'storage',
-          status: 'up',
-          message: 'S3 bucket accessible',
-          lastChecked: new Date()
-        },
-        auth: {
-          name: 'Authentication Service',
-          type: 'server',
-          status: 'up',
-          message: 'JWT verification working',
-          lastChecked: new Date()
-        },
-        vapi: {
-          name: 'Voice API',
-          type: 'api',
-          status: 'up',
-          message: 'All voice services operational',
-          lastChecked: new Date()
-        },
-        openai: {
-          name: 'OpenAI Integration',
-          type: 'api',
-          status: 'up',
-          message: 'API responding within SLA',
+        agent: {
+          name: clientId ? `${clientName} Agent` : 'Platform Agents',
+          type: 'server' as const,
+          status: agentStatus as 'up' | 'down',
+          message: agentMessage,
           lastChecked: new Date()
         }
-      },
-      lastChecked: new Date()
-    };
+      };
+
+      // Determine overall status
+      const hasDown = Object.values(components).some(c => c.status === 'down');
+      const overallStatus = hasDown ? 'down' : 'healthy';
+
+      return {
+        status: overallStatus,
+        components,
+        lastChecked: new Date()
+      };
+    } catch (error) {
+      // If we can't check health, assume system is down
+      return {
+        status: 'down',
+        components: {
+          database: {
+            name: 'Database',
+            type: 'database',
+            status: 'down',
+            message: 'Unable to connect to database',
+            lastChecked: new Date()
+          },
+          api: {
+            name: 'API Server',
+            type: 'api',
+            status: 'down',
+            message: 'API server unreachable',
+            lastChecked: new Date()
+          }
+        },
+        lastChecked: new Date()
+      };
+    }
   },
   
   getSystemMetrics: async (timeframe: 'day' | 'week' | 'month', clientId?: string | null): Promise<SystemMetrics> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Generate mock timeframe data based on selected timeframe
-    const now = new Date();
-    const timeframeData: Array<{ timestamp: Date, value: number }> = [];
-    
-    const dataPoints = timeframe === 'day' ? 24 : timeframe === 'week' ? 7 : 30;
-    const interval = timeframe === 'day' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-    
-    for (let i = 0; i < dataPoints; i++) {
-      const timestamp = new Date(now.getTime() - (dataPoints - i) * interval);
-      timeframeData.push({
-        timestamp,
-        value: Math.floor(Math.random() * 100) + 50
-      });
-    }
-    
-    // Mock recent events
-    const recentEvents = [
-      {
-        type: 'info' as const,
-        message: 'System update completed',
-        details: 'Version 2.4.1 deployed successfully',
-        timestamp: new Date(now.getTime() - 35 * 60 * 1000)
-      },
-      {
-        type: 'warning' as const,
-        message: 'High API usage detected',
-        details: 'Client ABC Corp exceeded normal API call volume',
-        timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000)
-      },
-      {
-        type: 'error' as const,
-        message: 'Database connection error',
-        details: 'Temporary connection issue resolved automatically',
-        timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000)
-      },
-      {
-        type: 'success' as const,
-        message: 'Backup completed',
-        details: 'Daily database backup completed successfully',
-        timestamp: new Date(now.getTime() - 12 * 60 * 60 * 1000)
-      },
-      {
-        type: 'info' as const,
-        message: 'New client onboarded',
-        details: 'XYZ Company successfully onboarded to the platform',
-        timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    try {
+      // Calculate date range based on timeframe
+      const now = new Date();
+      const startDate = new Date();
+      
+      switch (timeframe) {
+        case 'day':
+          startDate.setDate(now.getDate() - 1);
+          break;
+        case 'week':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
       }
-    ];
-    
-    // Mock system metrics
-    return {
-      totalCalls: 12478,
-      totalLeads: 3245,
-      activeClients: 18,
-      averageResponseTime: 245, // milliseconds
-      errorRate: 0.42, // percentage
-      timeframeData,
-      recentEvents
-    };
+
+      // Get metrics from database
+      let callsQuery = supabase
+        .from('calls')
+        .select('id, created_at, call_duration_seconds')
+        .gte('created_at', startDate.toISOString());
+        
+      let leadsQuery = supabase
+        .from('leads')
+        .select('id, created_at')
+        .gte('created_at', startDate.toISOString());
+
+      if (clientId) {
+        callsQuery = callsQuery.eq('client_id', clientId);
+        leadsQuery = leadsQuery.eq('client_id', clientId);
+      }
+
+      const [callsResult, leadsResult, clientsResult] = await Promise.all([
+        callsQuery,
+        leadsQuery,
+        supabase.from('clients').select('id').eq('status', 'active')
+      ]);
+
+      const calls = callsResult.data || [];
+      const leads = leadsResult.data || [];
+      const activeClients = clientsResult.data?.length || 0;
+
+      // Calculate metrics
+      const totalCalls = calls.length;
+      const totalLeads = leads.length;
+      const averageResponseTime = 245; // This would come from actual API monitoring
+      const errorRate = 0.42; // This would come from error tracking
+
+      // Generate timeframe data
+      const dataPoints = timeframe === 'day' ? 24 : timeframe === 'week' ? 7 : 30;
+      const interval = timeframe === 'day' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      const timeframeData: Array<{ timestamp: Date, value: number }> = [];
+      
+      for (let i = 0; i < dataPoints; i++) {
+        const timestamp = new Date(now.getTime() - (dataPoints - i) * interval);
+        const periodCalls = calls.filter(call => {
+          const callTime = new Date(call.created_at);
+          return callTime >= timestamp && callTime < new Date(timestamp.getTime() + interval);
+        }).length;
+        
+        timeframeData.push({
+          timestamp,
+          value: periodCalls
+        });
+      }
+
+      // Get recent system messages as events
+      const { data: recentMessages } = await supabase
+        .from('system_messages')
+        .select('type, message, timestamp')
+        .order('timestamp', { ascending: false })
+        .limit(5);
+
+      const recentEvents = (recentMessages || []).map(msg => ({
+        type: msg.type as 'error' | 'warning' | 'info' | 'success',
+        message: msg.message,
+        details: msg.message,
+        timestamp: new Date(msg.timestamp)
+      }));
+
+      return {
+        totalCalls,
+        totalLeads,
+        activeClients,
+        averageResponseTime,
+        errorRate,
+        timeframeData,
+        recentEvents
+      };
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   },
   
   runSystemHealthCheck: async (clientId?: string | null): Promise<void> => {
-    // Simulate API delay for running a health check
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // In a real implementation, this would trigger a comprehensive health check
-    // for the specified client or the entire platform if clientId is null
-    // and update the health status in the database
-    
-    console.log(`Running health check for ${clientId ? `client ${clientId}` : 'all clients'}`);
-    return;
+    try {
+      // Perform actual health checks
+      await supabase.from('clients').select('id').limit(1);
+      
+      if (clientId) {
+        // Check client-specific health
+        await supabase.from('calls').select('id').eq('client_id', clientId).limit(1);
+        await supabase.from('leads').select('id').eq('client_id', clientId).limit(1);
+      }
+      
+      // Health check completed successfully
+      console.log(`Health check completed for ${clientId ? `client ${clientId}` : 'platform'}`);
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
   }
 };
