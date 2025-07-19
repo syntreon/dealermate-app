@@ -530,51 +530,63 @@ export const AdminService = {
 
   createUser: async (data: CreateUserData, createdBy?: string): Promise<User> => {
     try {
-      // Generate a temporary password (user should reset it)
+      // First, create an auth user to satisfy the foreign key constraint
       const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
       
-      // Create the auth user and profile using the database function
-      const { data: userId, error: authError } = await supabase.rpc('create_user_with_auth', {
-        user_email: data.email,
-        user_password: tempPassword,
-        user_name: data.full_name,
-        user_phone: '', // Optional phone field
-        user_is_admin: data.role === 'admin' || data.role === 'owner'
+      const { data: authUser, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: data.full_name,
+            role: data.role
+          }
+        }
       });
-
+      
       if (authError) {
-        throw handleDatabaseError(authError);
+        throw authError;
       }
-
-      // Now update the user record with our additional fields
-      const { data: updatedUser, error: updateError } = await supabase
+      
+      if (!authUser.user) {
+        throw new Error('Failed to create auth user');
+      }
+      
+      const userId = authUser.user.id;
+      
+      // Now insert into public.users with the auth user's ID
+      const { data: directUser, error: directError } = await supabase
         .from('users')
-        .update({
+        .insert({
+          id: userId,
+          email: data.email,
           full_name: data.full_name,
           role: data.role,
           client_id: data.client_id || null,
+          phone: null,
           preferences: {
+            language: 'en',
+            timezone: 'America/Toronto',
             notifications: {
               email: true,
-              leadAlerts: false,
-              systemAlerts: false,
+              leadAlerts: data.role.includes('admin'),
+              systemAlerts: data.role.includes('admin'),
               notificationEmails: [data.email]
             },
             displaySettings: {
-              theme: 'system',
-              dashboardLayout: 'compact'
+              theme: 'light',
+              dashboardLayout: 'detailed'
             }
           }
         })
-        .eq('id', userId)
         .select()
         .single();
-
-      if (updateError) {
-        throw handleDatabaseError(updateError);
+      
+      if (directError) {
+        throw handleDatabaseError(directError);
       }
-
-      const user = transformUser(updatedUser);
+      
+      const user = transformUser(directUser);
       
       // Log audit event
       if (createdBy) {

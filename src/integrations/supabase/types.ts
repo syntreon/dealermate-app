@@ -268,34 +268,37 @@ export type Database = {
       }
       users: {
         Row: {
-          created_at: string
-          email: string
           id: string
-          full_name: string
-          role: string
           client_id: string | null
+          full_name: string | null
+          email: string
+          created_at: string | null
           last_login_at: string | null
+          role: string
           preferences: Json | null
+          phone: string | null
         }
         Insert: {
-          created_at?: string
-          email: string
           id: string
-          full_name: string
-          role: string
           client_id?: string | null
+          full_name?: string | null
+          email: string
+          created_at?: string | null
           last_login_at?: string | null
+          role?: string
           preferences?: Json | null
+          phone?: string | null
         }
         Update: {
-          created_at?: string
-          email?: string
           id?: string
-          full_name?: string
-          role?: string
           client_id?: string | null
+          full_name?: string | null
+          email?: string
+          created_at?: string | null
           last_login_at?: string | null
+          role?: string
           preferences?: Json | null
+          phone?: string | null
         }
         Relationships: [
           {
@@ -303,6 +306,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
             referencedColumns: ["id"]
           }
         ]
@@ -475,13 +485,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_user_with_auth: {
+      create_user_with_profile: {
         Args: {
           user_email: string
-          user_password: string
-          user_name: string
-          user_phone: string
-          user_is_admin?: boolean
+          user_full_name: string
+          user_role?: Database["public"]["Enums"]["role"]
+          user_client_id?: string
+          user_phone?: string
+        }
+        Returns: string
+      }
+      create_user_profile: {
+        Args: {
+          user_id: string
+          user_email: string
+          user_full_name: string
+          user_role?: Database["public"]["Enums"]["role"]
+          user_client_id?: string
+          user_phone?: string
         }
         Returns: string
       }
@@ -493,7 +514,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      role: "owner" | "admin" | "user" | "client_admin" | "client_user"
     }
     CompositeTypes: {
       [_ in never]: never

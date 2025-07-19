@@ -288,3 +288,34 @@ create index IF not exists idx_system_messages_created_by on public.system_messa
 create trigger update_system_messages_updated_at BEFORE
 update on system_messages for EACH row
 execute FUNCTION update_updated_at_column ();
+
+-- users
+create table public.users (
+  id uuid not null,
+  client_id uuid null,
+  full_name text null,
+  email text not null,
+  created_at timestamp with time zone null default now(),
+  last_login_at timestamp with time zone null,
+  role public.role not null default 'user'::role,
+  preferences jsonb null default '{"language": "en", "timezone": "America/Toronto", "notifications": {"email": true, "leadAlerts": true, "systemAlerts": true, "notificationEmails": []}, "displaySettings": {"theme": "light", "dashboardLayout": "detailed"}}'::jsonb,
+  phone text null,
+  constraint users_pkey primary key (id),
+  constraint users_email_key unique (email),
+  constraint users_client_id_fkey foreign KEY (client_id) references clients (id) on delete set null,
+  constraint users_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_users_id on public.users using btree (id) TABLESPACE pg_default;
+
+create index IF not exists idx_users_role on public.users using btree (role) TABLESPACE pg_default;
+
+create index IF not exists idx_users_client_id on public.users using btree (client_id) TABLESPACE pg_default;
+
+create index IF not exists idx_users_last_login_at on public.users using btree (last_login_at desc) TABLESPACE pg_default;
+
+create index IF not exists idx_users_created_at on public.users using btree (created_at desc) TABLESPACE pg_default;
+
+create index IF not exists idx_users_email_search on public.users using gin (to_tsvector('english'::regconfig, email)) TABLESPACE pg_default;
+
+create index IF not exists idx_users_full_name_search on public.users using gin (to_tsvector('english'::regconfig, full_name)) TABLESPACE pg_default;
