@@ -233,7 +233,19 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
               </tr>
             ) : (
               filteredAndSortedLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-secondary/20 transition-colors">
+                <tr 
+                  key={log.id} 
+                  className="hover:bg-secondary/20 transition-colors cursor-pointer" 
+                  onClick={(e) => {
+                    // Prevent row click if clicking on action buttons
+                    if ((e.target as HTMLElement).closest('button')) {
+                      return;
+                    }
+                    setSelectedCall(log);
+                    setIsDetailsOpen(true);
+                  }}
+                  title="Click to view call details"
+                >
                   <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
