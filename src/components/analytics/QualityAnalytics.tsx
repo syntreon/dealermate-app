@@ -29,35 +29,16 @@ import {
   Frown
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { QualityAnalyticsService, QualityAnalyticsData } from '@/services/qualityAnalyticsService';
+
+
 
 interface QualityAnalyticsProps {
   startDate?: string;
   endDate?: string;
 }
 
-interface QualityAnalyticsData {
-  // KPI metrics
-  overallQualityScore: number;
-  sentimentBreakdown: {
-    positive: number;
-    neutral: number;
-    negative: number;
-    positivePercentage: number;
-    neutralPercentage: number;
-    negativePercentage: number;
-  };
-  reviewMetrics: {
-    totalCalls: number;
-    callsForReview: number;
-    reviewPercentage: number;
-    negativeCallRate: number;
-  };
-  // Chart data
-  qualityTrends: Array<{ date: string; score: number }>;
-  scoreDistribution: Array<{ scoreRange: string; count: number }>;
-  sentimentTrends: Array<{ date: string; positive: number; neutral: number; negative: number }>;
-  reviewReasons: Array<{ reason: string; count: number }>;
-}
+// QualityAnalyticsData interface is now imported from the service
 
 const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate }) => {
   const { user } = useAuth();
@@ -65,7 +46,6 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data for now - replace with actual API call
   useEffect(() => {
     const fetchQualityAnalytics = async () => {
       if (!user) return;
@@ -74,64 +54,22 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
       setError(null);
 
       try {
-        // TODO: Replace with actual API call to fetch quality analytics
-        // For now, using mock data based on the spec
-        const mockData: QualityAnalyticsData = {
-          overallQualityScore: 8.5,
-          sentimentBreakdown: {
-            positive: 145,
-            neutral: 67,
-            negative: 23,
-            positivePercentage: 61.7,
-            neutralPercentage: 28.5,
-            negativePercentage: 9.8
-          },
-          reviewMetrics: {
-            totalCalls: 235,
-            callsForReview: 28,
-            reviewPercentage: 11.9,
-            negativeCallRate: 9.8
-          },
-          qualityTrends: [
-            { date: '2025-01-01', score: 8.2 },
-            { date: '2025-01-02', score: 8.4 },
-            { date: '2025-01-03', score: 8.1 },
-            { date: '2025-01-04', score: 8.6 },
-            { date: '2025-01-05', score: 8.5 },
-            { date: '2025-01-06', score: 8.7 },
-            { date: '2025-01-07', score: 8.5 }
-          ],
-          scoreDistribution: [
-            { scoreRange: '9-10', count: 89 },
-            { scoreRange: '8-9', count: 67 },
-            { scoreRange: '7-8', count: 45 },
-            { scoreRange: '6-7', count: 23 },
-            { scoreRange: '5-6', count: 8 },
-            { scoreRange: '<5', count: 3 }
-          ],
-          sentimentTrends: [
-            { date: '2025-01-01', positive: 15, neutral: 8, negative: 2 },
-            { date: '2025-01-02', positive: 18, neutral: 6, negative: 3 },
-            { date: '2025-01-03', positive: 22, neutral: 9, negative: 1 },
-            { date: '2025-01-04', positive: 19, neutral: 11, negative: 4 },
-            { date: '2025-01-05', positive: 21, neutral: 7, negative: 2 },
-            { date: '2025-01-06', positive: 25, neutral: 12, negative: 5 },
-            { date: '2025-01-07', positive: 25, neutral: 14, negative: 6 }
-          ],
-          reviewReasons: [
-            { reason: 'Low clarity score', count: 12 },
-            { reason: 'Poor objection handling', count: 8 },
-            { reason: 'Negative sentiment', count: 6 },
-            { reason: 'Incomplete lead capture', count: 2 }
-          ]
-        };
+        // Determine effective client ID based on user role (same logic as CallAnalytics)
+        const isAdminUser = user.client_id === null && (user.role === 'admin' || user.role === 'owner');
+        const effectiveClientId = isAdminUser ? undefined : user.client_id || undefined;
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setData(mockData);
+        // Fetch quality analytics data from the service
+        const qualityData = await QualityAnalyticsService.getQualityAnalyticsData({
+          clientId: effectiveClientId,
+          startDate,
+          endDate
+        });
+
+        console.log('Quality analytics data fetched:', qualityData);
+        setData(qualityData);
       } catch (err) {
         console.error('Error fetching quality analytics:', err);
-        setError('Failed to load quality analytics data');
+        setError(err instanceof Error ? err.message : 'Failed to load quality analytics data');
       } finally {
         setLoading(false);
       }
@@ -189,12 +127,21 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
     );
   }
 
-  if (!data) {
+  if (!data || data.reviewMetrics.totalCalls === 0) {
     return (
       <Card>
         <CardContent className="pt-6 flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <p className="text-muted-foreground">No quality analytics data available</p>
+            <div className="mb-4">
+              <Star className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+            </div>
+            <h3 className="text-lg font-semibold text-card-foreground mb-2">No Quality Data Available</h3>
+            <p className="text-muted-foreground mb-2">
+              No call evaluations found for the selected time period.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Quality analytics will appear here once calls have been evaluated.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -207,10 +154,13 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
     negative: '#ef4444'  // red-500
   };
 
+
+
   const scoreColors = ['#10b981', '#22c55e', '#84cc16', '#eab308', '#f59e0b', '#ef4444'];
 
   return (
     <div className="space-y-6">
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Overall Quality Score */}
@@ -237,31 +187,64 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
         {/* Sentiment Breakdown */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Sentiment Breakdown</p>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center">
-                      <Heart className="h-3 w-3 text-emerald-500 mr-1" />
-                      <span>Positive</span>
-                    </div>
-                    <span className="font-medium">{data.sentimentBreakdown.positivePercentage}%</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Sentiment Breakdown</p>
+                <div className="p-2 bg-blue-50 rounded-full">
+                  <Heart className="h-4 w-4 text-blue-600" />
+                </div>
+              </div>
+              
+              {/* Visual sentiment bars */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center">
+                    <Heart className="h-3 w-3 text-emerald-500 mr-1" />
+                    <span>Positive</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center">
-                      <Meh className="h-3 w-3 text-gray-500 mr-1" />
-                      <span>Neutral</span>
-                    </div>
-                    <span className="font-medium">{data.sentimentBreakdown.neutralPercentage}%</span>
+                  <span className="font-medium">{data.sentimentBreakdown.positivePercentage}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div 
+                    className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${data.sentimentBreakdown.positivePercentage}%` }}
+                  ></div>
+                </div>
+                
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center">
+                    <Meh className="h-3 w-3 text-gray-500 mr-1" />
+                    <span>Neutral</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center">
-                      <Frown className="h-3 w-3 text-red-500 mr-1" />
-                      <span>Negative</span>
-                    </div>
-                    <span className="font-medium">{data.sentimentBreakdown.negativePercentage}%</span>
+                  <span className="font-medium">{data.sentimentBreakdown.neutralPercentage}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div 
+                    className="bg-gray-500 h-1.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${data.sentimentBreakdown.neutralPercentage}%` }}
+                  ></div>
+                </div>
+                
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center">
+                    <Frown className="h-3 w-3 text-red-500 mr-1" />
+                    <span>Negative</span>
                   </div>
+                  <span className="font-medium">{data.sentimentBreakdown.negativePercentage}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div 
+                    className="bg-red-500 h-1.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${data.sentimentBreakdown.negativePercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+              
+              {/* Summary stats */}
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Total Calls</span>
+                  <span className="font-medium">{data.sentimentBreakdown.positive + data.sentimentBreakdown.neutral + data.sentimentBreakdown.negative}</span>
                 </div>
               </div>
             </div>
@@ -345,6 +328,8 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
                   stroke="#10b981" 
                   strokeWidth={2}
                   dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                  name="quality-score"
+                  id="quality-score-line"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -368,9 +353,9 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
                 <Tooltip 
                   formatter={(value: number) => [`${value} calls`, 'Count']}
                 />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} name="score-distribution">
                   {data.scoreDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={scoreColors[index % scoreColors.length]} />
+                    <Cell key={`cell-${entry.scoreRange}-${index}`} fill={scoreColors[index % scoreColors.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -403,6 +388,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
                   stroke={sentimentColors.positive} 
                   strokeWidth={2}
                   name="Positive"
+                  id="sentiment-positive-line"
                 />
                 <Line 
                   type="monotone" 
@@ -410,6 +396,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
                   stroke={sentimentColors.neutral} 
                   strokeWidth={2}
                   name="Neutral"
+                  id="sentiment-neutral-line"
                 />
                 <Line 
                   type="monotone" 
@@ -417,6 +404,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
                   stroke={sentimentColors.negative} 
                   strokeWidth={2}
                   name="Negative"
+                  id="sentiment-negative-line"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -446,7 +434,13 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
                   dataKey="count" 
                   fill="#f59e0b" 
                   radius={[0, 4, 4, 0]}
-                />
+                  name="review-reasons"
+                  id="review-reasons-bar"
+                >
+                  {data.reviewReasons.map((entry, index) => (
+                    <Cell key={`cell-${entry.reason}-${index}`} fill="#f59e0b" />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

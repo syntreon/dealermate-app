@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
@@ -24,16 +24,15 @@ const Analytics = () => {
         </div>
         <DateRangeFilter
           className="mt-4 sm:mt-0"
-          onRangeChange={(start, end) => {
+          onRangeChange={useCallback((start, end) => {
             setDateFilters({ start: start || undefined, end: end || undefined });
-          }}
+          }, [])}
         />
       </div>
 
-      <Tabs defaultValue="leads" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 mb-8">
+      <Tabs defaultValue="calls" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3 mb-8">
           <TabsTrigger value="calls">Call Analytics</TabsTrigger>
-          <TabsTrigger value="leads">Lead Analytics</TabsTrigger>
           <TabsTrigger value="quality">Quality Analytics</TabsTrigger>
           <TabsTrigger value="costs">Cost Analytics</TabsTrigger>
         </TabsList>
@@ -42,9 +41,10 @@ const Analytics = () => {
           <CallAnalytics startDate={dateFilters.start} endDate={dateFilters.end} />
         </TabsContent>
 
-        <TabsContent value="leads">
+        {/* Lead Analytics hidden for future updates */}
+        {/* <TabsContent value="leads">
           <LeadAnalytics />
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="quality">
           <QualityAnalytics startDate={dateFilters.start} endDate={dateFilters.end} />
