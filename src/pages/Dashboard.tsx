@@ -56,22 +56,27 @@ const Dashboard = () => {
     fetchCallsData();
   }, [user]);
 
+  // Updated chart colors to be theme-aware
   const chartData = [
-    { name: 'Sent', value: stats.sent, color: '#a78bfa' }, // Lighter purple for better contrast
-    { name: 'Answered', value: stats.answered, color: '#8b5cf6' }, // Primary purple
-    { name: 'Failed', value: stats.failed, color: '#f87171' }, // Lighter red for better contrast
+    { name: 'Sent', value: stats.sent, color: 'hsl(var(--primary) / 0.8)' }, // Primary with opacity
+    { name: 'Answered', value: stats.answered, color: 'hsl(var(--primary))' }, // Primary color
+    { name: 'Failed', value: stats.failed, color: 'hsl(var(--destructive))' }, // Destructive color
   ];
 
+  // Updated status icons to use theme-aware colors
   const getStatusIcon = (status: Call['status']) => {
     switch (status) {
       case 'sent':
         return <SendHorizontal className="h-4 w-4 text-primary" />;
       case 'answered':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        // Using success semantic color instead of hardcoded green
+        return <CheckCircle className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />;
       case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        // Using destructive semantic color instead of hardcoded red
+        return <XCircle className="h-4 w-4 text-destructive" />;
       default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        // Using amber for pending/unknown status
+        return <Clock className="h-4 w-4 text-amber-500 dark:text-amber-400" />;
     }
   };
 
@@ -170,9 +175,9 @@ const Dashboard = () => {
       <CallActivityTimeline />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
+        <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Call Distribution</CardTitle>
+            <CardTitle className="text-lg font-medium text-card-foreground">Call Distribution</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
             {!loadingCalls && stats.totalCalls > 0 ? (
@@ -197,8 +202,8 @@ const Dashboard = () => {
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-white border border-gray-200 shadow-md p-3 rounded-md">
-                            <p className="text-gray-700">{`${payload[0].name}: ${payload[0].value}`}</p>
+                          <div className="bg-card border border-border shadow-md p-3 rounded-md">
+                            <p className="text-card-foreground">{`${payload[0].name}: ${payload[0].value}`}</p>
                           </div>
                         );
                       }
@@ -209,21 +214,21 @@ const Dashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : loadingCalls ? (
-              <div className="h-[200px] flex items-center justify-center text-gray-500">
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                 <RefreshCw className="h-6 w-6 animate-spin mr-2" />
                 <p>Loading call data...</p>
               </div>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-gray-500">
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                 <p>No call data available yet</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
+        <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
+            <CardTitle className="text-lg font-medium text-card-foreground">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             {!loadingCalls && calls.length > 0 ? (
@@ -231,7 +236,7 @@ const Dashboard = () => {
                 {calls.slice(0, 5).map((call) => (
                   <div
                     key={call.id}
-                    className="flex items-start gap-4 p-3 rounded-lg bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                    className="flex items-start gap-4 p-3 rounded-lg bg-muted/50 border border-border hover:border-input transition-all duration-200"
                   >
                     <div className="p-2 rounded-full bg-primary/10">
                       {getStatusIcon(call.status)}
@@ -239,12 +244,12 @@ const Dashboard = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-medium truncate">{call.name}</h4>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {formatTimeAgo(new Date(call.timestamp))}
                         </span>
                       </div>
                       <div className="flex flex-wrap mt-1 gap-x-3 gap-y-1">
-                        <div className="flex items-center text-xs text-gray-600">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Phone className="h-3 w-3 mr-1" />
                           <span>{call.phoneNumber}</span>
                         </div>

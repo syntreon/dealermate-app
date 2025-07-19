@@ -21,24 +21,24 @@ interface UserProfileCardProps {
 export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
   const { logout } = useAuth();
   return (
-    <Card className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+    <Card className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
       <CardHeader>
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-gray-800">{user.full_name || user.name || 'User'}</CardTitle>
+            <CardTitle className="text-card-foreground">{user.full_name || user.name || 'User'}</CardTitle>
             <CardDescription className="flex items-center gap-1 mt-1">
               {user.is_admin && (
                 <>
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 py-0">
                     Admin
                   </Badge>
-                  <span className="text-gray-500 text-xs">•</span>
+                  <span className="text-muted-foreground text-xs">•</span>
                 </>
               )}
-              <span className="text-gray-500 text-xs">{user.email || 'No email available'}</span>
+              <span className="text-muted-foreground text-xs">{user.email || 'No email available'}</span>
             </CardDescription>
           </div>
         </div>
@@ -47,51 +47,51 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-gray-700">Full Name</Label>
+            <Label htmlFor="name" className="text-card-foreground">Full Name</Label>
             <Input 
               id="name" 
               value={user.full_name || user.name || ''} 
               readOnly 
-              className="bg-gray-50 border-gray-200 focus:border-primary cursor-not-allowed" 
+              className="bg-muted border-border focus:border-primary cursor-not-allowed" 
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-700">Email</Label>
+            <Label htmlFor="email" className="text-card-foreground">Email</Label>
             <Input 
               id="email" 
               value={user.email || ''} 
               readOnly 
-              className="bg-gray-50 border-gray-200 focus:border-primary cursor-not-allowed" 
+              className="bg-muted border-border focus:border-primary cursor-not-allowed" 
             />
           </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="phone" className="text-gray-700">Phone Number</Label>
+          <Label htmlFor="phone" className="text-card-foreground">Phone Number</Label>
           <div className="flex gap-3">
             <Input 
               id="phone" 
               value={user.phone || ''} 
               readOnly 
-              className="flex-1 bg-gray-50 border-gray-200 focus:border-primary cursor-not-allowed" 
+              className="flex-1 bg-muted border-border focus:border-primary cursor-not-allowed" 
             />
-            <Button variant="outline" size="icon" className="bg-white border-gray-200 hover:bg-gray-50">
-              <Phone className="h-4 w-4 text-gray-500" />
+            <Button variant="outline" size="icon" className="bg-card border-border hover:bg-muted">
+              <Phone className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </div>
         
-        <div className="pt-4 border-t border-gray-200">
-          <h3 className="text-sm font-medium text-gray-800 mb-4">Account Actions</h3>
+        <div className="pt-4 border-t border-border">
+          <h3 className="text-sm font-medium text-card-foreground mb-4">Account Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-800 text-gray-800">
+            <Button variant="outline" className="justify-start bg-card border-border hover:bg-muted hover:text-card-foreground text-card-foreground">
               <KeyRound className="h-4 w-4 mr-2" />
               Change Password
             </Button>
             <Button 
               variant="outline" 
-              className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-red-500 hover:text-red-600" 
+              className="justify-start bg-card border-border hover:bg-muted text-destructive hover:text-destructive/90" 
               onClick={logout}
             >
               <LogOut className="h-4 w-4 mr-2" />

@@ -203,10 +203,10 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
   };
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-      <div className="border-b border-gray-200 bg-gray-50 p-4">
-        <h2 className="text-lg font-medium text-gray-800">Notification Preferences</h2>
-        <p className="text-sm text-gray-500 mt-1">Configure how and when you receive notifications</p>
+    <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+      <div className="border-b border-border bg-muted/50 p-4">
+        <h2 className="text-lg font-medium text-card-foreground">Notification Preferences</h2>
+        <p className="text-sm text-muted-foreground mt-1">Configure how and when you receive notifications</p>
       </div>
       
       <div className="p-6">
@@ -217,10 +217,10 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-4 bg-muted/50">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base text-gray-800">Email Notifications</FormLabel>
-                    <FormDescription className="text-gray-500">
+                    <FormLabel className="text-base text-card-foreground">Email Notifications</FormLabel>
+                    <FormDescription className="text-muted-foreground">
                       Receive email notifications for important updates
                     </FormDescription>
                   </div>
@@ -239,10 +239,10 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
               control={form.control}
               name="leadAlerts"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-4 bg-muted/50">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base text-gray-800">Lead Alerts</FormLabel>
-                    <FormDescription className="text-gray-500">
+                    <FormLabel className="text-base text-card-foreground">Lead Alerts</FormLabel>
+                    <FormDescription className="text-muted-foreground">
                       Get notified when new leads are created
                     </FormDescription>
                   </div>
@@ -261,10 +261,10 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
               control={form.control}
               name="systemAlerts"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-4 bg-muted/50">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base text-gray-800">System Alerts</FormLabel>
-                    <FormDescription className="text-gray-500">
+                    <FormLabel className="text-base text-card-foreground">System Alerts</FormLabel>
+                    <FormDescription className="text-muted-foreground">
                       Receive notifications about system updates and maintenance
                     </FormDescription>
                   </div>
@@ -279,9 +279,9 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
             />
           
             {/* Notification Recipients */}
-            <div className="pt-6 border-t border-gray-200">
-              <h3 className="text-base font-medium mb-2 text-gray-800">Notification Recipients</h3>
-              <p className="text-sm text-gray-500 mb-4">Add email addresses that should receive notifications</p>
+            <div className="pt-6 border-t border-border">
+              <h3 className="text-base font-medium mb-2 text-card-foreground">Notification Recipients</h3>
+              <p className="text-sm text-muted-foreground mb-4">Add email addresses that should receive notifications</p>
               
               <div className="space-y-3">
                 {/* List of current notification emails */}
@@ -292,15 +292,15 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                       key={field.id}
                       name={`notificationEmails.${index}.value`}
                       render={({ field: itemField }) => (
-                        <FormItem className="flex items-center justify-between bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <FormItem className="flex items-center justify-between bg-muted/50 p-3 rounded-md border border-border">
                           <FormControl>
-                            <Input {...itemField} className="border-none bg-transparent focus-visible:ring-0 text-sm text-gray-700" readOnly />
+                            <Input {...itemField} className="border-none bg-transparent focus-visible:ring-0 text-sm text-card-foreground" readOnly />
                           </FormControl>
                           <Button 
                             variant="ghost" 
                             size="icon" 
                             onClick={() => remove(index)}
-                            className="h-8 w-8 text-gray-400 hover:text-red-500"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             type="button"
                           >
                             <X size={16} />
@@ -310,7 +310,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                     />
                   ))}
                   {fields.length === 0 && (
-                     <div className="text-center py-4 text-gray-500 italic text-sm bg-gray-50 rounded-md border border-gray-200">
+                     <div className="text-center py-4 text-muted-foreground italic text-sm bg-muted/50 rounded-md border border-border">
                         No notification recipients added yet
                       </div>
                   )}
@@ -327,9 +327,9 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                       setNewEmail(e.target.value);
                       setEmailError('');
                     }}
-                    className={`bg-white border-gray-300 focus:border-primary/50 focus:ring-primary/10 ${emailError ? 'border-red-500' : ''}`}
+                    className={`bg-background border-input focus:border-primary/50 focus:ring-primary/10 ${emailError ? 'border-destructive' : ''}`}
                   />
-                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+                  {emailError && <p className="text-destructive text-xs mt-1">{emailError}</p>}
                 </div>
                 <Button 
                   type="button"

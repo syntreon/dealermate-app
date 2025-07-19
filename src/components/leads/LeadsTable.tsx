@@ -135,27 +135,28 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
       <ChevronDown className="h-4 w-4 ml-1" />;
   };
 
-  // Get status badge
+  // Get status badge with theme-aware colors
   const getStatusBadge = (status: string) => {
     // Normalize status to handle any case variations
     const normalizedStatus = status?.toLowerCase() || 'unknown';
     
-    const statusConfig: Record<string, { color: string, label: string }> = {
-      'new': { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'New' },
-      'contacted': { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Contacted' },
-      'qualified': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Qualified' },
-      'proposal': { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Proposal' },
-      'closed_won': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed (Won)' },
-      'closed': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Closed' },
-      'closed_lost': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Closed (Lost)' },
-      'lost': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Lost' }
+    // Use theme-aware semantic classes instead of hardcoded colors
+    const statusConfig: Record<string, { variant: string, label: string }> = {
+      'new': { variant: 'default', label: 'New' },
+      'contacted': { variant: 'secondary', label: 'Contacted' },
+      'qualified': { variant: 'outline', label: 'Qualified' },
+      'proposal': { variant: 'secondary', label: 'Proposal' },
+      'closed_won': { variant: 'success', label: 'Closed (Won)' },
+      'closed': { variant: 'success', label: 'Closed' },
+      'closed_lost': { variant: 'destructive', label: 'Closed (Lost)' },
+      'lost': { variant: 'destructive', label: 'Lost' }
     };
 
     // Use normalized status for lookup to ensure case-insensitivity
-    const config = statusConfig[normalizedStatus] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: status || 'Unknown' };
+    const config = statusConfig[normalizedStatus] || { variant: 'outline', label: status || 'Unknown' };
 
     return (
-      <Badge className={cn('px-3 py-1 rounded-full text-xs font-medium border', config.color)}>
+      <Badge variant={config.variant as any} className="px-3 py-1 rounded-full text-xs font-medium">
         {config.label}
       </Badge>
     );

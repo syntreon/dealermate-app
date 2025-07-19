@@ -77,9 +77,9 @@ export const UserSettingsForm: React.FC<UserSettingsFormProps> = ({ user, onUser
 
   return (
     <div className="glass-morphism rounded-lg overflow-hidden">
-      <div className="border-b border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="border-b border-border bg-card/50 p-4">
         <h2 className="text-lg font-medium text-gradient-primary">Personal Information</h2>
-        <p className="text-sm text-zinc-400 mt-1">Update your personal details and contact information</p>
+        <p className="text-sm text-muted-foreground mt-1">Update your personal details and contact information</p>
       </div>
       
       <div className="p-6">
@@ -87,12 +87,12 @@ export const UserSettingsForm: React.FC<UserSettingsFormProps> = ({ user, onUser
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             {/* User avatar section */}
             <div className="flex items-center space-x-4 mb-6">
-              <div className="h-16 w-16 rounded-full bg-purple/20 flex items-center justify-center text-purple border border-purple/30">
+              <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/30">
                 <span className="text-xl font-medium">{user.name?.charAt(0) || user.email?.charAt(0) || '?'}</span>
               </div>
               <div>
-                <h3 className="font-medium">{user.name || 'User'}</h3>
-                <p className="text-sm text-zinc-400">{user.email}</p>
+                <h3 className="font-medium text-card-foreground">{user.name || 'User'}</h3>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
               </div>
             </div>
             

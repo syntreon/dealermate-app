@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -25,12 +26,22 @@ interface PreferencesProps {
 export const Preferences: React.FC<PreferencesProps> = ({ user, onUserUpdate }) => {
   // Get current theme from user preferences or default to system
   const currentTheme = user.preferences?.displaySettings?.theme || 'system';
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(currentTheme);
+  const [localTheme, setLocalTheme] = useState<'light' | 'dark' | 'system'>(currentTheme);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Use next-themes hook for theme management
+  const { setTheme: setNextTheme, theme: activeTheme } = useTheme();
+  
+  // Sync local state with next-themes on mount
+  useEffect(() => {
+    if (activeTheme && activeTheme !== localTheme) {
+      setLocalTheme(activeTheme as 'light' | 'dark' | 'system');
+    }
+  }, [activeTheme]);
 
   // Handle theme change
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
-    setTheme(newTheme);
+    setLocalTheme(newTheme);
     setIsLoading(true);
 
     try {
@@ -58,39 +69,36 @@ export const Preferences: React.FC<PreferencesProps> = ({ user, onUserUpdate }) 
       } as typeof user;
       onUserUpdate(updatedUser);
 
-      // Apply theme to document
-      document.documentElement.setAttribute('data-theme', newTheme === 'system' 
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : newTheme
-      );
+      // Use next-themes to set theme - this will handle the data-theme attribute
+      setNextTheme(newTheme);
 
       toast.success('Theme preferences updated');
     } catch (error) {
       console.error('Error updating theme preferences:', error);
       toast.error('Failed to update theme preferences');
       // Revert to previous theme
-      setTheme(currentTheme);
+      setLocalTheme(currentTheme);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+    <Card className="rounded-lg overflow-hidden shadow-sm">
       <CardContent className="space-y-6 pt-6">
         <div>
-          <h3 className="text-lg font-medium text-gray-800 mb-4">Display Preferences</h3>
+          <h3 className="text-lg font-medium mb-4">Display Preferences</h3>
           
           <div className="space-y-6">
             <div className="space-y-3">
-              <Label htmlFor="theme" className="text-gray-700">Theme</Label>
+              <Label htmlFor="theme">Theme</Label>
               <RadioGroup 
                 id="theme" 
-                value={theme} 
+                value={localTheme} 
                 onValueChange={(value) => handleThemeChange(value as 'light' | 'dark' | 'system')}
                 className="grid grid-cols-1 md:grid-cols-3 gap-4"
               >
-                <div className={`flex items-center space-x-2 rounded-md border p-4 ${theme === 'light' ? 'border-primary bg-primary/5' : 'border-gray-200'}`}>
+                <div className={`flex items-center space-x-2 rounded-md border p-4 ${localTheme === 'light' ? 'border-primary bg-primary/5' : 'border-border'}`}>
                   <RadioGroupItem value="light" id="light" disabled={isLoading} />
                   <Label htmlFor="light" className="flex items-center cursor-pointer">
                     <Sun className="h-4 w-4 mr-2 text-yellow-500" />
@@ -98,7 +106,7 @@ export const Preferences: React.FC<PreferencesProps> = ({ user, onUserUpdate }) 
                   </Label>
                 </div>
                 
-                <div className={`flex items-center space-x-2 rounded-md border p-4 ${theme === 'dark' ? 'border-primary bg-primary/5' : 'border-gray-200'}`}>
+                <div className={`flex items-center space-x-2 rounded-md border p-4 ${localTheme === 'dark' ? 'border-primary bg-primary/5' : 'border-border'}`}>
                   <RadioGroupItem value="dark" id="dark" disabled={isLoading} />
                   <Label htmlFor="dark" className="flex items-center cursor-pointer">
                     <Moon className="h-4 w-4 mr-2 text-blue-500" />
@@ -106,10 +114,10 @@ export const Preferences: React.FC<PreferencesProps> = ({ user, onUserUpdate }) 
                   </Label>
                 </div>
                 
-                <div className={`flex items-center space-x-2 rounded-md border p-4 ${theme === 'system' ? 'border-primary bg-primary/5' : 'border-gray-200'}`}>
+                <div className={`flex items-center space-x-2 rounded-md border p-4 ${localTheme === 'system' ? 'border-primary bg-primary/5' : 'border-border'}`}>
                   <RadioGroupItem value="system" id="system" disabled={isLoading} />
                   <Label htmlFor="system" className="flex items-center cursor-pointer">
-                    <Monitor className="h-4 w-4 mr-2 text-gray-500" />
+                    <Monitor className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span>System</span>
                   </Label>
                 </div>

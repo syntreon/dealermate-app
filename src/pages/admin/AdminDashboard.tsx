@@ -88,8 +88,8 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalCalls.toLocaleString()}</div>
             <div className="flex items-center gap-1 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-500" />
-              <span className="text-xs text-green-500">+12% this month</span>
+              <TrendingUp className="h-3 w-3 text-emerald-500" />
+              <span className="text-xs text-emerald-500">+12% this month</span>
             </div>
           </CardContent>
         </Card>
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
-            <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
+            <div className="h-3 w-3 bg-emerald-500 rounded-full animate-pulse"></div>
             <span className="font-medium">All Systems Operational</span>
             <Badge variant="secondary">Last updated: 2 minutes ago</Badge>
           </div>
@@ -148,10 +148,10 @@ const AdminDashboard = () => {
                   <Badge 
                     className={
                       client.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300' 
                         : client.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
+                        ? 'bg-warning/20 text-warning-foreground'
+                        : 'bg-destructive/10 text-destructive'
                     }
                   >
                     {client.status}

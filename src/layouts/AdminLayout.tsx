@@ -10,11 +10,15 @@ import { Button } from '@/components/ui/button';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ThemeProvider } from 'next-themes';
+import { useThemeInit } from '@/hooks/use-theme-init';
 
 const AdminLayout = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
+
+  // Initialize theme based on user preferences
+  useThemeInit();
 
   // Check if user has admin privileges
   const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.is_admin;
@@ -58,7 +62,7 @@ const AdminLayout = () => {
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
           {/* Top Bar - Only show on desktop */}

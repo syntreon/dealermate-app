@@ -31,32 +31,32 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
       case 'active':
         return {
           icon: Circle,
-          color: 'text-green-500',
-          bgColor: 'bg-green-100',
+          color: 'text-emerald-300',
+          bgColor: 'bg-emerald-900/30 dark:bg-emerald-900/50',
           label: 'Active',
           description: 'All systems operational'
         };
       case 'inactive':
         return {
           icon: AlertTriangle,
-          color: 'text-red-500',
-          bgColor: 'bg-red-100',
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/10',
           label: 'Inactive',
           description: 'System is down or unavailable'
         };
       case 'maintenance':
         return {
           icon: Wrench,
-          color: 'text-yellow-500',
-          bgColor: 'bg-yellow-100',
+          color: 'text-amber-500',
+          bgColor: 'bg-warning/20',
           label: 'Maintenance',
           description: 'System is under maintenance'
         };
       default:
         return {
           icon: Circle,
-          color: 'text-gray-500',
-          bgColor: 'bg-gray-100',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted',
           label: 'Unknown',
           description: 'Status unknown'
         };
@@ -109,12 +109,12 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
             <CurrentIcon className={cn("h-6 w-6", currentConfig.color)} />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium">{currentConfig.label}</span>
-                <Badge variant="outline">
+                <span className="font-medium text-white dark:text-emerald-100">{currentConfig.label}</span>
+                <Badge variant="outline" className="bg-white/20 text-white border-white/30 dark:bg-emerald-100/20 dark:text-emerald-100 dark:border-emerald-100/30">
                   Last updated: {currentStatus.lastUpdated.toLocaleString()}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-white/80 dark:text-emerald-100/80 mt-1">
                 {currentStatus.message || currentConfig.description}
               </p>
             </div>
@@ -143,19 +143,19 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
                 <SelectContent>
                   <SelectItem value="active">
                     <div className="flex items-center gap-2">
-                      <Circle className="h-4 w-4 text-green-500" />
+                      <Circle className="h-4 w-4 text-emerald-500" />
                       Active
                     </div>
                   </SelectItem>
                   <SelectItem value="inactive">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
                       Inactive
                     </div>
                   </SelectItem>
                   <SelectItem value="maintenance">
                     <div className="flex items-center gap-2">
-                      <Wrench className="h-4 w-4 text-yellow-500" />
+                      <Wrench className="h-4 w-4 text-amber-500" />
                       Maintenance
                     </div>
                   </SelectItem>
@@ -195,7 +195,7 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
               disabled={isUpdating}
               className="flex items-center gap-2"
             >
-              <Circle className="h-4 w-4 text-green-500" />
+              <Circle className="h-4 w-4 text-emerald-500" />
               Set Active
             </Button>
             <Button
@@ -204,7 +204,7 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
               disabled={isUpdating}
               className="flex items-center gap-2"
             >
-              <Wrench className="h-4 w-4 text-yellow-500" />
+              <Wrench className="h-4 w-4 text-amber-500" />
               Set Maintenance
             </Button>
             <Button
@@ -213,7 +213,7 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
               disabled={isUpdating}
               className="flex items-center gap-2"
             >
-              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <AlertTriangle className="h-4 w-4 text-destructive" />
               Set Inactive
             </Button>
           </div>

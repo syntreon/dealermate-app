@@ -12,6 +12,7 @@ import { SidebarTrigger, SidebarInset, SidebarProvider } from '@/components/ui/s
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
+import { useThemeInit } from '@/hooks/use-theme-init';
 
 const AppLayout = () => {
   const {
@@ -23,6 +24,9 @@ const AppLayout = () => {
   } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
+  
+  // Initialize theme based on user preferences
+  useThemeInit();
 
   // Force refresh the page
   const handleForceRefresh = () => {
@@ -62,7 +66,7 @@ const AppLayout = () => {
     );
   }
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
           {/* Top Bar - Only show on desktop */}

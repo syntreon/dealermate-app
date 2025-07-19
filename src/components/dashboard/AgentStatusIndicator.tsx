@@ -19,36 +19,36 @@ const AgentStatusIndicator: React.FC<AgentStatusIndicatorProps> = ({
       case 'active':
         return {
           icon: Circle,
-          color: 'text-green-500',
-          bgColor: 'bg-green-500/10',
-          borderColor: 'border-green-500/20',
+          color: 'text-emerald-500',
+          bgColor: 'bg-emerald-500/10',
+          borderColor: 'border-emerald-500/20',
           label: 'Active',
           variant: 'default' as const
         };
       case 'inactive':
         return {
           icon: AlertTriangle,
-          color: 'text-red-500',
-          bgColor: 'bg-red-500/10',
-          borderColor: 'border-red-500/20',
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/10',
+          borderColor: 'border-destructive/20',
           label: 'Inactive',
           variant: 'destructive' as const
         };
       case 'maintenance':
         return {
           icon: Wrench,
-          color: 'text-yellow-500',
-          bgColor: 'bg-yellow-500/10',
-          borderColor: 'border-yellow-500/20',
+          color: 'text-amber-500',
+          bgColor: 'bg-warning/10',
+          borderColor: 'border-warning/20',
           label: 'Maintenance',
           variant: 'secondary' as const
         };
       default:
         return {
           icon: Circle,
-          color: 'text-gray-500',
-          bgColor: 'bg-gray-500/10',
-          borderColor: 'border-gray-500/20',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted/50',
+          borderColor: 'border-border',
           label: 'Unknown',
           variant: 'secondary' as const
         };

@@ -22,26 +22,26 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
   
   return (
     <div className="space-y-6">
-      <Card className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+      <Card className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
         <CardContent className="space-y-6 pt-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-800">Account Settings</h3>
+            <h3 className="text-sm font-medium text-card-foreground">Account Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
+              <Button variant="outline" className="justify-start bg-card border-border hover:bg-muted text-card-foreground">
                 Change Password
               </Button>
-              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
+              <Button variant="outline" className="justify-start bg-card border-border hover:bg-muted text-card-foreground">
                 Two-Factor Authentication
               </Button>
-              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
+              <Button variant="outline" className="justify-start bg-card border-border hover:bg-muted text-card-foreground">
                 Notification Settings
               </Button>
-              <Button variant="outline" className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800">
+              <Button variant="outline" className="justify-start bg-card border-border hover:bg-muted text-card-foreground">
                 Privacy Settings
               </Button>
               <Button 
                 variant="outline" 
-                className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-red-500 hover:text-red-600" 
+                className="justify-start bg-card border-border hover:bg-muted text-destructive hover:text-destructive/90" 
                 onClick={logout}
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -53,15 +53,15 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
       </Card>
 
       {isAdmin && (
-        <Card className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+        <Card className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
           <CardContent className="space-y-6 pt-6">
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-800">Admin Settings</h3>
+              <h3 className="text-sm font-medium text-card-foreground">Admin Settings</h3>
               {/* Admin settings buttons - visible on all screen sizes */}
               <div className="grid grid-cols-1 gap-4">
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
+                  className="justify-start bg-card border-border hover:bg-muted text-card-foreground" 
                   onClick={() => navigate('/admin/dashboard')}
                 >
                   <Settings className="h-4 w-4 mr-2" />
@@ -73,21 +73,21 @@ export const SettingsOptions: React.FC<SettingsOptionsProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
+                  className="justify-start bg-card border-border hover:bg-muted text-card-foreground" 
                   onClick={onOpenWebhookDialog}
                 >
                   Webhook Configuration
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
+                  className="justify-start bg-card border-border hover:bg-muted text-card-foreground" 
                   onClick={onOpenAddUserDialog}
                 >
                   Add New User
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="justify-start bg-white border-gray-200 hover:bg-gray-50 text-gray-800" 
+                  className="justify-start bg-card border-border hover:bg-muted text-card-foreground" 
                   onClick={() => navigate('/manage-users')}
                 >
                   <Users className="h-4 w-4 mr-2" />

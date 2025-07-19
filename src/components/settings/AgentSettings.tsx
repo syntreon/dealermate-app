@@ -145,17 +145,17 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
   // Render loading state
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <Skeleton className="h-8 w-64 bg-gray-200" />
-          <Skeleton className="h-4 w-48 bg-gray-200 mt-2" />
+      <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+        <div className="border-b border-border bg-muted/50 p-4">
+          <Skeleton className="h-8 w-64 bg-muted" />
+          <Skeleton className="h-4 w-48 bg-muted mt-2" />
         </div>
         <div className="p-6 space-y-6">
           <div className="space-y-4">
-            <Skeleton className="h-24 w-full bg-gray-200 rounded-lg" />
-            <div className="grid grid-cols-1 gap-4">
-              <Skeleton className="h-16 w-full bg-gray-200 rounded-lg" />
-              <Skeleton className="h-16 w-full bg-gray-200 rounded-lg" />
+            <Skeleton className="h-24 w-full bg-muted rounded-lg" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Skeleton className="h-16 w-full bg-muted rounded-lg" />
+              <Skeleton className="h-16 w-full bg-muted rounded-lg" />
             </div>
           </div>
         </div>
@@ -166,12 +166,12 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
   // Render error state
   if (error) {
     return (
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h2 className="text-lg font-medium text-gray-800">Agent Settings</h2>
+      <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+        <div className="border-b border-border bg-muted/50 p-4">
+          <h2 className="text-lg font-medium text-card-foreground">Agent Settings</h2>
         </div>
         <div className="p-6">
-          <div className="flex items-center justify-center p-6 text-red-500 bg-red-50 rounded-lg border border-red-100">
+          <div className="flex items-center justify-center p-6 text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
             <AlertTriangle className="h-5 w-5 mr-2" />
             <span>{error}</span>
           </div>
@@ -183,16 +183,16 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
   // Render when no client is associated
   if (!clientId || !agentConfig) {
     return (
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h2 className="text-lg font-medium text-gray-800">Agent Settings</h2>
-          <p className="text-sm text-gray-500 mt-1">Agent configuration and status</p>
+      <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+        <div className="border-b border-border bg-muted/50 p-4">
+          <h2 className="text-lg font-medium text-card-foreground">Agent Settings</h2>
+          <p className="text-sm text-muted-foreground mt-1">Agent configuration and status</p>
         </div>
         <div className="p-6">
-          <div className="flex items-center justify-center p-8 text-gray-500 flex-col bg-gray-50 rounded-lg border border-gray-100">
-            <InfoIcon className="h-12 w-12 mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium mb-2 text-gray-700">No Agent Configuration</h3>
-            <p className="text-center text-gray-500">
+          <div className="flex items-center justify-center p-8 text-muted-foreground flex-col bg-muted/50 rounded-lg border border-border/50">
+            <InfoIcon className="h-12 w-12 mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2 text-card-foreground">No Agent Configuration</h3>
+            <p className="text-center text-muted-foreground">
               No agent configuration is available. This may be because you're not associated with a business or the agent hasn't been configured.
             </p>
           </div>
@@ -210,12 +210,12 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
   // Render agent configuration
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-      <div className="border-b border-gray-200 bg-gray-50 p-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+      <div className="border-b border-border bg-muted/50 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium text-gray-800">Agent Settings</h2>
-            <p className="text-sm text-gray-500 mt-1">Agent configuration and status</p>
+            <h2 className="text-lg font-medium text-card-foreground">Agent Settings</h2>
+            <p className="text-sm text-muted-foreground mt-1">Agent configuration and status</p>
           </div>
           <div>
             {!isEditing ? (
@@ -236,23 +236,23 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
       </div>
       <div className="p-6 space-y-6">
         {/* Agent Status */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <div className="bg-muted/50 p-4 rounded-lg border border-border">
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-primary/10 p-2 rounded-md">
               <Bot className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-800">Agent Status</h3>
-              <p className="text-sm text-gray-500">Current status of your virtual agent</p>
+              <h3 className="font-medium text-card-foreground">Agent Status</h3>
+              <p className="text-sm text-muted-foreground">Current status of your virtual agent</p>
             </div>
           </div>
           <div className="mt-3 flex items-center">
             <div className={`h-3 w-3 rounded-full mr-2 ${
-              agentStatus === 'online' ? 'bg-green-500' : 
-              agentStatus === 'busy' ? 'bg-yellow-500' : 
-              'bg-red-500'
+              agentStatus === 'online' ? 'bg-emerald-500' : 
+              agentStatus === 'busy' ? 'bg-amber-500' : 
+              'bg-destructive'
             }`}></div>
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-card-foreground">
               {agentStatus === 'online' ? 'Online and ready to handle calls' : 
                agentStatus === 'busy' ? 'Busy handling calls' : 
                'Offline - not accepting calls'}
@@ -262,14 +262,14 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
 
         {/* Lead Capture Configuration */}
         {agentConfig.lead_capture_config && (
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="bg-card p-4 rounded-lg border border-border">
             <div className="flex items-center gap-3 mb-3">
-              <div className="bg-gray-100 p-2 rounded-md">
-                <ListChecks className="h-5 w-5 text-gray-500" />
+              <div className="bg-muted p-2 rounded-md">
+                <ListChecks className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-800">Lead Capture Requirements</h3>
-                <p className="text-sm text-gray-500">Fields the agent will attempt to collect</p>
+                <h3 className="font-medium text-card-foreground">Lead Capture Requirements</h3>
+                <p className="text-sm text-muted-foreground">Fields the agent will attempt to collect</p>
               </div>
             </div>
             <div className="mt-3">
@@ -288,7 +288,7 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                   )}
                 />
               ) : (
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                <p className="text-sm text-card-foreground whitespace-pre-wrap">
                   {formatText(agentConfig.lead_capture_config.required_fields)}
                 </p>
               )}
@@ -299,16 +299,16 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
         {/* Conversation Quality Configuration */}
         {agentConfig.conversation_quality_config && (
           <div className="space-y-4 mt-4">
-            <h3 className="text-sm font-medium text-gray-700">Conversation Configuration</h3>
+            <h3 className="text-sm font-medium text-card-foreground">Conversation Configuration</h3>
             
             {/* Persona Name */}
             {agentConfig.conversation_quality_config.persona_name && (
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="bg-card p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-gray-100 p-1.5 rounded-md">
-                    <Bot className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-1.5 rounded-md">
+                    <Bot className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-500 text-sm">Persona Name</p>
+                  <p className="text-muted-foreground text-sm">Persona Name</p>
                 </div>
                 {isEditing ? (
                   <FormField
@@ -324,7 +324,7 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                     )}
                   />
                 ) : (
-                  <p className="text-sm text-gray-700 pl-10">
+                  <p className="text-sm text-card-foreground pl-10">
                     {formatText(agentConfig.conversation_quality_config.persona_name)}
                   </p>
                 )}
@@ -333,12 +333,12 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
             
             {/* Speech Style */}
             {agentConfig.conversation_quality_config.persona_speech_style && (
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="bg-card p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-gray-100 p-1.5 rounded-md">
-                    <MessageSquare className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-1.5 rounded-md">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-500 text-sm">Speech Style</p>
+                  <p className="text-muted-foreground text-sm">Speech Style</p>
                 </div>
                 {isEditing ? (
                   <FormField
@@ -354,7 +354,7 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                     )}
                   />
                 ) : (
-                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                  <p className="text-sm text-card-foreground pl-10 whitespace-pre-wrap">
                     {formatText(agentConfig.conversation_quality_config.persona_speech_style)}
                   </p>
                 )}
@@ -363,12 +363,12 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
             
             {/* Business Context */}
             {agentConfig.conversation_quality_config.client_business_context && (
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="bg-card p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-gray-100 p-1.5 rounded-md">
-                    <Building2 className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-1.5 rounded-md">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-500 text-sm">Business Context</p>
+                  <p className="text-muted-foreground text-sm">Business Context</p>
                 </div>
                 {isEditing ? (
                   <FormField
@@ -384,7 +384,7 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                     )}
                   />
                 ) : (
-                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                  <p className="text-sm text-card-foreground pl-10 whitespace-pre-wrap">
                     {formatText(agentConfig.conversation_quality_config.client_business_context)}
                   </p>
                 )}
@@ -393,12 +393,12 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
             
             {/* Call Objectives */}
             {agentConfig.conversation_quality_config.primary_call_objectives && (
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="bg-card p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-gray-100 p-1.5 rounded-md">
-                    <Target className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-1.5 rounded-md">
+                    <Target className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-500 text-sm">Call Objectives</p>
+                  <p className="text-muted-foreground text-sm">Call Objectives</p>
                 </div>
                 {isEditing ? (
                   <FormField
@@ -414,7 +414,7 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                     )}
                   />
                 ) : (
-                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                  <p className="text-sm text-card-foreground pl-10 whitespace-pre-wrap">
                     {formatText(agentConfig.conversation_quality_config.primary_call_objectives)}
                   </p>
                 )}
@@ -423,12 +423,12 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
             
             {/* Persona Identity */}
             {agentConfig.conversation_quality_config.persona_identity_and_personality && (
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="bg-card p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-gray-100 p-1.5 rounded-md">
-                    <User className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-1.5 rounded-md">
+                    <User className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-500 text-sm">Persona Identity & Personality</p>
+                  <p className="text-muted-foreground text-sm">Persona Identity & Personality</p>
                 </div>
                 {isEditing ? (
                   <FormField
@@ -444,7 +444,7 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
                     )}
                   />
                 ) : (
-                  <p className="text-sm text-gray-700 pl-10 whitespace-pre-wrap">
+                  <p className="text-sm text-card-foreground pl-10 whitespace-pre-wrap">
                     {formatText(agentConfig.conversation_quality_config.persona_identity_and_personality)}
                   </p>
                 )}
@@ -455,12 +455,12 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
         
         {/* Message when no configuration is available */}
         {(!agentConfig.lead_capture_config && !agentConfig.conversation_quality_config) && (
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm">
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 text-sm">
             <div className="flex items-start">
-              <InfoIcon className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
+              <InfoIcon className="h-5 w-5 text-warning mr-2 mt-0.5" />
               <div>
-                <p className="font-medium text-yellow-700 mb-1">No Agent Configuration</p>
-                <p className="text-yellow-600">
+                <p className="font-medium text-warning-foreground mb-1">No Agent Configuration</p>
+                <p className="text-warning-foreground/80">
                   The agent has not been configured yet. Please contact your administrator to set up the agent configuration.
                 </p>
               </div>

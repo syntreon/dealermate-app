@@ -95,42 +95,42 @@ const Settings = () => {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar navigation */}
         <div className="w-full md:w-64 shrink-0">
-          <div className="sticky top-4 bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="font-medium text-gray-800">Settings</h3>
+          <div className="sticky top-4 bg-card rounded-lg overflow-hidden border border-border shadow-sm">
+            <div className="p-4 border-b border-border">
+              <h3 className="font-medium text-card-foreground">Settings</h3>
             </div>
             <nav className="flex flex-col p-2">
               <button
                 onClick={() => setActiveTab('user')}
-                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'user' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
+                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'user' ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'}`}
               >
                 <UserIcon className="h-4 w-4" />
                 <span>User</span>
               </button>
               <button
                 onClick={() => setActiveTab('notifications')}
-                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'notifications' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
+                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'notifications' ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'}`}
               >
                 <Bell className="h-4 w-4" />
                 <span>Notifications</span>
               </button>
               <button
                 onClick={() => setActiveTab('preferences')}
-                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'preferences' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
+                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'preferences' ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'}`}
               >
                 <Sliders className="h-4 w-4" />
                 <span>Preferences</span>
               </button>
               <button
                 onClick={() => setActiveTab('business')}
-                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'business' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
+                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'business' ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'}`}
               >
                 <Building2 className="h-4 w-4" />
                 <span>Business</span>
               </button>
               <button
                 onClick={() => setActiveTab('agent')}
-                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'agent' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'}`}
+                className={`flex items-center gap-2 p-3 rounded-md text-left transition-colors ${activeTab === 'agent' ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'}`}
               >
                 <Bot className="h-4 w-4" />
                 <span>Agent</span>
@@ -139,7 +139,7 @@ const Settings = () => {
               {canViewSensitiveInfo(user as unknown as User) && (
                 <button
                   onClick={() => navigate('/admin/dashboard')}
-                  className="flex items-center gap-2 p-3 rounded-md text-left transition-colors hover:bg-gray-50 text-gray-700 mt-2 border-t border-gray-200 pt-4"
+                  className="flex items-center gap-2 p-3 rounded-md text-left transition-colors hover:bg-muted text-muted-foreground mt-2 border-t border-border pt-4"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>

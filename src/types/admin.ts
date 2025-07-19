@@ -1,9 +1,9 @@
 export interface Client {
   id: string;
   name: string;
-  status: 'active' | 'inactive' | 'trial' | 'churned';
+  status: 'active' | 'inactive' | 'trial' | 'churned' | 'pending'; //dont make any changes to this db enum
   type: string;
-  subscription_plan: 'Free Trial' | 'Basic' | 'Pro' | 'Custom';
+  subscription_plan: 'Free Trial' | 'Basic' | 'Pro' | 'Custom'; //dont make any changes to this db enum
   contact_person: string | null;
   contact_email: string | null;
   phone_number: string | null;

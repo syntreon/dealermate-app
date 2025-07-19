@@ -42,41 +42,46 @@
     --radius: 0.75rem;
   }
 
-  /* Dark mode theme variables with proper contrast */
+  /* Dark mode theme variables with zinc colors for a clean, minimal, modern UI */
   [data-theme="dark"] {
-    --background: 215 28% 17%; /* Dark background Hex: #1F2937 */
-    --foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    --background: 240 5% 10%; /* Dark zinc background Hex: #18181B */
+    --foreground: 240 5% 95%; /* Light zinc text Hex: #F4F4F5 */
     
-    --card: 215 25% 27%; /* Dark card background Hex: #374151 */
-    --card-foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    --card: 240 5% 14%; /* Dark zinc card background Hex: #27272A */
+    --card-foreground: 240 5% 95%; /* Light zinc text Hex: #F4F4F5 */
     
-    --popover: 215 25% 27%; /* Dark popover background Hex: #374151 */
-    --popover-foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    --popover: 240 5% 14%; /* Dark zinc popover background Hex: #27272A */
+    --popover-foreground: 240 5% 95%; /* Light zinc text Hex: #F4F4F5 */
     
-    --primary: 250 93% 85%; /* Lighter Purple Hex: #8B5CF6 for dark mode */
-    --primary-foreground: 215 28% 17%; /* Dark text Hex: #1F2937 */
+    --primary: 252 87% 67%; /* Vibrant purple Hex: #6366F1 */
+    --primary-foreground: 240 5% 95%; /* Light zinc text Hex: #F4F4F5 */
     
-    --secondary: 215 25% 27%; /* Dark secondary Hex: #374151 */
-    --secondary-foreground: 210 20% 98%; /* Light text Hex: #F5F8FA */
+    --secondary: 240 5% 18%; /* Slightly lighter zinc Hex: #3F3F46 */
+    --secondary-foreground: 240 5% 95%; /* Light zinc text Hex: #F4F4F5 */
     
-    --muted: 215 25% 27%; /* Dark muted background Hex: #374151 */
-    --muted-foreground: 217 19% 80%; /* Light muted text Hex: #D1D5DB */
+    --muted: 240 5% 18%; /* Slightly lighter zinc Hex: #3F3F46 */
+    --muted-foreground: 240 5% 65%; /* Medium zinc text Hex: #A1A1AA */
     
-    --accent: 250 93% 85%; /* Lighter Purple Hex: #8B5CF6 */
-    --accent-foreground: 215 28% 17%; /* Dark text Hex: #1F2937 */
+    --accent: 252 87% 67%; /* Vibrant purple Hex: #6366F1 */
+    --accent-foreground: 240 5% 95%; /* Light zinc text Hex: #F4F4F5 */
     
-    --destructive: 0 84% 80%; /* Lighter Red Hex: #F87171 */
-    --destructive-foreground: 215 28% 17%; /* Dark text Hex: #1F2937 */
+    --destructive: 0 84% 60%; /* Red Hex: #EF4444 */
+    --destructive-foreground: 240 5% 95%; /* Light zinc text Hex: #F4F4F5 */
     
-    --border: 215 25% 27%; /* Dark border Hex: #374151 */
-    --input: 215 25% 27%; /* Dark input border Hex: #374151 */
-    --ring: 250 93% 85%; /* Lighter Purple Hex: #8B5CF6 */
+    --border: 240 5% 20%; /* Dark zinc border Hex: #3F3F46 */
+    --input: 240 5% 20%; /* Dark zinc input border Hex: #3F3F46 */
+    --ring: 252 87% 67%; /* Vibrant purple Hex: #6366F1 */
   }
 }
 
 @layer base {
   * {
     @apply border-border selection:bg-primary/10 selection:text-primary;
+  }
+  
+  /* Add smooth transition for theme changes */
+  :root, [data-theme] {
+    transition: all 0.25s ease-out;
   }
   
   body {

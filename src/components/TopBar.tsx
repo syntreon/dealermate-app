@@ -54,8 +54,15 @@ const TopBar = () => {
     }
   }, [clientId, user]);
   
+  // Toggle between light, dark, and system themes
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    if (theme === 'light') {
+      setTheme('dark');
+    } else if (theme === 'dark') {
+      setTheme('system');
+    } else {
+      setTheme('light');
+    }
   };
 
   return (
@@ -83,18 +90,25 @@ const TopBar = () => {
           <SystemMessages messages={metrics.systemMessages} />
         )}
         
-        {/* Theme Toggle */}
+        {/* Theme Toggle with icon for current theme */}
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={toggleTheme} 
           className="rounded-full"
           aria-label="Toggle theme"
+          title={`Current theme: ${theme || 'system'}. Click to change.`}
         >
           {theme === 'dark' ? (
+            <Moon className="h-5 w-5" />
+          ) : theme === 'light' ? (
             <Sun className="h-5 w-5" />
           ) : (
-            <Moon className="h-5 w-5" />
+            <div className="relative h-5 w-5">
+              {/* System theme icon (combined sun/moon) */}
+              <Sun className="h-4 w-4 absolute top-0 left-0" />
+              <Moon className="h-3 w-3 absolute bottom-0 right-0" />
+            </div>
           )}
         </Button>
         

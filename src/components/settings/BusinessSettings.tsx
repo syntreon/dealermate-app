@@ -46,7 +46,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
           throw error;
         }
         
-        setBusinessData(data as BusinessData);
+        // Safely cast data to BusinessData after error check
+        setBusinessData(data as unknown as BusinessData);
       } catch (err) {
         console.error('Error fetching business data:', err);
         setError('Failed to load business information. Please try again later.');
@@ -61,17 +62,17 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
   // Render loading state
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <Skeleton className="h-8 w-64 bg-gray-200" />
-          <Skeleton className="h-4 w-48 bg-gray-200 mt-2" />
+      <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+        <div className="border-b border-border bg-muted/50 p-4">
+          <Skeleton className="h-8 w-64 bg-muted" />
+          <Skeleton className="h-4 w-48 bg-muted mt-2" />
         </div>
         <div className="p-6 space-y-6">
           <div className="space-y-4">
-            <Skeleton className="h-24 w-full bg-gray-200 rounded-lg" />
+            <Skeleton className="h-24 w-full bg-muted rounded-lg" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Skeleton className="h-16 w-full bg-gray-200 rounded-lg" />
-              <Skeleton className="h-16 w-full bg-gray-200 rounded-lg" />
+              <Skeleton className="h-16 w-full bg-muted rounded-lg" />
+              <Skeleton className="h-16 w-full bg-muted rounded-lg" />
             </div>
           </div>
         </div>
@@ -82,12 +83,12 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
   // Render error state
   if (error) {
     return (
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h2 className="text-lg font-medium text-gray-800">Business Information</h2>
+      <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+        <div className="border-b border-border bg-muted/50 p-4">
+          <h2 className="text-lg font-medium text-card-foreground">Business Information</h2>
         </div>
         <div className="p-6">
-          <div className="flex items-center justify-center p-6 text-red-500 bg-red-50 rounded-lg border border-red-100">
+          <div className="flex items-center justify-center p-6 text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
             <AlertTriangle className="h-5 w-5 mr-2" />
             <span>{error}</span>
           </div>
@@ -99,16 +100,16 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
   // Render when no client is associated
   if (!clientId || !businessData) {
     return (
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h2 className="text-lg font-medium text-gray-800">Business Information</h2>
-          <p className="text-sm text-gray-500 mt-1">Your business details</p>
+      <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+        <div className="border-b border-border bg-muted/50 p-4">
+          <h2 className="text-lg font-medium text-card-foreground">Business Information</h2>
+          <p className="text-sm text-muted-foreground mt-1">Your business details</p>
         </div>
         <div className="p-6">
-          <div className="flex items-center justify-center p-8 text-gray-500 flex-col bg-gray-50 rounded-lg border border-gray-100">
-            <InfoIcon className="h-12 w-12 mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium mb-2 text-gray-700">No Business Association</h3>
-            <p className="text-center text-gray-500">
+          <div className="flex items-center justify-center p-8 text-muted-foreground flex-col bg-muted/50 rounded-lg border border-border/50">
+            <InfoIcon className="h-12 w-12 mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2 text-card-foreground">No Business Association</h3>
+            <p className="text-center text-muted-foreground">
               You are not associated with any business organization.
               {isAdmin && " As an admin, you have access to all system features."}
             </p>
@@ -120,20 +121,20 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
 
   // Render business information
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-      <div className="border-b border-gray-200 bg-gray-50 p-4">
+    <div className="bg-card rounded-lg overflow-hidden shadow-sm border border-border">
+      <div className="border-b border-border bg-muted/50 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium text-gray-800">Business Information</h2>
-            <p className="text-sm text-gray-500 mt-1">Your business details</p>
+            <h2 className="text-lg font-medium text-card-foreground">Business Information</h2>
+            <p className="text-sm text-muted-foreground mt-1">Your business details</p>
           </div>
           <Badge 
             variant="outline" 
             className={`
-              ${businessData.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' : 
-                businessData.status === 'trial' ? 'bg-blue-100 text-blue-700 border-blue-200' : 
-                businessData.status === 'churned' ? 'bg-gray-100 text-gray-700 border-gray-200' :
-                'bg-red-100 text-red-700 border-red-200'}
+              ${businessData.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                businessData.status === 'trial' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 
+                businessData.status === 'churned' ? 'bg-muted text-muted-foreground border-muted-foreground/20' :
+                'bg-destructive/10 text-destructive border-destructive/20'}
             `}
           >
             {businessData.status.charAt(0).toUpperCase() + businessData.status.slice(1)}
@@ -143,58 +144,58 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
       <div className="p-6 space-y-6">
         {/* Business information */}
         <div className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div className="bg-muted/50 p-4 rounded-lg border border-border">
             <div className="flex items-center gap-3 mb-3">
               <div className="bg-primary/10 p-2 rounded-md">
                 <Building2 className="h-5 w-5 text-primary" />
               </div>
-              <h3 className="font-medium text-lg text-gray-800">{businessData.name}</h3>
+              <h3 className="font-medium text-lg text-card-foreground">{businessData.name}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mt-4">
               {businessData.address && (
                 <div className="flex items-center gap-3">
-                  <div className="bg-gray-100 p-2 rounded-md">
-                    <Building2 className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-2 rounded-md">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs mb-1">Address</p>
-                    <p className="font-medium text-gray-700">{businessData.address}</p>
+                    <p className="text-muted-foreground text-xs mb-1">Address</p>
+                    <p className="font-medium text-card-foreground">{businessData.address}</p>
                   </div>
                 </div>
               )}
               
               {businessData.contact_person && (
                 <div className="flex items-center gap-3">
-                  <div className="bg-gray-100 p-2 rounded-md">
-                    <User className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-2 rounded-md">
+                    <User className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs mb-1">Main Contact</p>
-                    <p className="font-medium text-gray-700">{businessData.contact_person}</p>
+                    <p className="text-muted-foreground text-xs mb-1">Main Contact</p>
+                    <p className="font-medium text-card-foreground">{businessData.contact_person}</p>
                   </div>
                 </div>
               )}
               
               {businessData.phone_number && (
                 <div className="flex items-center gap-3">
-                  <div className="bg-gray-100 p-2 rounded-md">
-                    <Phone className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-2 rounded-md">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs mb-1">Phone</p>
-                    <p className="font-medium text-gray-700">{businessData.phone_number}</p>
+                    <p className="text-muted-foreground text-xs mb-1">Phone</p>
+                    <p className="font-medium text-card-foreground">{businessData.phone_number}</p>
                   </div>
                 </div>
               )}
               
               {businessData.contact_email && (
                 <div className="flex items-center gap-3">
-                  <div className="bg-gray-100 p-2 rounded-md">
-                    <Mail className="h-4 w-4 text-gray-500" />
+                  <div className="bg-muted p-2 rounded-md">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs mb-1">Email</p>
-                    <p className="font-medium text-gray-700">{businessData.contact_email}</p>
+                    <p className="text-muted-foreground text-xs mb-1">Email</p>
+                    <p className="font-medium text-card-foreground">{businessData.contact_email}</p>
                   </div>
                 </div>
               )}
@@ -209,7 +210,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
               <InfoIcon className="h-5 w-5 text-primary mr-2 mt-0.5" />
               <div>
                 <p className="font-medium text-primary mb-1">Admin Access Required</p>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   To modify business information, please contact your administrator. 
                   Only users with admin privileges can change business-level settings.
                 </p>

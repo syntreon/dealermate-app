@@ -24,9 +24,9 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="bg-white shadow-sm">
+          <Card key={i} className="bg-card shadow-sm">
             <CardContent className="pt-6">
-              <div className="h-20 animate-pulse bg-gray-200 rounded-md"></div>
+              <div className="h-20 animate-pulse bg-muted rounded-md"></div>
             </CardContent>
           </Card>
         ))}
@@ -39,9 +39,9 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="bg-white shadow-sm">
+          <Card key={i} className="bg-card shadow-sm">
             <CardContent className="pt-6 flex flex-col items-center justify-center h-32">
-              <p className="text-gray-500">No data available</p>
+              <p className="text-muted-foreground">No data available</p>
             </CardContent>
           </Card>
         ))}
@@ -83,23 +83,23 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card, index) => (
-        <Card key={index} className="bg-white shadow-sm hover:border-primary/20 transition-all duration-300">
+        <Card key={index} className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[#6B7280] text-sm">{card.title}</span>
+              <span className="text-muted-foreground text-sm">{card.title}</span>
               <div className="bg-primary/10 p-2 rounded-lg">
                 {card.icon}
               </div>
             </div>
-            <h3 className="text-3xl font-bold mb-2">
-              {card.format(card.value)}
+            <h3 className="text-3xl font-bold mb-2 text-card-foreground">
+              {card.format(card.value as any)}
             </h3>
             {card.growth !== undefined && (
               <div className="flex items-center">
-                <span className={`text-xs ${card.growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <span className={`text-xs ${card.growth >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
                   {card.growth >= 0 ? '↑' : '↓'} {Math.abs(card.growth)}% 
                 </span>
-                <span className="text-xs text-[#6B7280] ml-1">vs last month</span>
+                <span className="text-xs text-muted-foreground ml-1">vs last month</span>
               </div>
             )}
           </CardContent>
