@@ -6,14 +6,21 @@
  * that handle multi-client data must use these utilities.
  */
 
-import { User } from '@/types/user';
+import { UserRole } from '@/types/user';
+
+// A flexible user type that covers the essential properties from both User and UserData
+export interface AuthUser {
+  role?: UserRole | null;
+  is_admin?: boolean | null;
+  client_id?: string | null;
+}
 
 /**
  * Determines if a user should see only their client's data
  * @param user The authenticated user
  * @returns Boolean indicating if data should be filtered by client
  */
-export function shouldFilterByClient(user: User | null): boolean {
+export function shouldFilterByClient(user: AuthUser | null): boolean {
     if (!user) return true; // No user = no access
 
     // Admin users can see all data
@@ -30,11 +37,11 @@ export function shouldFilterByClient(user: User | null): boolean {
  * @param user The authenticated user
  * @returns The client ID to filter by, or null for admins
  */
-export function getClientIdFilter(user: User | null): string | null {
+export function getClientIdFilter(user: AuthUser | null): string | null {
     if (!user) return null;
 
     if (shouldFilterByClient(user)) {
-        return user.client_id;
+        return user.client_id || null;
     }
 
     return null; // Admin users don't need filtering
@@ -46,14 +53,14 @@ export function getClientIdFilter(user: User | null): string | null {
  * @param clientId The client ID of the data being accessed
  * @returns Boolean indicating if access is allowed
  */
-export function canAccessClientData(user: User | null, clientId: string | null): boolean {
+export function canAccessClientData(user: AuthUser | null, clientId: string | null): boolean {
     if (!user) return false;
 
     // Admin users can access all client data
     if (!shouldFilterByClient(user)) return true;
 
     // Non-admin users can only access their own client's data
-    return user.client_id === clientId;
+    return !!user.client_id && user.client_id === clientId;
 }
 
 /**
@@ -61,10 +68,10 @@ export function canAccessClientData(user: User | null, clientId: string | null):
  * @param user The authenticated user
  * @returns Boolean indicating if sensitive info should be visible
  */
-export function canViewSensitiveInfo(user: User | null): boolean {
+export function canViewSensitiveInfo(user: AuthUser | null): boolean {
     if (!user) return false;
 
-    return user.is_admin || user.role === 'admin' || user.role === 'owner';
+    return !!user.is_admin || user.role === 'admin' || user.role === 'owner';
 }
 
 /**
@@ -75,7 +82,7 @@ export function canViewSensitiveInfo(user: User | null): boolean {
  */
 export function filterItemsByClientAccess<T extends { client_id?: string | null }>(
     items: T[],
-    user: User | null
+    user: AuthUser | null
 ): T[] {
     if (!user) return [];
 
