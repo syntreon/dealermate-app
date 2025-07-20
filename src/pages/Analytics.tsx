@@ -6,17 +6,25 @@ import LeadAnalytics from '@/components/analytics/LeadAnalytics';
 import CallAnalytics from '@/components/analytics/CallAnalytics';
 import QualityAnalytics from '@/components/analytics/QualityAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
+import ClientSelector from '@/components/ClientSelector';
 import { useDateRange } from '@/hooks/useDateRange';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/context/AuthContext';
+import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Analytics = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('calls');
   const { dateRange, setDateRange, startDate, endDate } = useDateRange();
   const [dateFilters, setDateFilters] = useState<{ start?: string; end?: string }>({});
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Check if user can view all clients (admin)
+  const canViewAllClients = canViewSensitiveInfo(user);
   
   // Tab options
   const tabOptions = [
@@ -24,6 +32,11 @@ const Analytics = () => {
     { id: 'quality', label: 'Quality Analytics', shortLabel: 'Quality' },
     { id: 'costs', label: 'Cost Analytics', shortLabel: 'Cost' },
   ];
+  
+  // Handle client selection change
+  const handleClientChange = useCallback((clientId: string | null) => {
+    setSelectedClientId(clientId);
+  }, []);
   
   // Handle tab scrolling on mobile
   const scrollToTab = (direction: 'left' | 'right') => {
@@ -42,13 +55,26 @@ const Analytics = () => {
           </div>
           <p className="text-muted-foreground">Detailed analytics and insights for your call system.</p>
         </div>
-        {/* Date filter is hidden on smallest screens and shown as a dropdown on larger screens */}
-        <DateRangeFilter
-          className={cn("mt-4 sm:mt-0", isMobile ? "hidden sm:block" : "")}
-          onRangeChange={useCallback((start, end) => {
-            setDateFilters({ start: start || undefined, end: end || undefined });
-          }, [])}
-        />
+        
+        {/* Filters section */}
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+          {/* Client selector for admin users */}
+          {canViewAllClients && (
+            <ClientSelector
+              selectedClientId={selectedClientId}
+              onClientChange={handleClientChange}
+              className="w-full sm:w-auto"
+            />
+          )}
+          
+          {/* Date filter is hidden on smallest screens and shown as a dropdown on larger screens */}
+          <DateRangeFilter
+            className={cn("mt-2 sm:mt-0", isMobile ? "hidden sm:block" : "")}
+            onRangeChange={useCallback((start, end) => {
+              setDateFilters({ start: start || undefined, end: end || undefined });
+            }, [])}
+          />
+        </div>
       </div>
       
       {/* Mobile-only date filter button that opens a bottom sheet */}
@@ -117,7 +143,11 @@ const Analytics = () => {
         )}
 
         <TabsContent value="calls">
-          <CallAnalytics startDate={dateFilters.start} endDate={dateFilters.end} />
+          <CallAnalytics 
+            startDate={dateFilters.start} 
+            endDate={dateFilters.end}
+            clientId={selectedClientId}
+          />
         </TabsContent>
 
         {/* Lead Analytics hidden for future updates */}
@@ -126,7 +156,11 @@ const Analytics = () => {
         </TabsContent> */}
 
         <TabsContent value="quality">
-          <QualityAnalytics startDate={dateFilters.start} endDate={dateFilters.end} />
+          <QualityAnalytics 
+            startDate={dateFilters.start} 
+            endDate={dateFilters.end}
+            clientId={selectedClientId}
+          />
         </TabsContent>
 
         <TabsContent value="costs">

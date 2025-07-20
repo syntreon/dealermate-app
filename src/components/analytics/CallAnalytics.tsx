@@ -26,6 +26,7 @@ import CallVolumeHeatmap from './CallVolumeHeatmap';
 interface CallAnalyticsProps {
   startDate?: string;
   endDate?: string;
+  clientId?: string | null;
 }
 
 interface CallAnalyticsData {
@@ -45,7 +46,7 @@ interface CallAnalyticsData {
   };
 }
 
-const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => {
+const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clientId }) => {
   const { user } = useAuth();
   const [data, setData] = useState<CallAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,9 +84,11 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
       setError(null);
 
       try {
-        // Determine effective client ID based on user role
+        // Determine effective client ID based on user role and clientId prop
         const isAdminUser = user.client_id === null && (user.role === 'admin' || user.role === 'owner');
-        const effectiveClientId = isAdminUser ? undefined : user.client_id || undefined;
+        // For admin users, use the clientId prop if provided, otherwise show all data (undefined)
+        // For regular users, always use their own client_id
+        const effectiveClientId = isAdminUser ? clientId || undefined : user.client_id || undefined;
 
         // Fetch call inquiries data from the database
         const callInquiriesRaw = await CallIntelligenceService.getCallInquiries(
@@ -153,7 +156,7 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
     };
 
     fetchAnalytics();
-  }, [user, startDate, endDate]);
+  }, [user, startDate, endDate, clientId]);
 
   if (loading) {
     return (
@@ -318,33 +321,42 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.callVolume}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  />
-                  <YAxis 
-                    allowDecimals={false} 
-                    tick={{ fontSize: 12 }} 
-                  />
-                  <Tooltip 
-                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                    formatter={(value) => [`${value} calls`, 'Call Volume']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={2}
-                    dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                    name="call-volume"
-                    id="call-volume-line"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {data.callVolume && data.callVolume.length > 1 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.callVolume}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    />
+                    <YAxis 
+                      allowDecimals={false} 
+                      tick={{ fontSize: 12 }} 
+                    />
+                    <Tooltip 
+                      labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                      formatter={(value) => [`${value} calls`, 'Call Volume']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="count" 
+                      stroke="#8b5cf6" 
+                      strokeWidth={2}
+                      dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
+                      name="call-volume"
+                      id="call-volume-line"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-2">Not enough data to display trend</p>
+                    <p className="text-sm text-muted-foreground">At least 2 data points are needed for a meaningful chart</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -400,22 +412,28 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.hourlyDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="hour" 
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `${value}:00`}
-                  />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                  <Tooltip 
-                    labelFormatter={(value) => `${value}:00`}
-                    formatter={(value) => [`${value} calls`, 'Call Count']}
-                  />
-                  <Bar dataKey="count" fill="#a78bfa" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {data.hourlyDistribution && data.hourlyDistribution.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.hourlyDistribution}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="hour" 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `${value}:00`}
+                    />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip 
+                      labelFormatter={(value) => `${value}:00`}
+                      formatter={(value) => [`${value} calls`, 'Call Count']}
+                    />
+                    <Bar dataKey="count" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No hourly distribution data available</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -427,33 +445,42 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.callDuration}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => formatDuration(value)}
-                  />
-                  <Tooltip 
-                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                    formatter={(value) => [formatDuration(value as number), 'Avg Duration']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="avgDuration" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                    name="avg-duration"
-                    id="avg-duration-line"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {data.callDuration && data.callDuration.length > 1 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.callDuration}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => formatDuration(value)}
+                    />
+                    <Tooltip 
+                      labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                      formatter={(value) => [formatDuration(value as number), 'Avg Duration']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="avgDuration" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                      name="avg-duration"
+                      id="avg-duration-line"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-2">Not enough data to display trend</p>
+                    <p className="text-sm text-muted-foreground">At least 2 data points are needed for a meaningful chart</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

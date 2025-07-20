@@ -247,12 +247,12 @@ function generateDailyQualityTrends(evaluations: any[]): Array<{ date: string; s
  */
 function generateScoreDistribution(evaluations: any[]): Array<{ scoreRange: string; count: number }> {
   const ranges = [
-    { range: '9-10', min: 9, max: 10 },
-    { range: '8-9', min: 8, max: 9 },
-    { range: '7-8', min: 7, max: 8 },
-    { range: '6-7', min: 6, max: 7 },
-    { range: '5-6', min: 5, max: 6 },
-    { range: '<5', min: 0, max: 5 }
+    { range: '4.5-5.0', min: 4.5, max: 5.0 },
+    { range: '4.0-4.5', min: 4.0, max: 4.5 },
+    { range: '3.5-4.0', min: 3.5, max: 4.0 },
+    { range: '3.0-3.5', min: 3.0, max: 3.5 },
+    { range: '2.5-3.0', min: 2.5, max: 3.0 },
+    { range: '<2.5', min: 0, max: 2.5 }
   ];
 
   // Filter out duplicates by id and ensure valid scores
@@ -267,7 +267,7 @@ function generateScoreDistribution(evaluations: any[]): Array<{ scoreRange: stri
     const count = uniqueEvaluations.filter(e => {
       const score = parseFloat(e.overall_evaluation_score);
       if (isNaN(score)) return false;
-      if (range === '<5') return score < 5;
+      if (range === '<2.5') return score < 2.5;
       return score >= min && score < max;
     }).length;
 

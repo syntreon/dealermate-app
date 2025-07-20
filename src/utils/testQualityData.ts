@@ -100,7 +100,7 @@ export const insertSampleQualityData = async (clientId: string) => {
       failure_risk_score: 2,
       negative_call_flag: false,
       human_review_required: false,
-      overall_evaluation_score: 8.2,
+      overall_evaluation_score: 4.2,
       evaluated_at: new Date().toISOString()
     },
     {
@@ -117,7 +117,7 @@ export const insertSampleQualityData = async (clientId: string) => {
       negative_call_flag: false,
       human_review_required: true,
       review_reason: 'Low clarity score',
-      overall_evaluation_score: 6.2,
+      overall_evaluation_score: 3.1,
       evaluated_at: new Date().toISOString()
     },
     {
@@ -134,7 +134,7 @@ export const insertSampleQualityData = async (clientId: string) => {
       negative_call_flag: true,
       human_review_required: true,
       review_reason: 'Negative sentiment',
-      overall_evaluation_score: 4.2,
+      overall_evaluation_score: 2.1,
       evaluated_at: new Date().toISOString()
     }
   ];

@@ -36,11 +36,12 @@ import { QualityAnalyticsService, QualityAnalyticsData } from '@/services/qualit
 interface QualityAnalyticsProps {
   startDate?: string;
   endDate?: string;
+  clientId?: string | null;
 }
 
 // QualityAnalyticsData interface is now imported from the service
 
-const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate }) => {
+const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate, clientId }) => {
   const { user } = useAuth();
   const [data, setData] = useState<QualityAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,9 +55,11 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
       setError(null);
 
       try {
-        // Determine effective client ID based on user role (same logic as CallAnalytics)
+        // Determine effective client ID based on user role and clientId prop (same logic as CallAnalytics)
         const isAdminUser = user.client_id === null && (user.role === 'admin' || user.role === 'owner');
-        const effectiveClientId = isAdminUser ? undefined : user.client_id || undefined;
+        // For admin users, use the clientId prop if provided, otherwise show all data (undefined)
+        // For regular users, always use their own client_id
+        const effectiveClientId = isAdminUser ? clientId || undefined : user.client_id || undefined;
 
         // Fetch quality analytics data from the service
         const qualityData = await QualityAnalyticsService.getQualityAnalyticsData({
@@ -76,7 +79,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
     };
 
     fetchQualityAnalytics();
-  }, [user, startDate, endDate]);
+  }, [user, startDate, endDate, clientId]);
 
   if (loading) {
     return (
