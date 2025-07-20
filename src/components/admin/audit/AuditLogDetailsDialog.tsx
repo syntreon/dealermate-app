@@ -59,7 +59,7 @@ export const AuditLogDetailsDialog: React.FC<AuditLogDetailsDialogProps> = ({
                 {oldValue !== undefined && (
                   <div className="flex-1">
                     <div className="text-xs text-muted-foreground mb-1">Before:</div>
-                    <div className="bg-red-50 border border-red-200 rounded p-2 text-red-800">
+                    <div className="bg-destructive/10 border border-destructive/20 rounded p-2 text-destructive">
                       {typeof oldValue === 'object' ? JSON.stringify(oldValue, null, 2) : String(oldValue)}
                     </div>
                   </div>
@@ -72,7 +72,7 @@ export const AuditLogDetailsDialog: React.FC<AuditLogDetailsDialogProps> = ({
                 {newValue !== undefined && (
                   <div className="flex-1">
                     <div className="text-xs text-muted-foreground mb-1">After:</div>
-                    <div className="bg-green-50 border border-green-200 rounded p-2 text-green-800">
+                    <div className="bg-primary/10 border border-primary/20 rounded p-2 text-primary">
                       {typeof newValue === 'object' ? JSON.stringify(newValue, null, 2) : String(newValue)}
                     </div>
                   </div>

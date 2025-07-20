@@ -37,7 +37,15 @@ import { AuditService } from '@/services/auditService';
 import { AuditLog, AuditFilters, AuditAction } from '@/types/admin';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
-import { Pagination } from '@/components/ui/pagination';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
+} from '@/components/ui/pagination';
 import { AuditLogDetailsDialog } from '@/components/admin/audit/AuditLogDetailsDialog';
 
 const AdminAudit = () => {
@@ -139,17 +147,17 @@ const AdminAudit = () => {
   const getActionIcon = (action: AuditAction) => {
     switch (action) {
       case 'create':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-success" />;
       case 'update':
-        return <Info className="h-4 w-4 text-blue-500" />;
+        return <Info className="h-4 w-4 text-primary" />;
       case 'delete':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
       case 'login':
-        return <User className="h-4 w-4 text-green-500" />;
+        return <User className="h-4 w-4 text-success" />;
       case 'logout':
-        return <User className="h-4 w-4 text-gray-500" />;
+        return <User className="h-4 w-4 text-muted-foreground" />;
       default:
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-warning" />;
     }
   };
 
@@ -287,16 +295,16 @@ const AdminAudit = () => {
             <div className="space-y-4">
               {[...Array(10)].map((_, i) => (
                 <div key={i} className="animate-pulse flex items-center space-x-4">
-                  <div className="h-4 w-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded flex-1"></div>
-                  <div className="h-4 bg-gray-200 rounded w-20"></div>
-                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 w-4 bg-muted rounded"></div>
+                  <div className="h-4 bg-muted rounded flex-1"></div>
+                  <div className="h-4 bg-muted rounded w-20"></div>
+                  <div className="h-4 bg-muted rounded w-24"></div>
                 </div>
               ))}
             </div>
           ) : auditLogs.length === 0 ? (
             <div className="text-center py-12">
-              <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Audit Logs Found</h3>
               <p className="text-muted-foreground">No audit logs match your current filters.</p>
             </div>
@@ -377,11 +385,82 @@ const AdminAudit = () => {
               {/* Pagination */}
               {totalCount > 20 && (
                 <div className="mt-6 flex justify-center">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={Math.ceil(totalCount / 20)}
-                    onPageChange={(page) => loadAuditLogs(page)}
-                  />
+                  <Pagination>
+                    <PaginationContent>
+                      {/* Previous page button */}
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => currentPage > 1 && loadAuditLogs(currentPage - 1)}
+                          className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                        />
+                      </PaginationItem>
+                      
+                      {/* First page and ellipsis if needed */}
+                      {currentPage > 3 && Math.ceil(totalCount / 20) > 5 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => loadAuditLogs(1)}>1</PaginationLink>
+                          </PaginationItem>
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        </>
+                      )}
+                      
+                      {/* Page numbers */}
+                      {(() => {
+                        const totalPages = Math.ceil(totalCount / 20);
+                        let pageNumbers = [];
+                        
+                        if (totalPages <= 5) {
+                          // If 5 or fewer pages, show all
+                          pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+                        } else if (currentPage <= 3) {
+                          // Near start: show first 5 pages
+                          pageNumbers = [1, 2, 3, 4, 5];
+                        } else if (currentPage >= totalPages - 2) {
+                          // Near end: show last 5 pages
+                          pageNumbers = Array.from({ length: 5 }, (_, i) => totalPages - 4 + i);
+                        } else {
+                          // Middle: show current page and 2 pages on each side
+                          pageNumbers = [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+                        }
+                        
+                        return pageNumbers.map(pageNum => (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink 
+                              isActive={pageNum === currentPage}
+                              onClick={() => loadAuditLogs(pageNum)}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ));
+                      })()}
+                      
+                      {/* Last page and ellipsis if needed */}
+                      {currentPage < Math.ceil(totalCount / 20) - 2 && Math.ceil(totalCount / 20) > 5 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => loadAuditLogs(Math.ceil(totalCount / 20))}>
+                              {Math.ceil(totalCount / 20)}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
+                      
+                      {/* Next page button */}
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => currentPage < Math.ceil(totalCount / 20) && loadAuditLogs(currentPage + 1)}
+                          className={currentPage >= Math.ceil(totalCount / 20) ? 'pointer-events-none opacity-50' : ''}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                 </div>
               )}
             </>

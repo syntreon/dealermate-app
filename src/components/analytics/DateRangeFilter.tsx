@@ -32,12 +32,18 @@ export function DateRangeFilter({
     isDateRangeSelected
   } = useDateRange();
 
-  // Call the onRangeChange callback when the date range changes
+  // Using a ref to prevent infinite loops from callback changes
+  const onRangeChangeRef = React.useRef(onRangeChange);
+  
   React.useEffect(() => {
-    if (onRangeChange) {
-      onRangeChange(startDate, endDate);
+    onRangeChangeRef.current = onRangeChange;
+  }, [onRangeChange]);
+  
+  React.useEffect(() => {
+    if (onRangeChangeRef.current) {
+      onRangeChangeRef.current(startDate, endDate);
     }
-  }, [startDate, endDate, onRangeChange]);
+  }, [startDate, endDate]);
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>

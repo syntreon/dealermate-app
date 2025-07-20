@@ -8,7 +8,8 @@ import {
   LogOut, 
   Shield,
   Activity,
-  ChevronLeft
+  ChevronLeft,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -30,6 +31,8 @@ const adminNavItems = [
   { icon: LayoutDashboard, label: 'Admin Dashboard', path: '/admin/dashboard' },
   { icon: Building2, label: 'Client Management', path: '/admin/clients' },
   { icon: Users, label: 'User Management', path: '/admin/users' },
+  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
+  { icon: Shield, label: 'Audit Logs', path: '/admin/audit' },
   { icon: Activity, label: 'System Status', path: '/admin/system-status' },
   { icon: Settings, label: 'Admin Settings', path: '/admin/settings' },
 ];

@@ -25,6 +25,8 @@ import ClientDetails from "./pages/admin/ClientDetails";
 import UserManagement from "./pages/admin/UserManagement";
 import AdminSettings from "./pages/admin/AdminSettings";
 import SystemHealthMonitoring from "./pages/admin/SystemHealthMonitoring";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminAudit from "./pages/admin/AdminAudit";
 import AuthTest from "./test/AuthTest";
 
 const queryClient = new QueryClient();
@@ -57,6 +59,8 @@ const App = () => (
                   <Route path="clients" element={<ClientManagement />} />
                   <Route path="clients/:id" element={<ClientDetails />} />
                   <Route path="users" element={<UserManagement />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route path="audit" element={<AdminAudit />} />
                   <Route path="system-status" element={<AdminSystemStatus />} />
                   <Route path="system-health" element={<SystemHealthMonitoring />} />
                   <Route path="settings" element={<AdminSettings />} />

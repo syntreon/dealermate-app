@@ -28,7 +28,14 @@ export function DateRangePicker({
   placeholder = "Select date range",
   showPresets = true,
 }: DateRangePickerProps) {
+  // Control the open state of the popover
   const [isOpen, setIsOpen] = React.useState(false);
+  
+  // Use a callback ref for onChange to prevent infinite loops
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   // Predefined date ranges - using useMemo to recalculate fresh dates
   const presets = React.useMemo(() => [
@@ -102,7 +109,7 @@ export function DateRangePicker({
     try {
       const preset = presets.find((p) => p.id === presetId);
       if (preset) {
-        onChange(preset.dateRange);
+        onChangeRef.current(preset.dateRange);
         setIsOpen(false); // Close the popover after selection
       }
     } catch (error) {
@@ -113,25 +120,25 @@ export function DateRangePicker({
   // Handle calendar date selection
   const handleDateSelect = (range: DateRange | undefined) => {
     if (!range) {
-      onChange(undefined);
+      onChangeRef.current(undefined);
       return;
     }
 
     // If user selects the same date for both from and to, keep it as a single date
     if (range.from && range.to && format(range.from, "yyyy-MM-dd") === format(range.to, "yyyy-MM-dd")) {
-      onChange({
+      onChangeRef.current({
         from: range.from,
         to: range.from, // Same date for both
       });
     } else {
-      onChange(range);
+      onChangeRef.current(range);
     }
   };
 
   // Handle "Today" quick selection
   const handleTodaySelect = () => {
     const today = new Date();
-    onChange({
+    onChangeRef.current({
       from: today,
       to: today,
     });
@@ -216,7 +223,7 @@ export function DateRangePicker({
                     variant="outline"
                     className="w-full"
                     onClick={() => {
-                      onChange(undefined);
+                      onChangeRef.current(undefined);
                       setIsOpen(false);
                     }}
                   >
