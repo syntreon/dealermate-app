@@ -71,8 +71,8 @@ const AdminLayout = () => {
           <div className="flex flex-1">
             <AdminSidebar />
             
-            <main className="flex-1 overflow-auto p-6">
-              <div className="container mx-auto max-w-7xl">
+            <main className="flex-1 overflow-auto p-2 pb-24 md:p-4">
+              <div className="w-full">
                 <Outlet />
               </div>
             </main>

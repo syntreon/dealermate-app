@@ -75,13 +75,10 @@ const AppLayout = () => {
           <div className="flex flex-1">
             <AppSidebar />
 
-            <SidebarInset className={cn(
-              "flex-1 overflow-auto",
-              isMobile ? "p-4 pb-24" : "p-6" // Add bottom padding on mobile to prevent content being hidden behind navbar
-            )}>
+            <SidebarInset className="flex-1 overflow-auto p-2 pb-24 md:p-3">
 
 
-              <div className="container mx-auto max-w-7xl animate-in px-0">
+              <div className="w-full animate-in">
                 <Outlet />
               </div>
             </SidebarInset>

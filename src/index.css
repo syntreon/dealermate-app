@@ -7,6 +7,13 @@
 
 @layer base {
   :root {
+    /* Responsive spacing variables */
+    --container-padding-mobile: 0.75rem; /* 12px */
+    --container-padding-tablet: 1.25rem; /* 20px */
+    --container-padding-desktop: 1.5rem; /* 24px */
+    --content-spacing-mobile: 0.75rem; /* 12px */
+    --content-spacing-tablet: 1rem; /* 16px */
+    --content-spacing-desktop: 1.5rem; /* 24px */
     /* Updated color scheme aligned with branding and improved contrast ratios */
     --background: 210 20% 98%; /* Light background Hex: #F5F8FA */
     --foreground: 215 25% 27%; /* Dark blue-gray text Hex: #364152 */
