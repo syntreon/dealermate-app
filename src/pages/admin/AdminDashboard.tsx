@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -32,8 +32,12 @@ import {
   AlertCircle,
   Cpu,
   HardDrive,
-  Wifi
+  Wifi,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import { AdminService } from '@/services/adminService';
 import { AgentStatusService } from '@/services/agentStatusService';
 import { SystemMessageService } from '@/services/systemMessageService';
@@ -117,6 +121,25 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Tab options
+  const tabOptions = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'clients', label: 'Clients' },
+    { id: 'users', label: 'Users' },
+    { id: 'financial', label: 'Financial' },
+    { id: 'system', label: 'System' }
+  ];
+  
+  // Handle tab scrolling on mobile
+  const scrollToTab = (direction: 'left' | 'right') => {
+    if (!tabsRef.current) return;
+    
+    const scrollAmount = direction === 'left' ? -120 : 120;
+    tabsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -361,7 +384,7 @@ const AdminDashboard = () => {
         </div>
         <Button onClick={handleRefresh} disabled={isLoading} className="flex items-center gap-2">
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
+          {!isMobile && "Refresh"}
         </Button>
       </div>
 
@@ -487,13 +510,54 @@ const AdminDashboard = () => {
 
       {/* Dashboard Tabs */}
       <Tabs defaultValue="financial" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="financial">Financial</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
-        </TabsList>
+        {/* Mobile-optimized tabs with horizontal scrolling */}
+        {isMobile ? (
+          <div className="relative mb-6">
+            {/* Left scroll button */}
+            <button 
+              onClick={() => scrollToTab('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {/* Scrollable tabs container */}
+            <div 
+              ref={tabsRef}
+              className="overflow-x-auto scrollbar-hide py-2 px-8"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <TabsList className="inline-flex w-auto space-x-2 rounded-full bg-muted/50 p-1">
+                {tabOptions.map(tab => (
+                  <TabsTrigger 
+                    key={tab.id}
+                    value={tab.id}
+                    className="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            
+            {/* Right scroll button */}
+            <button 
+              onClick={() => scrollToTab('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          /* Desktop tabs */
+          <TabsList className="grid w-full grid-cols-5">
+            {tabOptions.map(tab => (
+              <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
 
         <TabsContent value="financial" className="space-y-4">
           {/* Cost Breakdown */}

@@ -29,7 +29,8 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
           </div>
           <div>
             <CardTitle className="text-card-foreground">{user.full_name || user.name || 'User'}</CardTitle>
-            <CardDescription className="flex items-center gap-1 mt-1">
+            {/* Fix DOM nesting issue - CardDescription renders as <p> which can't contain <div> from Badge */}
+            <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
               {user.is_admin && (
                 <>
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 py-0">
@@ -39,7 +40,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
                 </>
               )}
               <span className="text-muted-foreground text-xs">{user.email || 'No email available'}</span>
-            </CardDescription>
+            </div>
           </div>
         </div>
       </CardHeader>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,12 @@ import {
   Save,
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
@@ -154,6 +158,26 @@ const AdminSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Tab options
+  const tabOptions = [
+    { id: 'general', label: 'General' },
+    { id: 'notifications', label: 'Notifications' },
+    { id: 'security', label: 'Security' },
+    { id: 'calls', label: 'Calls' },
+    { id: 'billing', label: 'Billing' },
+    { id: 'integrations', label: 'Integrations' }
+  ];
+  
+  // Handle tab scrolling on mobile
+  const scrollToTab = (direction: 'left' | 'right') => {
+    if (!tabsRef.current) return;
+    
+    const scrollAmount = direction === 'left' ? -120 : 120;
+    tabsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
 
   const handleSettingChange = (key: string, value: any) => {
     setSettings(prev => ({
@@ -279,14 +303,54 @@ const AdminSettings = () => {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="calls">Calls</TabsTrigger>
-          <TabsTrigger value="billing">Billing</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-        </TabsList>
+        {/* Mobile-optimized tabs with horizontal scrolling */}
+        {isMobile ? (
+          <div className="relative mb-6">
+            {/* Left scroll button */}
+            <button 
+              onClick={() => scrollToTab('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {/* Scrollable tabs container */}
+            <div 
+              ref={tabsRef}
+              className="overflow-x-auto scrollbar-hide py-2 px-8"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <TabsList className="inline-flex w-auto space-x-2 rounded-full bg-muted/50 p-1">
+                {tabOptions.map(tab => (
+                  <TabsTrigger 
+                    key={tab.id}
+                    value={tab.id}
+                    className="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            
+            {/* Right scroll button */}
+            <button 
+              onClick={() => scrollToTab('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          /* Desktop tabs */
+          <TabsList className="grid w-full grid-cols-6">
+            {tabOptions.map(tab => (
+              <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
 
         {/* General Settings */}
         <TabsContent value="general" className="space-y-4">

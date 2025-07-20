@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -56,6 +59,25 @@ const AdminAnalytics = () => {
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
   const [selectedMetric, setSelectedMetric] = useState<'calls' | 'leads' | 'revenue'>('calls');
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Tab options
+  const tabOptions = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'clients', label: 'Clients' },
+    { id: 'revenue', label: 'Revenue' },
+    { id: 'performance', label: 'Performance' },
+    { id: 'users', label: 'Users' },
+  ];
+  
+  // Handle tab scrolling on mobile
+  const scrollToTab = (direction: 'left' | 'right') => {
+    if (!tabsRef.current) return;
+    
+    const scrollAmount = direction === 'left' ? -120 : 120;
+    tabsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
 
   const loadAnalyticsData = async () => {
     try {
@@ -222,20 +244,37 @@ const AdminAnalytics = () => {
             Comprehensive analytics and insights across all clients
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center gap-2", isMobile ? "flex-wrap justify-end" : "")}>
           <DateRangeFilter
+            className={isMobile ? "hidden sm:block" : ""}
             onRangeChange={(start, end) => setDateRange({ start, end })}
           />
           <Button onClick={handleExportData} variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            Export
+            {!isMobile && "Export"}
           </Button>
           <Button onClick={loadAnalyticsData} disabled={isLoading} className="flex items-center gap-2">
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {!isMobile && "Refresh"}
           </Button>
         </div>
       </div>
+      
+      {/* Mobile-only date filter button */}
+      {isMobile && (
+        <div className="mb-4">
+          <button 
+            className="w-full py-2 px-4 bg-muted/50 rounded-lg border border-border flex items-center justify-center gap-2 text-sm font-medium text-foreground"
+            onClick={() => {
+              // This would open a date picker sheet in a real implementation
+              alert("Date filter would open here");
+            }}
+          >
+            <Calendar className="h-4 w-4" />
+            <span>Filter by Date</span>
+          </button>
+        </div>
+      )}
 
       {/* Key Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -298,13 +337,54 @@ const AdminAnalytics = () => {
 
       {/* Analytics Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-        </TabsList>
+        {/* Mobile-optimized tabs with horizontal scrolling */}
+        {isMobile ? (
+          <div className="relative mb-6">
+            {/* Left scroll button */}
+            <button 
+              onClick={() => scrollToTab('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {/* Scrollable tabs container */}
+            <div 
+              ref={tabsRef}
+              className="overflow-x-auto scrollbar-hide py-2 px-8"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <TabsList className="inline-flex w-auto space-x-2 rounded-full bg-muted/50 p-1">
+                {tabOptions.map(tab => (
+                  <TabsTrigger 
+                    key={tab.id}
+                    value={tab.id}
+                    className="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            
+            {/* Right scroll button */}
+            <button 
+              onClick={() => scrollToTab('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          /* Desktop tabs */
+          <TabsList className="grid w-full grid-cols-5">
+            {tabOptions.map(tab => (
+              <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">

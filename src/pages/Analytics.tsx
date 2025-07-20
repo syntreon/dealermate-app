@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
@@ -7,11 +7,31 @@ import CallAnalytics from '@/components/analytics/CallAnalytics';
 import QualityAnalytics from '@/components/analytics/QualityAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { useDateRange } from '@/hooks/useDateRange';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('calls');
   const { dateRange, setDateRange, startDate, endDate } = useDateRange();
   const [dateFilters, setDateFilters] = useState<{ start?: string; end?: string }>({});
+  const isMobile = useIsMobile();
+  const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Tab options
+  const tabOptions = [
+    { id: 'calls', label: 'Call Analytics', shortLabel: 'Calls' },
+    { id: 'quality', label: 'Quality Analytics', shortLabel: 'Quality' },
+    { id: 'costs', label: 'Cost Analytics', shortLabel: 'Cost' },
+  ];
+  
+  // Handle tab scrolling on mobile
+  const scrollToTab = (direction: 'left' | 'right') => {
+    if (!tabsRef.current) return;
+    
+    const scrollAmount = direction === 'left' ? -120 : 120;
+    tabsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-8 pb-8">
@@ -22,26 +42,79 @@ const Analytics = () => {
           </div>
           <p className="text-muted-foreground">Detailed analytics and insights for your call system.</p>
         </div>
+        {/* Date filter is hidden on smallest screens and shown as a dropdown on larger screens */}
         <DateRangeFilter
-          className="mt-4 sm:mt-0"
+          className={cn("mt-4 sm:mt-0", isMobile ? "hidden sm:block" : "")}
           onRangeChange={useCallback((start, end) => {
             setDateFilters({ start: start || undefined, end: end || undefined });
           }, [])}
         />
       </div>
+      
+      {/* Mobile-only date filter button that opens a bottom sheet */}
+      {isMobile && (
+        <div className="mb-4">
+          <button 
+            className="w-full py-2 px-4 bg-muted/50 rounded-lg border border-border flex items-center justify-center gap-2 text-sm font-medium text-foreground"
+            onClick={() => {
+              // This would open a date picker sheet in a real implementation
+              alert("Date filter would open here");
+            }}
+          >
+            <span>Filter by Date</span>
+          </button>
+        </div>
+      )}
 
       <Tabs defaultValue="calls" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 mb-8">
-          {/* Mobile view tabs */}
-          <TabsTrigger value="calls" className="sm:hidden px-1">Call</TabsTrigger>
-          <TabsTrigger value="quality" className="sm:hidden px-1">Quality</TabsTrigger>
-          <TabsTrigger value="costs" className="sm:hidden px-1">Cost</TabsTrigger>
-          
-          {/* Desktop view tabs */}
-          <TabsTrigger value="calls" className="hidden sm:flex">Call Analytics</TabsTrigger>
-          <TabsTrigger value="quality" className="hidden sm:flex">Quality Analytics</TabsTrigger>
-          <TabsTrigger value="costs" className="hidden sm:flex">Cost Analytics</TabsTrigger>
-        </TabsList>
+        {/* Mobile-optimized tabs with horizontal scrolling */}
+        {isMobile ? (
+          <div className="relative mb-6">
+            {/* Left scroll button */}
+            <button 
+              onClick={() => scrollToTab('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {/* Scrollable tabs container */}
+            <div 
+              ref={tabsRef}
+              className="overflow-x-auto scrollbar-hide py-2 px-8"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <TabsList className="inline-flex w-auto space-x-2 rounded-full bg-muted/50 p-1">
+                {tabOptions.map(tab => (
+                  <TabsTrigger 
+                    key={tab.id}
+                    value={tab.id}
+                    className="rounded-full px-4 py-2 text-sm font-medium"
+                  >
+                    {tab.shortLabel}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            
+            {/* Right scroll button */}
+            <button 
+              onClick={() => scrollToTab('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-card shadow-md border border-border"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          /* Desktop tabs */
+          <TabsList className="grid grid-cols-3 mb-8">
+            {tabOptions.map(tab => (
+              <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
 
         <TabsContent value="calls">
           <CallAnalytics startDate={dateFilters.start} endDate={dateFilters.end} />
@@ -61,11 +134,23 @@ const Analytics = () => {
             <CardContent className="pt-6 flex items-center justify-center min-h-[400px]">
               <div className="text-center">
                 <ComingSoonBadge />
-                <p className="mt-4 text-gray-600">Cost analytics will be available soon.</p>
+                <p className="mt-4 text-muted-foreground">Cost analytics will be available soon.</p>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
+        
+        {/* Mobile-only date range indicator */}
+        {isMobile && activeTab !== 'costs' && (
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Date Range:</span>
+              <span className="font-medium text-foreground">
+                {dateFilters.start ? new Date(dateFilters.start).toLocaleDateString() : 'All time'} - {dateFilters.end ? new Date(dateFilters.end).toLocaleDateString() : 'Present'}
+              </span>
+            </div>
+          </div>
+        )}
       </Tabs>
     </div>
   );
