@@ -49,9 +49,36 @@ export interface UpdateClientData extends Partial<CreateClientData> {
 export interface ClientFilters {
   status?: 'active' | 'inactive' | 'trial' | 'churned' | 'all';
   type?: string;
+  subscription_plan?: 'Free Trial' | 'Basic' | 'Pro' | 'Custom' | 'all';
   search?: string;
-  sortBy?: 'name' | 'joined_at' | 'last_active_at' | 'status';
+  searchFields?: ('name' | 'contact_person' | 'contact_email' | 'slug')[];
+  dateRange?: {
+    field: 'joined_at' | 'last_active_at';
+    start?: Date;
+    end?: Date;
+  };
+  billingRange?: {
+    min?: number;
+    max?: number;
+  };
+  customFields?: {
+    [key: string]: any;
+  };
+  sortBy?: 'name' | 'joined_at' | 'last_active_at' | 'status' | 'monthly_billing_amount_cad' | 'type';
   sortDirection?: 'asc' | 'desc';
+  multiSort?: Array<{
+    field: string;
+    direction: 'asc' | 'desc';
+  }>;
+}
+
+export interface SavedFilter {
+  id: string;
+  name: string;
+  filters: ClientFilters;
+  isDefault?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface User {

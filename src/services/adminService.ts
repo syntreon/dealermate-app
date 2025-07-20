@@ -13,7 +13,8 @@ import {
   BulkOperation,
   BulkOperationResult,
   SystemHealth,
-  SystemMetrics
+  SystemMetrics,
+  SavedFilter
 } from '@/types/admin';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -148,24 +149,77 @@ export const AdminService = {
 
       // Apply filters
       if (filters) {
+        // Status filter
         if (filters.status && filters.status !== 'all') {
           query = query.eq('status', filters.status);
         }
 
-        if (filters.type) {
+        // Type filter
+        if (filters.type && filters.type !== 'all') {
           query = query.eq('type', filters.type);
         }
 
-        if (filters.search) {
-          query = query.or(`name.ilike.%${filters.search}%,slug.ilike.%${filters.search}%,contact_person.ilike.%${filters.search}%,contact_email.ilike.%${filters.search}%`);
+        // Subscription plan filter
+        if (filters.subscription_plan && filters.subscription_plan !== 'all') {
+          query = query.eq('subscription_plan', filters.subscription_plan);
         }
 
-        // Apply sorting
-        if (filters.sortBy) {
+        // Advanced search with specific fields
+        if (filters.search) {
+          const searchFields = filters.searchFields || ['name', 'slug', 'contact_person', 'contact_email'];
+          const searchConditions = searchFields.map(field => `${field}.ilike.%${filters.search}%`);
+          query = query.or(searchConditions.join(','));
+        }
+
+        // Date range filters
+        if (filters.dateRange) {
+          const { field, start, end } = filters.dateRange;
+          if (start) {
+            query = query.gte(field, start.toISOString());
+          }
+          if (end) {
+            query = query.lte(field, end.toISOString());
+          }
+        }
+
+        // Billing range filter
+        if (filters.billingRange) {
+          if (filters.billingRange.min !== undefined) {
+            query = query.gte('monthly_billing_amount_cad', filters.billingRange.min);
+          }
+          if (filters.billingRange.max !== undefined) {
+            query = query.lte('monthly_billing_amount_cad', filters.billingRange.max);
+          }
+        }
+
+        // Custom field filters
+        if (filters.customFields) {
+          Object.entries(filters.customFields).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+              // Handle JSON field queries for config_json
+              if (key.startsWith('config.')) {
+                const configPath = key.replace('config.', '');
+                query = query.eq(`config_json->${configPath}`, value);
+              } else {
+                query = query.eq(key, value);
+              }
+            }
+          });
+        }
+
+        // Multi-column sorting
+        if (filters.multiSort && filters.multiSort.length > 0) {
+          filters.multiSort.forEach(sort => {
+            const ascending = sort.direction === 'asc';
+            query = query.order(sort.field, { ascending });
+          });
+        } else if (filters.sortBy) {
+          // Single column sorting (fallback)
           const ascending = filters.sortDirection !== 'desc';
           query = query.order(filters.sortBy, { ascending });
         } else {
-          query = query.order('created_at', { ascending: false });
+          // Default sorting
+          query = query.order('joined_at', { ascending: false });
         }
       }
 
@@ -771,6 +825,81 @@ export const AdminService = {
       }
       
       return results;
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
+  },
+
+  // Saved filter management
+  getSavedFilters: async (userId: string): Promise<SavedFilter[]> => {
+    try {
+      // For now, store in localStorage. In production, this would be in the database
+      const savedFilters = localStorage.getItem(`saved_filters_${userId}`);
+      if (savedFilters) {
+        const filters = JSON.parse(savedFilters);
+        return filters.map((filter: any) => ({
+          ...filter,
+          createdAt: new Date(filter.createdAt),
+          updatedAt: new Date(filter.updatedAt)
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to load saved filters:', error);
+      return [];
+    }
+  },
+
+  saveFilter: async (userId: string, name: string, filters: ClientFilters): Promise<SavedFilter> => {
+    try {
+      const savedFilter: SavedFilter = {
+        id: crypto.randomUUID(),
+        name,
+        filters,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const existingFilters = await AdminService.getSavedFilters(userId);
+      const updatedFilters = [...existingFilters, savedFilter];
+      
+      localStorage.setItem(`saved_filters_${userId}`, JSON.stringify(updatedFilters));
+      return savedFilter;
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
+  },
+
+  updateSavedFilter: async (userId: string, filterId: string, name: string, filters: ClientFilters): Promise<SavedFilter> => {
+    try {
+      const existingFilters = await AdminService.getSavedFilters(userId);
+      const filterIndex = existingFilters.findIndex(f => f.id === filterId);
+      
+      if (filterIndex === -1) {
+        throw new Error('Filter not found');
+      }
+
+      const updatedFilter: SavedFilter = {
+        ...existingFilters[filterIndex],
+        name,
+        filters,
+        updatedAt: new Date()
+      };
+
+      existingFilters[filterIndex] = updatedFilter;
+      localStorage.setItem(`saved_filters_${userId}`, JSON.stringify(existingFilters));
+      
+      return updatedFilter;
+    } catch (error) {
+      throw handleDatabaseError(error);
+    }
+  },
+
+  deleteSavedFilter: async (userId: string, filterId: string): Promise<void> => {
+    try {
+      const existingFilters = await AdminService.getSavedFilters(userId);
+      const updatedFilters = existingFilters.filter(f => f.id !== filterId);
+      localStorage.setItem(`saved_filters_${userId}`, JSON.stringify(updatedFilters));
     } catch (error) {
       throw handleDatabaseError(error);
     }

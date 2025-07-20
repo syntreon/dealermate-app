@@ -8,7 +8,8 @@ import ClientsTable from '@/components/admin/clients/ClientsTable';
 import ClientForm from '@/components/admin/clients/ClientForm';
 import ClientFilters from '@/components/admin/clients/ClientFilters';
 import { AdminService } from '@/services/adminService';
-import { Client, ClientFilters as ClientFiltersType, CreateClientData, UpdateClientData } from '@/types/admin';
+import { Client, ClientFilters as ClientFiltersType, CreateClientData, UpdateClientData, SavedFilter } from '@/types/admin';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientManagement = () => {
   const { toast } = useToast();
@@ -20,10 +21,30 @@ const ClientManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [filters, setFilters] = useState<ClientFiltersType>({
-    status: 'all',
     sortBy: 'name',
     sortDirection: 'asc',
   });
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user on mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setCurrentUserId(user.id);
+          // Load saved filters for this user
+          const userSavedFilters = await AdminService.getSavedFilters(user.id);
+          setSavedFilters(userSavedFilters);
+        }
+      } catch (error) {
+        console.error('Failed to get current user:', error);
+      }
+    };
+
+    getCurrentUser();
+  }, []);
 
   // Load clients on mount and when filters change
   useEffect(() => {
@@ -160,10 +181,57 @@ const ClientManagement = () => {
 
   const resetFilters = () => {
     setFilters({
-      status: 'all',
       sortBy: 'name',
       sortDirection: 'asc',
     });
+  };
+
+  const handleSaveFilter = async (name: string, filterData: ClientFiltersType) => {
+    if (!currentUserId) return;
+    
+    try {
+      const savedFilter = await AdminService.saveFilter(currentUserId, name, filterData);
+      setSavedFilters([...savedFilters, savedFilter]);
+      toast({
+        title: 'Filter Saved',
+        description: `Filter "${name}" has been saved successfully.`,
+      });
+    } catch (error) {
+      console.error('Failed to save filter:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save filter. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleLoadFilter = (filter: SavedFilter) => {
+    setFilters(filter.filters);
+    toast({
+      title: 'Filter Loaded',
+      description: `Filter "${filter.name}" has been applied.`,
+    });
+  };
+
+  const handleDeleteFilter = async (filterId: string) => {
+    if (!currentUserId) return;
+    
+    try {
+      await AdminService.deleteSavedFilter(currentUserId, filterId);
+      setSavedFilters(savedFilters.filter(f => f.id !== filterId));
+      toast({
+        title: 'Filter Deleted',
+        description: 'Filter has been deleted successfully.',
+      });
+    } catch (error) {
+      console.error('Failed to delete filter:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete filter. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -185,6 +253,11 @@ const ClientManagement = () => {
         filters={filters}
         onFilterChange={handleFilterChange}
         onResetFilters={resetFilters}
+        savedFilters={savedFilters}
+        onSaveFilter={handleSaveFilter}
+        onLoadFilter={handleLoadFilter}
+        onDeleteFilter={handleDeleteFilter}
+        isLoading={isLoading}
       />
 
       <ClientsTable
