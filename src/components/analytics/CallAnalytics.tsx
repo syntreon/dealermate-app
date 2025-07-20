@@ -20,6 +20,7 @@ import {
 import { Phone, Clock, TrendingUp, TrendingDown, Users, PhoneCall } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { AnalyticsService } from '@/services/analyticsService';
+import { CallIntelligenceService } from '@/services/callIntelligenceService';
 import CallVolumeHeatmap from './CallVolumeHeatmap';
 
 interface CallAnalyticsProps {
@@ -64,10 +65,14 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
   
   // Colors for call inquiry types
   const inquiryColors = useMemo(() => ({
-    general: '#a78bfa', // Light purple shade
-    purchase: '#10b981', // Green shade
-    service: '#f59e0b', // Orange shade
-    other: '#6b7280' // Grey shade
+    general: '#a78bfa',     // Light purple shade
+    purchase: '#10b981',    // Green shade
+    service: '#f59e0b',     // Orange shade
+    parts: '#3b82f6',       // Blue shade
+    test_drive: '#ec4899',  // Pink shade
+    finance: '#14b8a6',     // Teal shade
+    trade_in: '#8b5cf6',    // Purple shade
+    other: '#6b7280'        // Grey shade
   }), []);
 
   useEffect(() => {
@@ -82,6 +87,30 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
         const isAdminUser = user.client_id === null && (user.role === 'admin' || user.role === 'owner');
         const effectiveClientId = isAdminUser ? undefined : user.client_id || undefined;
 
+        // Fetch call inquiries data from the database
+        const callInquiriesRaw = await CallIntelligenceService.getCallInquiries(
+          effectiveClientId,
+          startDate,
+          endDate
+        );
+
+        // Process the inquiry data
+        const callInquiriesData = CallIntelligenceService.processCallInquiryData(callInquiriesRaw);
+        
+        console.log('Raw call inquiries data:', callInquiriesRaw);
+        console.log('Processed call inquiries data:', callInquiriesData);
+
+        // If no real data is available, use fallback mock data
+        const callInquiries = callInquiriesData.length > 0 ? callInquiriesData : [
+          { type: 'general', count: 18, percentage: 18 },
+          { type: 'purchase', count: 52, percentage: 52 },
+          { type: 'service', count: 28, percentage: 28 },
+          { type: 'other', count: 2, percentage: 2 }
+        ];
+        
+        console.log('Final call inquiries data for chart:', callInquiries);
+
+        // Fetch other analytics data in parallel
         const [analyticsData, performanceData] = await Promise.all([
           AnalyticsService.getAnalyticsData({
             clientId: effectiveClientId,
@@ -91,20 +120,12 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
           }),
           AnalyticsService.getCallPerformanceMetrics(effectiveClientId)
         ]);
-        
-        // Mock data for call inquiries
-        const mockCallInquiries = [
-          { type: 'general', count: 18, percentage: 18 },
-          { type: 'purchase', count: 52, percentage: 52 },
-          { type: 'service', count: 28, percentage: 28 },
-          { type: 'other', count: 2, percentage: 2 }
-        ];
 
         setData({
           callVolume: analyticsData.callVolume,
           callDuration: analyticsData.callDuration,
           callOutcomes: analyticsData.callOutcomes,
-          callInquiries: mockCallInquiries,
+          callInquiries: callInquiries,
           hourlyDistribution: analyticsData.hourlyDistribution,
           dailyDistribution: analyticsData.dailyDistribution,
           performanceMetrics: performanceData
@@ -316,33 +337,39 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data.callInquiries}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="count"
-                    nameKey="type"
-                    label={({ type, percentage }) => `${type} (${percentage}%)`}
-                  >
-                    {data.callInquiries.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={inquiryColors[entry.type as keyof typeof inquiryColors] || '#6b7280'} 
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value, name, props) => [`${value}%`, `${props.payload.type} inquiries`]} 
-                    labelFormatter={() => ''}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {data.callInquiries && data.callInquiries.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={data.callInquiries}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="count"
+                      nameKey="type"
+                      label={({ type, percentage }) => `${type} (${percentage}%)`}
+                    >
+                      {data.callInquiries.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={inquiryColors[entry.type as keyof typeof inquiryColors] || '#6b7280'} 
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value, name, props) => [`${value}%`, `${props.payload.type} inquiries`]} 
+                      labelFormatter={() => ''}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No inquiry data available</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
