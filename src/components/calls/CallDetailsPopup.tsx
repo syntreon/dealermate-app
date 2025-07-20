@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import {
   Phone,
@@ -37,8 +38,18 @@ import {
   VolumeX,
   SkipBack,
   SkipForward,
+  Star,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  Heart,
+  Meh,
+  Frown,
 } from 'lucide-react';
 import { CallLog, CallType } from '@/integrations/supabase/call-logs-service';
+import { LeadEvaluationService } from '@/services/leadEvaluationService';
+import { LeadEvaluationSummary } from '@/types/leadEvaluation';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -61,6 +72,8 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [evaluation, setEvaluation] = useState<LeadEvaluationSummary | null>(null);
+  const [evaluationLoading, setEvaluationLoading] = useState(false);
 
   // Initialize audio player when call changes
   useEffect(() => {
@@ -96,6 +109,34 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
       };
     }
   }, [call]);
+
+  // Load evaluation data when call changes (admin only)
+  useEffect(() => {
+    const loadEvaluation = async () => {
+      if (!call?.id || !canViewSensitiveInfo(user)) {
+        setEvaluation(null);
+        return;
+      }
+
+      setEvaluationLoading(true);
+      try {
+        const evaluationData = await LeadEvaluationService.getEvaluationByCallId(call.id);
+        if (evaluationData) {
+          const summary = LeadEvaluationService.transformToSummary(evaluationData);
+          setEvaluation(summary);
+        } else {
+          setEvaluation(null);
+        }
+      } catch (error) {
+        console.error('Error loading evaluation:', error);
+        setEvaluation(null);
+      } finally {
+        setEvaluationLoading(false);
+      }
+    };
+
+    loadEvaluation();
+  }, [call, user]);
 
   // Handle play/pause
   const togglePlayPause = () => {
@@ -244,7 +285,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               {/* Mobile tab labels */}
-              <TabsList className="grid grid-cols-3 w-full sm:hidden">
+              <TabsList className={`w-full sm:hidden ${canViewSensitiveInfo(user) ? 'grid-cols-4' : 'grid-cols-3'} grid`}>
                 <TabsTrigger value="details" className="px-2">
                   <FileText className="h-4 w-4 mr-1" />
                   Info
@@ -257,10 +298,16 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                   <FileText className="h-4 w-4 mr-1" />
                   Text
                 </TabsTrigger>
+                {canViewSensitiveInfo(user) && (
+                  <TabsTrigger value="evaluation" className="px-2">
+                    <Star className="h-4 w-4 mr-1" />
+                    Eval
+                  </TabsTrigger>
+                )}
               </TabsList>
               
               {/* Desktop tab labels */}
-              <TabsList className="grid grid-cols-3 w-full hidden sm:grid">
+              <TabsList className={`w-full hidden sm:grid ${canViewSensitiveInfo(user) ? 'grid-cols-4' : 'grid-cols-3'}`}>
                 <TabsTrigger value="details">
                   <FileText className="h-4 w-4 mr-2" />
                   Details
@@ -273,6 +320,12 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Transcript
                 </TabsTrigger>
+                {canViewSensitiveInfo(user) && (
+                  <TabsTrigger value="evaluation">
+                    <Star className="h-4 w-4 mr-2" />
+                    Evaluation
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="details" className="mt-4">
@@ -555,6 +608,178 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                   </div>
                 )}
               </TabsContent>
+
+              {canViewSensitiveInfo(user) && (
+                <TabsContent value="evaluation" className="mt-4">
+                  {evaluationLoading ? (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                          <Card key={i}>
+                            <CardContent className="p-6">
+                              <Skeleton className="h-4 w-20 mb-2" />
+                              <Skeleton className="h-8 w-16 mb-1" />
+                              <Skeleton className="h-3 w-24" />
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ) : evaluation ? (
+                    <div className="space-y-6">
+                      {/* Overall Summary */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Star className="h-5 w-5" />
+                            Call Evaluation Summary
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="text-center">
+                              <p className="text-sm text-muted-foreground">Overall Score</p>
+                              <p className="text-2xl font-bold text-card-foreground">
+                                {evaluation.overallScore ? `${evaluation.overallScore}/5` : 'N/A'}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm text-muted-foreground">Sentiment</p>
+                              <div className="flex items-center justify-center gap-2 mt-1">
+                                {(() => {
+                                  const sentimentDisplay = LeadEvaluationService.getSentimentDisplay(evaluation.sentiment);
+                                  return (
+                                    <>
+                                      <span className="text-xl">{sentimentDisplay.icon}</span>
+                                      <Badge 
+                                        className={cn(
+                                          'text-xs',
+                                          sentimentDisplay.color === 'green' && 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                          sentimentDisplay.color === 'yellow' && 'bg-amber-50 text-amber-700 border-amber-200',
+                                          sentimentDisplay.color === 'red' && 'bg-red-50 text-red-700 border-red-200'
+                                        )}
+                                      >
+                                        {sentimentDisplay.label}
+                                      </Badge>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm text-muted-foreground">Status</p>
+                              <div className="flex flex-col items-center gap-1 mt-1">
+                                {evaluation.humanReviewRequired && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    Review Required
+                                  </Badge>
+                                )}
+                                {evaluation.negativeCallFlag && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Negative Call
+                                  </Badge>
+                                )}
+                                {!evaluation.humanReviewRequired && !evaluation.negativeCallFlag && (
+                                  <Badge variant="secondary" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Good Call
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Separator />
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground">
+                              Evaluated on {format(evaluation.evaluatedAt, 'MMM d, yyyy h:mm a')}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Score Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {evaluation.cards.map((card, index) => (
+                          <Card key={index}>
+                            <CardContent className="p-6">
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-medium text-muted-foreground">{card.title}</h3>
+                                <div className={cn(
+                                  'p-2 rounded-full',
+                                  card.color === 'green' && 'bg-emerald-50',
+                                  card.color === 'yellow' && 'bg-amber-50',
+                                  card.color === 'red' && 'bg-red-50',
+                                  card.color === 'blue' && 'bg-blue-50',
+                                  card.color === 'purple' && 'bg-purple-50'
+                                )}>
+                                  <Star className={cn(
+                                    'h-4 w-4',
+                                    card.color === 'green' && 'text-emerald-600',
+                                    card.color === 'yellow' && 'text-amber-600',
+                                    card.color === 'red' && 'text-red-600',
+                                    card.color === 'blue' && 'text-blue-600',
+                                    card.color === 'purple' && 'text-purple-600'
+                                  )} />
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-2xl font-bold text-card-foreground">
+                                    {card.score}
+                                  </span>
+                                  {card.maxScore && (
+                                    <span className="text-sm text-muted-foreground">
+                                      / {card.maxScore}
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {card.maxScore && (
+                                  <div className="w-full bg-muted rounded-full h-2">
+                                    <div 
+                                      className={cn(
+                                        'h-2 rounded-full transition-all duration-300',
+                                        card.color === 'green' && 'bg-emerald-500',
+                                        card.color === 'yellow' && 'bg-amber-500',
+                                        card.color === 'red' && 'bg-red-500',
+                                        card.color === 'blue' && 'bg-blue-500',
+                                        card.color === 'purple' && 'bg-purple-500'
+                                      )}
+                                      style={{ width: `${(card.score / card.maxScore) * 100}%` }}
+                                    />
+                                  </div>
+                                )}
+                                
+                                {card.rationale && (
+                                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                                    {card.rationale}
+                                  </p>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="mb-4">
+                        <Star className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-card-foreground mb-2">No Evaluation Available</h3>
+                      <p className="text-muted-foreground mb-2">
+                        This call has not been evaluated yet.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Evaluation data will appear here once the call has been processed.
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+              )}
             </Tabs>
 
             {/* Footer space maintained for consistent spacing */}
