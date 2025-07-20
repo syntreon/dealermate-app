@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
-import { formatCustomLeadData, combineNotesWithCustomData } from '@/utils/leadDataFormatter';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -155,63 +154,9 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
         return notes.split('\n').filter(note => note.trim() !== '');
     };
 
-    // Store a reference to track if we've processed custom data
-    const processedLeadId = React.useRef<string | null>(null);
-
-    // Process custom lead data and add to notes when component mounts
-    useEffect(() => {
-        // Skip if we've already processed this lead or if there's no lead
-        if (!lead || !lead.id || processedLeadId.current === lead.id || isAddingNote || !lead.custom_lead_data) {
-            return;
-        }
-
-        // Mark this lead as processed
-        processedLeadId.current = lead.id;
-
-        // Use a timeout to ensure we don't interfere with other state updates
-        const timer = setTimeout(() => {
-            try {
-                // Check if the custom data is valid JSON or already a parsed object
-                let customData = lead.custom_lead_data;
-                if (typeof customData === 'string') {
-                    try {
-                        customData = JSON.parse(customData);
-                    } catch (e) {
-                        // If it's not valid JSON, just use it as is
-                        console.log('Custom lead data is not valid JSON, using as string');
-                    }
-                }
-
-                // Only process if we have valid data
-                if (customData && typeof customData === 'object') {
-                    // Format custom lead data
-                    const customDataFormatted = formatCustomLeadData(customData);
-
-                    // Check if custom data is already in notes to avoid duplication
-                    if (customDataFormatted &&
-                        lead.notes &&
-                        !lead.notes.includes('--- Custom Lead Data ---')) {
-                        const combinedNotes = combineNotesWithCustomData(lead.notes, customData);
-                        onAddNote(lead, combinedNotes).catch(err =>
-                            console.error('Error adding combined notes:', err)
-                        );
-                    } else if (customDataFormatted && !lead.notes) {
-                        // If no notes exist yet, just add the custom data
-                        onAddNote(lead, customDataFormatted).catch(err =>
-                            console.error('Error adding custom data as notes:', err)
-                        );
-                    }
-                }
-            } catch (error) {
-                console.error('Error processing custom lead data:', error);
-            }
-        }, 1000); // Longer delay to ensure component is fully mounted
-
-        // Cleanup function
-        return () => {
-            clearTimeout(timer);
-        };
-    }, [lead?.id]); // Only depend on lead ID to prevent unnecessary re-runs
+    // Note: The function that automatically adds custom lead data to notes has been removed
+    // as per requirements. Initial notes are now added when the record is created in the database.
+    // This component now only handles adding additional notes from the frontend.
 
     if (!isOpen || !lead) return null;
 
