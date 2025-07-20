@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Call } from '@/context/CallsContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PotentialEarnings } from '@/components/dashboard/PotentialEarnings';
@@ -12,6 +13,8 @@ import MetricsSummaryCards from '@/components/dashboard/MetricsSummaryCards';
 import useDashboardMetrics from '@/hooks/useDashboardMetrics';
 import { CallActivityTimeline } from '@/components/dashboard/CallActivityTimeline';
 import { CallsService, CallStats } from '@/services/callsService';
+import CallDetailsPopup from '@/components/calls/CallDetailsPopup';
+import { callLogsService } from '@/integrations/supabase/call-logs-service';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -21,6 +24,12 @@ const Dashboard = () => {
   const [calls, setCalls] = useState<Call[]>([]);
   const [stats, setStats] = useState<CallStats>({ totalCalls: 0, sent: 0, answered: 0, failed: 0 });
   const [loadingCalls, setLoadingCalls] = useState(true);
+  
+  // State for call details popup
+  const [selectedCallId, setSelectedCallId] = useState<string | null>(null);
+  const [selectedCallDetails, setSelectedCallDetails] = useState<any>(null);
+  const [isCallDetailsOpen, setIsCallDetailsOpen] = useState(false);
+  const [loadingCallDetails, setLoadingCallDetails] = useState(false);
 
   // Get client ID from user if available
   const clientId = user?.client_id || undefined;
@@ -125,8 +134,42 @@ const Dashboard = () => {
     navigate('/call');
   };
 
+  // Handle opening call details popup
+  const handleOpenCallDetails = async (callId: string) => {
+    if (!callId) return;
+    
+    setSelectedCallId(callId);
+    setLoadingCallDetails(true);
+    setIsCallDetailsOpen(true);
+    
+    try {
+      // Fetch the full call details
+      const callDetails = await callLogsService.getCallLogById(callId);
+      setSelectedCallDetails(callDetails);
+    } catch (error) {
+      console.error('Error fetching call details:', error);
+      toast.error('Failed to load call details');
+    } finally {
+      setLoadingCallDetails(false);
+    }
+  };
+  
+  // Handle closing call details popup
+  const handleCloseCallDetails = () => {
+    setIsCallDetailsOpen(false);
+    setSelectedCallId(null);
+    // We don't clear selectedCallDetails immediately to avoid UI flicker
+    // It will be replaced on next open
+  };
+
   return (
     <div className="space-y-8 pb-8"> {/* Increased top-level spacing */}
+      {/* Call Details Popup */}
+      <CallDetailsPopup
+        call={selectedCallDetails}
+        isOpen={isCallDetailsOpen}
+        onClose={handleCloseCallDetails}
+      />
       {/* Enhanced responsive header layout with improved spacing */}
       <div className="flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center">
         <div className="space-y-3"> {/* Increased vertical spacing */}
@@ -191,7 +234,10 @@ const Dashboard = () => {
                 {calls.slice(0, 5).map((call) => (
                   <div
                     key={call.id}
-                    className="flex items-start gap-4 p-3 rounded-lg bg-muted/50 border border-border hover:border-input transition-all duration-200"
+                    className="flex items-start gap-4 p-3 rounded-lg bg-muted/50 border border-border hover:border-input transition-all duration-200 cursor-pointer"
+                    onClick={() => handleOpenCallDetails(call.id)}
+                    role="button"
+                    aria-label={`View details for call from ${call.name}`}
                   >
                     <div className="p-2 rounded-full bg-primary/10">
                       {getStatusIcon(call.status)}
