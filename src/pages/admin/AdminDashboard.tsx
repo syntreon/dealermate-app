@@ -23,6 +23,7 @@ const OperationsTab = React.lazy(() => import('@/components/admin/dashboard/tabs
 import { AdminService } from '@/services/adminService';
 import { AgentStatusService } from '@/services/agentStatusService';
 import { SystemMessageService } from '@/services/systemMessageService';
+import { MetricsCalculationService } from '@/services/metricsCalculationService';
 import { Client, User, SystemMessage, AgentStatus } from '@/types/admin';
 import { formatNumber, formatCurrency } from '@/utils/formatting';
 
@@ -153,43 +154,21 @@ const AdminDashboard = () => {
       const totalCalls = clients.reduce((sum, client) => sum + (client.metrics?.totalCalls || 0), 0);
       const totalLeads = clients.reduce((sum, client) => sum + (client.metrics?.totalLeads || 0), 0);
 
-      // Financial calculations
-      const totalRevenue = clients.reduce((sum, client) => sum + client.monthly_billing_amount_cad, 0);
-      const totalAiCosts = clients.reduce((sum, client) => sum + (client.average_monthly_ai_cost_usd * 1.35), 0); // Convert USD to CAD
-      const totalMiscCosts = clients.reduce((sum, client) => sum + (client.average_monthly_misc_cost_usd * 1.35), 0);
-      const totalPartnerSplits = clients.reduce((sum, client) => sum + (client.monthly_billing_amount_cad * client.partner_split_percentage / 100), 0);
-      const totalFindersFees = clients.reduce((sum, client) => sum + client.finders_fee_cad, 0);
+      // Get real financial calculations from MetricsCalculationService
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      const [financialMetrics, costBreakdown, clientProfitability] = await Promise.all([
+        MetricsCalculationService.getFinancialMetrics('current_month'),
+        MetricsCalculationService.getCostBreakdown(startDate, endDate),
+        MetricsCalculationService.getClientProfitability()
+      ]);
 
-      const totalCosts = totalAiCosts + totalMiscCosts + totalPartnerSplits + totalFindersFees;
-      const totalProfit = totalRevenue - totalCosts;
-      const avgProfitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-      // Cost breakdown
-      const costBreakdown = {
-        aiCosts: totalAiCosts,
-        miscCosts: totalMiscCosts,
-        partnerSplits: totalPartnerSplits,
-        findersFees: totalFindersFees
-      };
-
-      // Client profitability analysis
-      const clientProfitability = clients.map(client => {
-        const revenue = client.monthly_billing_amount_cad;
-        const costs = (client.average_monthly_ai_cost_usd + client.average_monthly_misc_cost_usd) * 1.35 +
-          (revenue * client.partner_split_percentage / 100) + client.finders_fee_cad;
-        const profit = revenue - costs;
-        const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-
-        return {
-          id: client.id,
-          name: client.name,
-          revenue,
-          costs,
-          profit,
-          margin,
-          status: client.status
-        };
-      }).sort((a, b) => b.profit - a.profit);
+      const totalRevenue = financialMetrics.totalRevenue;
+      const totalCosts = costBreakdown.totalCosts;
+      const totalProfit = financialMetrics.netProfit;
+      const avgProfitMargin = financialMetrics.profitMargin;
 
       // User analytics
       const usersByRole = users.reduce((acc, user) => {
@@ -226,13 +205,8 @@ const AdminDashboard = () => {
         apiLimitUtilization: Math.min((totalCalls / 10000) * 100, 100) // Assuming 10k daily limit
       };
 
-      // Growth trends (mock data - would need historical data)
-      const growthTrends = {
-        clientGrowth: Math.floor(Math.random() * 20) + 5, // 5-25%
-        revenueGrowth: Math.floor(Math.random() * 15) + 8, // 8-23%
-        costGrowth: Math.floor(Math.random() * 10) + 3, // 3-13%
-        profitGrowth: Math.floor(Math.random() * 25) + 10 // 10-35%
-      };
+      // Get real growth trends
+      const growthTrends = await MetricsCalculationService.getGrowthTrends();
 
       // Calculate average call duration
       const callDurations = clients
@@ -261,14 +235,19 @@ const AdminDashboard = () => {
         totalCalls,
         totalLeads,
         totalRevenue,
-        totalAiCosts,
-        totalMiscCosts,
+        totalAiCosts: costBreakdown.aiCosts,
+        totalMiscCosts: costBreakdown.toolCosts,
         totalProfit,
         avgProfitMargin,
         avgCallDuration,
         conversionRate,
         systemHealth: systemHealth.status,
-        costBreakdown,
+        costBreakdown: {
+          aiCosts: costBreakdown.aiCosts,
+          miscCosts: costBreakdown.toolCosts,
+          partnerSplits: costBreakdown.partnerSplits,
+          findersFees: costBreakdown.findersFees
+        },
         clientProfitability,
         userAnalytics,
         systemResources,

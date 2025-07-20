@@ -5,16 +5,16 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
 // Components
-import DashboardHeader from '@/components/admin/dashboard/DashboardHeader';
-import FinancialOverview from '@/components/admin/dashboard/FinancialOverview';
-import BusinessMetrics from '@/components/admin/dashboard/BusinessMetrics';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { FinancialOverview } from '@/components/admin/dashboard/FinancialOverview';
+import { BusinessMetrics } from '@/components/admin/dashboard/BusinessMetrics';
 
 // Lazy load tab components for better performance
-const FinancialTab = React.lazy(() => import('@/components/admin/dashboard/tabs/FinancialTab'));
-const ClientsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/ClientsTab'));
-const UsersTab = React.lazy(() => import('@/components/admin/dashboard/tabs/UsersTab'));
-const SystemTab = React.lazy(() => import('@/components/admin/dashboard/tabs/SystemTab'));
-const OperationsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/OperationsTab'));
+const FinancialTab = React.lazy(() => import('@/components/admin/dashboard/tabs/FinancialTab').then(m => ({ default: m.FinancialTab })));
+const ClientsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/ClientsTab').then(m => ({ default: m.ClientsTab })));
+const UsersTab = React.lazy(() => import('@/components/admin/dashboard/tabs/UsersTab').then(m => ({ default: m.UsersTab })));
+const SystemTab = React.lazy(() => import('@/components/admin/dashboard/tabs/SystemTab').then(m => ({ default: m.SystemTab })));
+const OperationsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/OperationsTab').then(m => ({ default: m.OperationsTab })));
 
 // Temporary mock data - will be replaced with real data hook
 const mockFinancialMetrics = {

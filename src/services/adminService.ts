@@ -1,11 +1,11 @@
-import { 
-  Client, 
-  ClientFilters, 
-  CreateClientData, 
-  UpdateClientData, 
-  User, 
-  UserFilters, 
-  CreateUserData, 
+import {
+  Client,
+  ClientFilters,
+  CreateClientData,
+  UpdateClientData,
+  User,
+  UserFilters,
+  CreateUserData,
   UpdateUserData,
   PaginatedResponse,
   PaginationOptions,
@@ -23,12 +23,12 @@ import { AuditService } from './auditService';
 // Database utility functions
 const handleDatabaseError = (error: any): DatabaseError => {
   console.error('Database error:', error);
-  
+
   const dbError = new Error(error.message || 'Database operation failed') as DatabaseError;
   dbError.code = error.code;
   dbError.details = error.details;
   dbError.hint = error.hint;
-  
+
   return dbError;
 };
 
@@ -83,13 +83,13 @@ const transformUser = (row: Database['public']['Tables']['users']['Row']): User 
 const calculateClientMetrics = async (clientId: string) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   // Get total calls and leads
   const { data: calls, error: callsError } = await supabase
     .from('calls')
     .select('id, call_duration_seconds, created_at')
     .eq('client_id', clientId);
-    
+
   if (callsError) {
     console.error('Error fetching calls for metrics:', callsError);
     return {
@@ -100,33 +100,33 @@ const calculateClientMetrics = async (clientId: string) => {
       leadsToday: 0
     };
   }
-  
+
   const { data: leads, error: leadsError } = await supabase
     .from('leads')
     .select('id, created_at')
     .eq('client_id', clientId);
-    
+
   if (leadsError) {
     console.error('Error fetching leads for metrics:', leadsError);
   }
-  
+
   const totalCalls = calls?.length || 0;
   const totalLeads = leads?.length || 0;
-  
+
   // Calculate average call duration
-  const avgCallDuration = totalCalls > 0 
+  const avgCallDuration = totalCalls > 0
     ? Math.round((calls?.reduce((sum, call) => sum + call.call_duration_seconds, 0) || 0) / totalCalls)
     : 0;
-  
+
   // Calculate today's metrics
-  const callsToday = calls?.filter(call => 
+  const callsToday = calls?.filter(call =>
     new Date(call.created_at) >= today
   ).length || 0;
-  
-  const leadsToday = leads?.filter(lead => 
+
+  const leadsToday = leads?.filter(lead =>
     new Date(lead.created_at) >= today
   ).length || 0;
-  
+
   return {
     totalCalls,
     totalLeads,
@@ -278,7 +278,7 @@ export const AdminService = {
 
       const client = transformClient(data);
       client.metrics = await calculateClientMetrics(client.id);
-      
+
       return client;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -315,7 +315,7 @@ export const AdminService = {
 
       const client = transformClient(newClient);
       client.metrics = await calculateClientMetrics(client.id);
-      
+
       // Log audit event
       if (userId) {
         try {
@@ -330,7 +330,7 @@ export const AdminService = {
           console.error('Failed to log audit event:', auditError);
         }
       }
-      
+
       return client;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -341,9 +341,9 @@ export const AdminService = {
     try {
       // Get the old client data for audit logging
       const oldClient = userId ? await AdminService.getClientById(id) : null;
-      
+
       const updateData: any = {};
-      
+
       // Only include defined fields in the update
       Object.keys(data).forEach(key => {
         if (data[key as keyof UpdateClientData] !== undefined) {
@@ -364,7 +364,7 @@ export const AdminService = {
 
       const client = transformClient(updatedClient);
       client.metrics = await calculateClientMetrics(client.id);
-      
+
       // Log audit event
       if (userId && oldClient) {
         try {
@@ -379,7 +379,7 @@ export const AdminService = {
           console.error('Failed to log audit event:', auditError);
         }
       }
-      
+
       return client;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -390,7 +390,7 @@ export const AdminService = {
     try {
       // Get the client data for audit logging before deletion
       const client = userId ? await AdminService.getClientById(id) : null;
-      
+
       const { error } = await supabase
         .from('clients')
         .delete()
@@ -399,7 +399,7 @@ export const AdminService = {
       if (error) {
         throw handleDatabaseError(error);
       }
-      
+
       // Log audit event
       if (userId && client) {
         try {
@@ -473,7 +473,7 @@ export const AdminService = {
       }
 
       results.success = results.failed === 0;
-      
+
       // Log bulk operation audit event
       if (userId) {
         try {
@@ -487,7 +487,7 @@ export const AdminService = {
           console.error('Failed to log bulk operation audit event:', auditError);
         }
       }
-      
+
       return results;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -586,7 +586,7 @@ export const AdminService = {
     try {
       // First, create an auth user to satisfy the foreign key constraint
       const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
-      
+
       const { data: authUser, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: tempPassword,
@@ -597,17 +597,17 @@ export const AdminService = {
           }
         }
       });
-      
+
       if (authError) {
         throw authError;
       }
-      
+
       if (!authUser.user) {
         throw new Error('Failed to create auth user');
       }
-      
+
       const userId = authUser.user.id;
-      
+
       // Now insert into public.users with the auth user's ID
       const { data: directUser, error: directError } = await supabase
         .from('users')
@@ -635,20 +635,20 @@ export const AdminService = {
         })
         .select()
         .single();
-      
+
       if (directError) {
         throw handleDatabaseError(directError);
       }
-      
+
       const user = transformUser(directUser);
-      
+
       // Log audit event asynchronously to prevent RLS policy errors from breaking user creation
       if (createdBy) {
         // Store user data for audit logging
         const newUserData = { email: user.email, role: user.role, full_name: user.full_name };
         const clientId = user.client_id || undefined;
         const userId = user.id;
-        
+
         // Use setTimeout to make audit logging non-blocking
         setTimeout(async () => {
           try {
@@ -676,9 +676,9 @@ export const AdminService = {
     try {
       // Get the old user data for audit logging
       const oldUser = updatedBy ? await AdminService.getUserById(id) : null;
-      
+
       const updateData: any = {};
-      
+
       // Only include defined fields in the update
       Object.keys(data).forEach(key => {
         if (data[key as keyof UpdateUserData] !== undefined) {
@@ -698,14 +698,14 @@ export const AdminService = {
       }
 
       const user = transformUser(updatedUser);
-      
+
       // Log audit event asynchronously to prevent RLS policy errors from breaking the update
       if (updatedBy && oldUser) {
         // Store user data for audit logging
         const oldUserData = { email: oldUser.email, role: oldUser.role, full_name: oldUser.full_name };
         const newUserData = { email: user.email, role: user.role, full_name: user.full_name };
         const clientId = user.client_id || undefined;
-        
+
         // Use setTimeout to make audit logging non-blocking
         setTimeout(async () => {
           try {
@@ -733,7 +733,7 @@ export const AdminService = {
     try {
       // Get the user data for audit logging before deletion
       const user = deletedBy ? await AdminService.getUserById(id) : null;
-      
+
       // Store user data for audit logging before deletion
       const userData = user ? {
         email: user.email,
@@ -741,7 +741,7 @@ export const AdminService = {
         full_name: user.full_name,
         client_id: user.client_id
       } : null;
-      
+
       // Delete the user first
       const { error } = await supabase
         .from('users')
@@ -751,7 +751,7 @@ export const AdminService = {
       if (error) {
         throw handleDatabaseError(error);
       }
-      
+
       // Log audit event after successful deletion
       // This is done in a non-blocking way to prevent audit failures from affecting core functionality
       if (deletedBy && userData) {
@@ -809,7 +809,7 @@ export const AdminService = {
       }
 
       results.success = results.failed === 0;
-      
+
       // Log bulk operation audit event
       if (userId) {
         try {
@@ -823,7 +823,7 @@ export const AdminService = {
           console.error('Failed to log bulk operation audit event:', auditError);
         }
       }
-      
+
       return results;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -862,7 +862,7 @@ export const AdminService = {
 
       const existingFilters = await AdminService.getSavedFilters(userId);
       const updatedFilters = [...existingFilters, savedFilter];
-      
+
       localStorage.setItem(`saved_filters_${userId}`, JSON.stringify(updatedFilters));
       return savedFilter;
     } catch (error) {
@@ -874,7 +874,7 @@ export const AdminService = {
     try {
       const existingFilters = await AdminService.getSavedFilters(userId);
       const filterIndex = existingFilters.findIndex(f => f.id === filterId);
-      
+
       if (filterIndex === -1) {
         throw new Error('Filter not found');
       }
@@ -888,7 +888,7 @@ export const AdminService = {
 
       existingFilters[filterIndex] = updatedFilter;
       localStorage.setItem(`saved_filters_${userId}`, JSON.stringify(existingFilters));
-      
+
       return updatedFilter;
     } catch (error) {
       throw handleDatabaseError(error);
@@ -916,14 +916,14 @@ export const AdminService = {
       // Get agent status for client or platform
       let agentStatus = 'up';
       let agentMessage = 'All agents operational';
-      
+
       if (clientId) {
         const { data: agentData, error: agentError } = await supabase
           .from('agent_status')
           .select('status, message')
           .eq('client_id', clientId)
           .single();
-          
+
         if (!agentError && agentData) {
           agentStatus = agentData.status === 'active' ? 'up' : 'down';
           agentMessage = agentData.message || `Agent is ${agentData.status}`;
@@ -994,13 +994,13 @@ export const AdminService = {
       };
     }
   },
-  
+
   getSystemMetrics: async (timeframe: 'day' | 'week' | 'month', clientId?: string | null): Promise<SystemMetrics> => {
     try {
       // Calculate date range based on timeframe
       const now = new Date();
       const startDate = new Date();
-      
+
       switch (timeframe) {
         case 'day':
           startDate.setDate(now.getDate() - 1);
@@ -1018,7 +1018,7 @@ export const AdminService = {
         .from('calls')
         .select('id, created_at, call_duration_seconds')
         .gte('created_at', startDate.toISOString());
-        
+
       let leadsQuery = supabase
         .from('leads')
         .select('id, created_at')
@@ -1049,14 +1049,14 @@ export const AdminService = {
       const dataPoints = timeframe === 'day' ? 24 : timeframe === 'week' ? 7 : 30;
       const interval = timeframe === 'day' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
       const timeframeData: Array<{ timestamp: Date, value: number }> = [];
-      
+
       for (let i = 0; i < dataPoints; i++) {
         const timestamp = new Date(now.getTime() - (dataPoints - i) * interval);
         const periodCalls = calls.filter(call => {
           const callTime = new Date(call.created_at);
           return callTime >= timestamp && callTime < new Date(timestamp.getTime() + interval);
         }).length;
-        
+
         timeframeData.push({
           timestamp,
           value: periodCalls
@@ -1090,18 +1090,18 @@ export const AdminService = {
       throw handleDatabaseError(error);
     }
   },
-  
+
   runSystemHealthCheck: async (clientId?: string | null): Promise<void> => {
     try {
       // Perform actual health checks
       await supabase.from('clients').select('id').limit(1);
-      
+
       if (clientId) {
         // Check client-specific health
         await supabase.from('calls').select('id').eq('client_id', clientId).limit(1);
         await supabase.from('leads').select('id').eq('client_id', clientId).limit(1);
       }
-      
+
       // Health check completed successfully
       console.log(`Health check completed for ${clientId ? `client ${clientId}` : 'platform'}`);
     } catch (error) {

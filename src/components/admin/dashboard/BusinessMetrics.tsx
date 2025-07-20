@@ -23,11 +23,11 @@ export const BusinessMetrics: React.FC<BusinessMetricsProps> = ({ metrics }) => 
   const getHealthIcon = () => {
     switch (metrics.systemHealth) {
       case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />;
       case 'degraded':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className="h-5 w-5 text-amber-500 dark:text-amber-400" />;
       case 'down':
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+        return <AlertTriangle className="h-5 w-5 text-destructive" />;
       default:
         return <Activity className="h-5 w-5 text-muted-foreground" />;
     }
