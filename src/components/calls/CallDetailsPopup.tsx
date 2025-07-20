@@ -72,6 +72,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0); // Default playback speed
   const [evaluation, setEvaluation] = useState<LeadEvaluationSummary | null>(null);
   const [evaluationLoading, setEvaluationLoading] = useState(false);
 
@@ -98,6 +99,9 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
       audio.addEventListener('timeupdate', handleTimeUpdate);
       audio.addEventListener('ended', handleEnded);
       
+      // Set initial playback speed
+      audio.playbackRate = playbackSpeed;
+      
       setAudioElement(audio);
       
       return () => {
@@ -108,7 +112,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
         setAudioElement(null);
       };
     }
-  }, [call]);
+  }, [call, playbackSpeed]);
 
   // Load evaluation data when call changes (admin only)
   useEffect(() => {
@@ -159,6 +163,25 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
     setIsMuted(!isMuted);
   };
 
+  // Handle playback speed change
+  const cyclePlaybackSpeed = () => {
+    if (!audioElement) return;
+    
+    // Define the sequence of speeds
+    const speeds = [1.0, 1.25, 1.5, 1.75, 2.0];
+    
+    // Find the index of the current speed or the closest one
+    const currentIndex = speeds.findIndex(speed => speed === playbackSpeed);
+    
+    // Get the next speed in the sequence or go back to the beginning
+    const nextIndex = (currentIndex + 1) % speeds.length;
+    const nextSpeed = speeds[nextIndex];
+    
+    // Apply the new speed without pausing playback
+    audioElement.playbackRate = nextSpeed;
+    setPlaybackSpeed(nextSpeed);
+  };
+
   // Handle seek
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioElement) return;
@@ -192,13 +215,19 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Copy text to clipboard
+  const copyToClipboard = (text: string, label: string) => {
+    if (!text) return;
+    
+    navigator.clipboard.writeText(text)
+      .then(() => toast.success(`${label} copied to clipboard`))
+      .catch(() => toast.error(`Failed to copy ${label.toLowerCase()}`));
+  };
+  
   // Copy transcript to clipboard
   const copyTranscript = () => {
     if (!call?.transcript) return;
-    
-    navigator.clipboard.writeText(call.transcript)
-      .then(() => toast.success('Transcript copied to clipboard'))
-      .catch(() => toast.error('Failed to copy transcript'));
+    copyToClipboard(call.transcript, 'Transcript');
   };
 
   // Download transcript as text file
@@ -271,7 +300,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <Phone className="h-5 w-5" />
@@ -283,7 +312,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
               {/* Mobile tab labels */}
               <TabsList className={`w-full sm:hidden ${canViewSensitiveInfo(user) ? 'grid-cols-4' : 'grid-cols-3'} grid`}>
                 <TabsTrigger value="details" className="px-2">
@@ -328,9 +357,10 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                 )}
               </TabsList>
 
-              <TabsContent value="details" className="mt-4">
-                {call ? (
-                  <div className="space-y-6">
+              <TabsContent value="details" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  {call ? (
+                    <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Caller Information */}
                       <Card className="flex-1">
@@ -358,19 +388,62 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                           <div className="space-y-2">
                             {/* Only show client ID to admins */}
                             {canViewSensitiveInfo(user) && (
-                              <div className="flex justify-between">
+                              <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Client ID</span>
-                                <span className="text-sm font-medium">{call.client_id || 'N/A'}</span>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-sm font-medium">{call.client_id || 'N/A'}</span>
+                                  {call.client_id && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-5 w-5" 
+                                      onClick={() => copyToClipboard(call.client_id!, 'Client ID')}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             )}
                             <div className="flex justify-between">
                               <span className="text-sm text-muted-foreground">To Phone Number</span>
                               <span className="text-sm font-medium">{call.to_phone_number || 'N/A'}</span>
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Assistant ID</span>
-                              <span className="text-sm font-medium">{call.assistant_id || 'N/A'}</span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm font-medium">{call.assistant_id || 'N/A'}</span>
+                                {call.assistant_id && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-5 w-5" 
+                                    onClick={() => copyToClipboard(call.assistant_id!, 'Assistant ID')}
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
+                            {/* Show call ID to admins */}
+                            {canViewSensitiveInfo(user) && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-muted-foreground">Call ID</span>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-sm font-medium">{call.id || 'N/A'}</span>
+                                  {call.id && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-5 w-5" 
+                                      onClick={() => copyToClipboard(call.id!, 'Call ID')}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -433,30 +506,23 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                           
                           <Separator />
                           
-                          <div className="space-y-2">
-                            {/* Only show cost information to admins */}
-                            {canViewSensitiveInfo(user) ? (
-                              <>
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">Total Call Cost</span>
-                                  <span className="text-sm font-medium">
-                                    ${call.total_call_cost_usd?.toFixed(2) || '0.00'} USD
-                                  </span>
-                                </div>
-                                
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">Total Cost (CAD)</span>
-                                  <span className="text-sm font-medium">
-                                    ${call.total_cost_cad?.toFixed(2) || '0.00'} CAD
-                                  </span>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="text-sm text-muted-foreground italic">
-                                Cost information is only visible to administrators
+                          {canViewSensitiveInfo(user) && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Total Call Cost</span>
+                                <span className="text-sm font-medium">
+                                  ${call.total_call_cost_usd?.toFixed(2) || '0.00'} USD
+                                </span>
                               </div>
-                            )}
-                          </div>
+                              
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Total Cost (CAD)</span>
+                                <span className="text-sm font-medium">
+                                  ${call.total_cost_cad?.toFixed(2) || '0.00'} CAD
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </div>
@@ -472,17 +538,20 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                         </p>
                       </CardContent>
                     </Card>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Call details not available</p>
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Call details not available</p>
+                    </div>
+                  )}
+                </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="recording" className="mt-4">
-                {call?.recording_url ? (
-                  <Card>
+              <TabsContent value="recording" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    {call?.recording_url ? (
+                      <Card className="w-full max-w-2xl">
                     <CardHeader>
                       <CardTitle className="text-base">Call Recording</CardTitle>
                     </CardHeader>
@@ -533,6 +602,17 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                               <Volume2 className="h-4 w-4" />
                             )}
                           </Button>
+                          
+                          {/* Playback Speed Control */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={cyclePlaybackSpeed}
+                            disabled={!audioElement}
+                            className="text-xs font-medium"
+                          >
+                            {playbackSpeed}x
+                          </Button>
                         </div>
                         
                         <div className="flex items-center gap-3">
@@ -561,18 +641,21 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                           {call.call_duration_mins ? `Total duration: ${call.call_duration_mins} minutes` : ''}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No recording available for this call</p>
+                      </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-muted-foreground">No recording available for this call</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="transcript" className="mt-4">
-                {call?.transcript ? (
-                  <Card>
+              <TabsContent value="transcript" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  {call?.transcript ? (
+                    <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                       <CardTitle className="text-base">Call Transcript</CardTitle>
                       <div className="flex gap-2">
@@ -595,23 +678,25 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <ScrollArea className="h-[400px] rounded-md border p-4">
+                      <div className="rounded-md border p-4 bg-muted/50">
                         <pre className="text-sm whitespace-pre-wrap font-sans">
                           {call.transcript}
                         </pre>
-                      </ScrollArea>
+                      </div>
                     </CardContent>
-                  </Card>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No transcript available for this call</p>
-                  </div>
-                )}
+                    </Card>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No transcript available for this call</p>
+                    </div>
+                  )}
+                </ScrollArea>
               </TabsContent>
 
               {canViewSensitiveInfo(user) && (
-                <TabsContent value="evaluation" className="mt-4">
-                  {evaluationLoading ? (
+                <TabsContent value="evaluation" className="flex-1 overflow-hidden mt-4">
+                  <ScrollArea className="h-full pr-4">
+                    {evaluationLoading ? (
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[...Array(6)].map((_, i) => (
@@ -778,12 +863,10 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                       </p>
                     </div>
                   )}
+                  </ScrollArea>
                 </TabsContent>
               )}
             </Tabs>
-
-            {/* Footer space maintained for consistent spacing */}
-            <DialogFooter className="mt-4"></DialogFooter>
       </DialogContent>
     </Dialog>
   );
