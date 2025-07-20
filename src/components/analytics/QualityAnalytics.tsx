@@ -169,7 +169,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Overall Quality Score</p>
-                <p className="text-2xl font-bold text-card-foreground">{data.overallQualityScore}/10</p>
+                <p className="text-2xl font-bold text-card-foreground">{data.overallQualityScore}/5</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
                   <Badge variant="secondary" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">

@@ -24,6 +24,7 @@ import {
   Clock,
   FileText,
   Headphones,
+  Mic,
   MessageSquare,
   X,
   Minimize2,
@@ -53,7 +54,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
   onClose,
 }) => {
   const { user } = useAuth();
-  const [isMinimized, setIsMinimized] = useState(false);
+  // Removed minimize functionality
   const [activeTab, setActiveTab] = useState('details');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -229,67 +230,43 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className={cn(
-          "max-w-4xl transition-all duration-300",
-          isMinimized ? "h-24 overflow-hidden" : "max-h-[90vh]"
-        )}
-      >
-        <div className="flex justify-between items-center">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <Phone className="h-5 w-5" />
             Call Details
             {call && getCallTypeBadge(call.call_type)}
           </DialogTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMinimized(!isMinimized)}
-              className="h-8 w-8 p-0"
-            >
-              {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+          <DialogDescription>
+            View call details, listen to recording, and read transcript
+          </DialogDescription>
+        </DialogHeader>
 
-        {isMinimized ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback>{call?.caller_full_name ? getCallerInitials(call.caller_full_name) : 'UN'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{call?.caller_full_name || 'Unknown Caller'}</p>
-                <p className="text-xs text-muted-foreground">{call?.caller_phone_number || 'No phone number'}</p>
-              </div>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {call?.call_start_time ? format(new Date(call.call_start_time), 'MMM d, yyyy h:mm a') : 'Unknown date'}
-            </div>
-          </div>
-        ) : (
-          <>
-            <DialogDescription>
-              View call details, listen to recording, and read transcript
-            </DialogDescription>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              {/* Mobile tab labels */}
+              <TabsList className="grid grid-cols-3 w-full sm:hidden">
+                <TabsTrigger value="details" className="px-2">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Info
+                </TabsTrigger>
+                <TabsTrigger value="recording" className="px-2" disabled={!call?.recording_url}>
+                  <Mic className="h-4 w-4 mr-1" />
+                  Audio
+                </TabsTrigger>
+                <TabsTrigger value="transcript" className="px-2" disabled={!call?.transcript}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  Text
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Desktop tab labels */}
+              <TabsList className="grid grid-cols-3 w-full hidden sm:grid">
                 <TabsTrigger value="details">
                   <FileText className="h-4 w-4 mr-2" />
                   Details
                 </TabsTrigger>
                 <TabsTrigger value="recording" disabled={!call?.recording_url}>
-                  <Headphones className="h-4 w-4 mr-2" />
+                  <Mic className="h-4 w-4 mr-2" />
                   Recording
                 </TabsTrigger>
                 <TabsTrigger value="transcript" disabled={!call?.transcript}>
@@ -301,7 +278,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
               <TabsContent value="details" className="mt-4">
                 {call ? (
                   <div className="space-y-6">
-                    <div className="flex flex-col md:flex-row gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Caller Information */}
                       <Card className="flex-1">
                         <CardHeader>
@@ -580,13 +557,8 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
               </TabsContent>
             </Tabs>
 
-            <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={onClose}>
-                Close
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+            {/* Footer space maintained for consistent spacing */}
+            <DialogFooter className="mt-4"></DialogFooter>
       </DialogContent>
     </Dialog>
   );
