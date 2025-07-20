@@ -50,6 +50,175 @@ const calculateGrowthPercentage = (current: number, previous: number): number =>
 
 export const DashboardService = {
   /**
+   * Get admin-specific platform metrics (extends basic dashboard metrics)
+   */
+  getAdminPlatformMetrics: async (): Promise<{
+    totalClients: number;
+    activeClients: number;
+    totalUsers: number;
+    totalRevenue: number;
+    platformCallVolume: number;
+    platformLeadVolume: number;
+    systemHealth: 'healthy' | 'degraded' | 'down';
+  }> => {
+    try {
+      // Get all clients for admin metrics
+      const { data: clients, error: clientsError } = await supabase
+        .from('clients')
+        .select('id, status, monthly_billing_amount_cad');
+
+      if (clientsError) throw clientsError;
+
+      // Get all users count
+      const { count: usersCount, error: usersError } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+
+      if (usersError) throw usersError;
+
+      // Get platform-wide call and lead counts
+      const [callsResult, leadsResult] = await Promise.all([
+        supabase.from('calls').select('id', { count: 'exact', head: true }),
+        supabase.from('leads').select('id', { count: 'exact', head: true })
+      ]);
+
+      if (callsResult.error) throw callsResult.error;
+      if (leadsResult.error) throw leadsResult.error;
+
+      const totalClients = clients?.length || 0;
+      const activeClients = clients?.filter(c => c.status === 'active').length || 0;
+      const totalUsers = usersCount || 0;
+      const totalRevenue = clients?.reduce((sum, client) => 
+        sum + (client.monthly_billing_amount_cad || 0), 0) || 0;
+      const platformCallVolume = callsResult.count || 0;
+      const platformLeadVolume = leadsResult.count || 0;
+
+      // Simple system health check based on data availability
+      const systemHealth: 'healthy' | 'degraded' | 'down' = 
+        (totalClients > 0 && totalUsers > 0) ? 'healthy' : 'degraded';
+
+      return {
+        totalClients,
+        activeClients,
+        totalUsers,
+        totalRevenue,
+        platformCallVolume,
+        platformLeadVolume,
+        systemHealth
+      };
+    } catch (error) {
+      console.error('Error fetching admin platform metrics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get client distribution metrics for admin dashboard
+   */
+  getClientDistributionMetrics: async (): Promise<{
+    byStatus: Array<{ status: string; count: number }>;
+    bySubscriptionPlan: Array<{ plan: string; count: number }>;
+    byType: Array<{ type: string; count: number }>;
+  }> => {
+    try {
+      const { data: clients, error } = await supabase
+        .from('clients')
+        .select('status, subscription_plan, type');
+
+      if (error) throw error;
+
+      // Group by status
+      const statusMap: Record<string, number> = {};
+      const planMap: Record<string, number> = {};
+      const typeMap: Record<string, number> = {};
+
+      clients?.forEach(client => {
+        statusMap[client.status] = (statusMap[client.status] || 0) + 1;
+        planMap[client.subscription_plan] = (planMap[client.subscription_plan] || 0) + 1;
+        typeMap[client.type] = (typeMap[client.type] || 0) + 1;
+      });
+
+      return {
+        byStatus: Object.entries(statusMap).map(([status, count]) => ({ status, count })),
+        bySubscriptionPlan: Object.entries(planMap).map(([plan, count]) => ({ plan, count })),
+        byType: Object.entries(typeMap).map(([type, count]) => ({ type, count }))
+      };
+    } catch (error) {
+      console.error('Error fetching client distribution metrics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get user analytics for admin dashboard
+   */
+  getUserAnalytics: async (): Promise<{
+    byRole: Array<{ role: string; count: number }>;
+    activeToday: number;
+    activeThisWeek: number;
+    newThisMonth: number;
+    recentActivity: Array<{ id: string; email: string; lastLogin: Date | null; role: string }>;
+  }> => {
+    try {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('id, email, role, last_login_at, created_at')
+        .order('last_login_at', { ascending: false, nullsLast: true });
+
+      if (error) throw error;
+
+      // Group by role
+      const roleMap: Record<string, number> = {};
+      let activeToday = 0;
+      let activeThisWeek = 0;
+      let newThisMonth = 0;
+
+      users?.forEach(user => {
+        roleMap[user.role] = (roleMap[user.role] || 0) + 1;
+
+        // Count active users
+        if (user.last_login_at) {
+          const lastLogin = new Date(user.last_login_at);
+          if (lastLogin >= today) activeToday++;
+          if (lastLogin >= weekAgo) activeThisWeek++;
+        }
+
+        // Count new users this month
+        if (new Date(user.created_at) >= monthAgo) {
+          newThisMonth++;
+        }
+      });
+
+      // Get recent activity (top 10 most recent logins)
+      const recentActivity = (users || [])
+        .filter(user => user.last_login_at)
+        .slice(0, 10)
+        .map(user => ({
+          id: user.id,
+          email: user.email,
+          lastLogin: user.last_login_at ? new Date(user.last_login_at) : null,
+          role: user.role
+        }));
+
+      return {
+        byRole: Object.entries(roleMap).map(([role, count]) => ({ role, count })),
+        activeToday,
+        activeThisWeek,
+        newThisMonth,
+        recentActivity
+      };
+    } catch (error) {
+      console.error('Error fetching user analytics:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get comprehensive dashboard metrics for a client or all clients (admin)
    */
   getDashboardMetrics: async (clientId?: string | null): Promise<DashboardMetrics> => {

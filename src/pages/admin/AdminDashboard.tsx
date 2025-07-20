@@ -1,49 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import {
-  Users,
-  Building2,
-  Phone,
-  UserCheck,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Activity,
-  BarChart3,
-  RefreshCw,
-  PieChart,
-  Target,
-  Zap,
-  Shield,
-  Database,
-  Server,
-  CreditCard,
-  Percent,
-  Calculator,
-  Globe,
-  UserX,
-  AlertCircle,
-  Cpu,
-  HardDrive,
-  Wifi,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+
+// Import new modular components
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { FinancialOverview } from '@/components/admin/dashboard/FinancialOverview';
+import { BusinessMetrics } from '@/components/admin/dashboard/BusinessMetrics';
+import { TabLoadingSkeleton } from '@/components/admin/dashboard/TabLoadingSkeleton';
+
+// Lazy load tab components for better performance
+const FinancialTab = React.lazy(() => import('@/components/admin/dashboard/tabs/FinancialTab').then(m => ({ default: m.FinancialTab })));
+const ClientsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/ClientsTab').then(m => ({ default: m.ClientsTab })));
+const UsersTab = React.lazy(() => import('@/components/admin/dashboard/tabs/UsersTab').then(m => ({ default: m.UsersTab })));
+const SystemTab = React.lazy(() => import('@/components/admin/dashboard/tabs/SystemTab').then(m => ({ default: m.SystemTab })));
+const OperationsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/OperationsTab').then(m => ({ default: m.OperationsTab })));
+
+// Import existing services (will be extended in later tasks)
 import { AdminService } from '@/services/adminService';
 import { AgentStatusService } from '@/services/agentStatusService';
 import { SystemMessageService } from '@/services/systemMessageService';
 import { Client, User, SystemMessage, AgentStatus } from '@/types/admin';
-import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, formatNumber } from '@/utils/formatting';
+import { formatNumber, formatCurrency } from '@/utils/formatting';
 
 interface DashboardMetrics {
   // Basic counts
@@ -124,13 +105,13 @@ const AdminDashboard = () => {
   const isMobile = useIsMobile();
   const tabsRef = useRef<HTMLDivElement>(null);
   
-  // Tab options
+  // Tab options following Analytics page pattern
   const tabOptions = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'clients', label: 'Clients' },
-    { id: 'users', label: 'Users' },
-    { id: 'financial', label: 'Financial' },
-    { id: 'system', label: 'System' }
+    { id: 'financial', label: 'Financial Analysis', shortLabel: 'Financial' },
+    { id: 'clients', label: 'Client Analytics', shortLabel: 'Clients' },
+    { id: 'users', label: 'User Analytics', shortLabel: 'Users' },
+    { id: 'system', label: 'System Health', shortLabel: 'System' },
+    { id: 'operations', label: 'Operations', shortLabel: 'Operations' }
   ];
   
   // Handle tab scrolling on mobile
@@ -374,141 +355,40 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            System overview and key metrics • Last updated: {lastUpdated.toLocaleTimeString()}
-          </p>
-        </div>
-        <Button onClick={handleRefresh} disabled={isLoading} className="flex items-center gap-2">
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          {!isMobile && "Refresh"}
-        </Button>
-      </div>
+      {/* Header Component */}
+      <DashboardHeader 
+        lastUpdated={lastUpdated}
+        isLoading={isLoading}
+        onRefresh={handleRefresh}
+      />
 
-      {/* Financial Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalRevenue, 'CAD')}</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              +{metrics.growthTrends.revenueGrowth}% from last month
-            </p>
-          </CardContent>
-        </Card>
+      {/* Financial Overview Component */}
+      <FinancialOverview 
+        metrics={{
+          totalRevenue: metrics.totalRevenue,
+          totalCosts: metrics.totalAiCosts + metrics.totalMiscCosts + metrics.costBreakdown.partnerSplits + metrics.costBreakdown.findersFees,
+          netProfit: metrics.totalProfit,
+          profitMargin: metrics.avgProfitMargin,
+          growthTrends: metrics.growthTrends
+        }}
+      />
 
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Costs</CardTitle>
-            <CreditCard className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(metrics.totalAiCosts + metrics.totalMiscCosts + metrics.costBreakdown.partnerSplits + metrics.costBreakdown.findersFees, 'CAD')}
-            </div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              +{metrics.growthTrends.costGrowth}% from last month
-            </p>
-          </CardContent>
-        </Card>
+      {/* Business Metrics Component */}
+      <BusinessMetrics 
+        metrics={{
+          activeClients: metrics.activeClients,
+          totalClients: metrics.totalClients,
+          clientGrowth: metrics.growthTrends.clientGrowth,
+          activeUsersToday: metrics.userAnalytics.activeToday,
+          totalUsers: metrics.totalUsers,
+          newUsersThisMonth: metrics.userAnalytics.newThisMonth,
+          apiUtilization: metrics.systemResources.apiLimitUtilization,
+          apiCallsToday: metrics.systemResources.apiCallsToday,
+          systemHealth: metrics.systemHealth
+        }}
+      />
 
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-            <Target className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.totalProfit, 'CAD')}</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              +{metrics.growthTrends.profitGrowth}% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
-            <Percent className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{metrics.avgProfitMargin.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Average across all clients
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Business Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(metrics.activeClients)}</div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.totalClients} total • +{metrics.growthTrends.clientGrowth}% growth
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users Today</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(metrics.userAnalytics.activeToday)}</div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.totalUsers} total • {metrics.userAnalytics.newThisMonth} new this month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">API Utilization</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.systemResources.apiLimitUtilization.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              {formatNumber(metrics.systemResources.apiCallsToday)} calls today
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Health</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold capitalize">{metrics.systemHealth}</div>
-              {metrics.systemHealth === 'healthy' && <CheckCircle className="h-5 w-5 text-green-500" />}
-              {metrics.systemHealth === 'degraded' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
-              {metrics.systemHealth === 'down' && <AlertTriangle className="h-5 w-5 text-red-500" />}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All systems operational
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Dashboard Tabs */}
+      {/* Dashboard Tabs - Following Analytics page pattern */}
       <Tabs defaultValue="financial" className="space-y-4">
         {/* Mobile-optimized tabs with horizontal scrolling */}
         {isMobile ? (
@@ -534,7 +414,7 @@ const AdminDashboard = () => {
                     value={tab.id}
                     className="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap"
                   >
-                    {tab.label}
+                    {tab.shortLabel}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -559,530 +439,34 @@ const AdminDashboard = () => {
           </TabsList>
         )}
 
-        <TabsContent value="financial" className="space-y-4">
-          {/* Cost Breakdown */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5" />
-                  Cost Breakdown
-                </CardTitle>
-                <CardDescription>Monthly operational costs by category</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">AI Costs (OpenAI)</span>
-                    <span className="font-medium">{formatCurrency(metrics.costBreakdown.aiCosts, 'CAD')}</span>
-                  </div>
-                  <Progress value={(metrics.costBreakdown.aiCosts / (metrics.totalAiCosts + metrics.totalMiscCosts + metrics.costBreakdown.partnerSplits + metrics.costBreakdown.findersFees)) * 100} className="h-2" />
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Miscellaneous Costs</span>
-                    <span className="font-medium">{formatCurrency(metrics.costBreakdown.miscCosts, 'CAD')}</span>
-                  </div>
-                  <Progress value={(metrics.costBreakdown.miscCosts / (metrics.totalAiCosts + metrics.totalMiscCosts + metrics.costBreakdown.partnerSplits + metrics.costBreakdown.findersFees)) * 100} className="h-2" />
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Partner Splits</span>
-                    <span className="font-medium">{formatCurrency(metrics.costBreakdown.partnerSplits, 'CAD')}</span>
-                  </div>
-                  <Progress value={(metrics.costBreakdown.partnerSplits / (metrics.totalAiCosts + metrics.totalMiscCosts + metrics.costBreakdown.partnerSplits + metrics.costBreakdown.findersFees)) * 100} className="h-2" />
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Finder's Fees</span>
-                    <span className="font-medium">{formatCurrency(metrics.costBreakdown.findersFees, 'CAD')}</span>
-                  </div>
-                  <Progress value={(metrics.costBreakdown.findersFees / (metrics.totalAiCosts + metrics.totalMiscCosts + metrics.costBreakdown.partnerSplits + metrics.costBreakdown.findersFees)) * 100} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Profitability Analysis
-                </CardTitle>
-                <CardDescription>Revenue vs costs breakdown</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-green-600">
-                    <span className="text-sm font-medium">Total Revenue</span>
-                    <span className="font-bold">{formatCurrency(metrics.totalRevenue, 'CAD')}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-red-600">
-                    <span className="text-sm font-medium">Total Costs</span>
-                    <span className="font-bold">-{formatCurrency(metrics.totalAiCosts + metrics.totalMiscCosts + metrics.costBreakdown.partnerSplits + metrics.costBreakdown.findersFees, 'CAD')}</span>
-                  </div>
-
-                  <hr className="my-2" />
-
-                  <div className="flex items-center justify-between text-blue-600">
-                    <span className="text-sm font-medium">Net Profit</span>
-                    <span className="font-bold text-lg">{formatCurrency(metrics.totalProfit, 'CAD')}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Profit Margin</span>
-                    <span className="font-medium">{metrics.avgProfitMargin.toFixed(1)}%</span>
-                  </div>
-
-                  <Progress value={Math.max(0, metrics.avgProfitMargin)} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Top Performing Clients by Profitability */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Client Profitability Ranking
-              </CardTitle>
-              <CardDescription>Clients ranked by profit contribution</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {metrics.clientProfitability.slice(0, 8).map((client, index) => (
-                  <div key={client.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{client.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Revenue: {formatCurrency(client.revenue, 'CAD')} •
-                          Costs: {formatCurrency(client.costs, 'CAD')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-bold ${client.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(client.profit, 'CAD')}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {client.margin.toFixed(1)}% margin
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="financial">
+          <Suspense fallback={<TabLoadingSkeleton />}>
+            <FinancialTab />
+          </Suspense>
         </TabsContent>
 
-        <TabsContent value="clients" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Client Status Distribution
-                </CardTitle>
-                <CardDescription>Breakdown of clients by status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(
-                    metrics.recentClients.reduce((acc, client) => {
-                      acc[client.status] = (acc[client.status] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  ).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={status === 'active' ? 'default' : 'secondary'}>
-                          {status}
-                        </Badge>
-                        <span className="text-sm capitalize">{status} Clients</span>
-                      </div>
-                      <span className="font-medium">{count}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Subscription Plans
-                </CardTitle>
-                <CardDescription>Distribution by subscription tier</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(
-                    metrics.recentClients.reduce((acc, client) => {
-                      acc[client.subscription_plan] = (acc[client.subscription_plan] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  ).map(([plan, count]) => (
-                    <div key={plan} className="flex items-center justify-between">
-                      <span className="text-sm">{plan}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{count}</span>
-                        <Progress value={(count / metrics.totalClients) * 100} className="w-16 h-2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Client Activity</CardTitle>
-              <CardDescription>Latest client registrations and updates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {metrics.recentClients.map((client) => (
-                  <div key={client.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div>
-                      <p className="font-medium">{client.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {client.type} • {client.subscription_plan} •
-                        Joined {new Date(client.joined_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                        {client.status}
-                      </Badge>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {formatCurrency(client.monthly_billing_amount_cad, 'CAD')}/mo
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="clients">
+          <Suspense fallback={<TabLoadingSkeleton />}>
+            <ClientsTab />
+          </Suspense>
         </TabsContent>
 
-        <TabsContent value="users" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  User Distribution by Role
-                </CardTitle>
-                <CardDescription>Breakdown of users by access level</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(metrics.userAnalytics.byRole).map(([role, count]) => (
-                    <div key={role} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="capitalize">
-                          {role.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{count}</span>
-                        <Progress value={(count / metrics.totalUsers) * 100} className="w-16 h-2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  User Activity Metrics
-                </CardTitle>
-                <CardDescription>User engagement and activity stats</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Active Today</span>
-                  <span className="font-medium">{metrics.userAnalytics.activeToday}</span>
-                </div>
-                <Progress value={(metrics.userAnalytics.activeToday / metrics.totalUsers) * 100} className="h-2" />
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">New This Month</span>
-                  <span className="font-medium">{metrics.userAnalytics.newThisMonth}</span>
-                </div>
-                <Progress value={(metrics.userAnalytics.newThisMonth / metrics.totalUsers) * 100} className="h-2" />
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Total Users</span>
-                  <span className="font-medium">{metrics.totalUsers}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent User Activity</CardTitle>
-              <CardDescription>Latest user registrations and logins</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {metrics.recentUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div>
-                      <p className="font-medium">{user.full_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.email} • {user.role.replace('_', ' ')}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm">
-                        Joined {new Date(user.created_at).toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.last_login_at
-                          ? `Last login: ${new Date(user.last_login_at).toLocaleDateString()}`
-                          : 'Never logged in'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="users">
+          <Suspense fallback={<TabLoadingSkeleton />}>
+            <UsersTab />
+          </Suspense>
         </TabsContent>
 
-        <TabsContent value="system" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Cpu className="h-5 w-5" />
-                  CPU Usage
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold mb-2">{metrics.systemResources.cpuUsage}%</div>
-                <Progress value={metrics.systemResources.cpuUsage} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {metrics.systemResources.cpuUsage < 70 ? 'Normal' : 'High'} usage
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Memory Usage
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold mb-2">{metrics.systemResources.memoryUsage}%</div>
-                <Progress value={metrics.systemResources.memoryUsage} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {metrics.systemResources.memoryUsage < 80 ? 'Normal' : 'High'} usage
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HardDrive className="h-5 w-5" />
-                  Storage Usage
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold mb-2">{metrics.systemResources.storageUsage}%</div>
-                <Progress value={metrics.systemResources.storageUsage} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {metrics.systemResources.storageUsage < 85 ? 'Normal' : 'High'} usage
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wifi className="h-5 w-5" />
-                  System Health Status
-                </CardTitle>
-                <CardDescription>Current system component status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Database</span>
-                    <Badge variant="default">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Healthy
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">API Server</span>
-                    <Badge variant="default">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Healthy
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">AI Services</span>
-                    <Badge variant="default">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Healthy
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Storage</span>
-                    <Badge variant="default">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Healthy
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>System Messages</CardTitle>
-                <CardDescription>Recent system notifications and alerts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {metrics.systemMessages.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No recent system messages</p>
-                  ) : (
-                    metrics.systemMessages.slice(0, 5).map((message) => (
-                      <div key={message.id} className="flex items-start gap-3">
-                        <Badge variant={
-                          message.type === 'error' ? 'destructive' :
-                            message.type === 'warning' ? 'secondary' :
-                              message.type === 'success' ? 'default' : 'outline'
-                        }>
-                          {message.type}
-                        </Badge>
-                        <div className="flex-1">
-                          <p className="text-sm">{message.message}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(message.timestamp).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="system">
+          <Suspense fallback={<TabLoadingSkeleton />}>
+            <SystemTab />
+          </Suspense>
         </TabsContent>
 
-        <TabsContent value="operations" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Call Operations
-                </CardTitle>
-                <CardDescription>Call volume and performance metrics</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Total Calls</span>
-                  <span className="font-medium">{formatNumber(metrics.totalCalls)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Total Leads</span>
-                  <span className="font-medium">{formatNumber(metrics.totalLeads)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Conversion Rate</span>
-                  <span className="font-medium">{metrics.conversionRate.toFixed(1)}%</span>
-                </div>
-                <Progress value={metrics.conversionRate} className="h-2" />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Avg Call Duration</span>
-                  <span className="font-medium">{Math.round(metrics.avgCallDuration / 60)}m {metrics.avgCallDuration % 60}s</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Agent Status Overview
-                </CardTitle>
-                <CardDescription>Current agent operational status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {metrics.agentStatuses.slice(0, 5).map((status) => (
-                    <div key={status.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">
-                          {status.client_id ? `Client ${status.client_id.slice(0, 8)}...` : 'Global Agent'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {status.message || 'No status message'}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          status.status === 'active' ? 'default' :
-                            status.status === 'maintenance' ? 'secondary' : 'destructive'
-                        }
-                      >
-                        {status.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Platform Growth Trends
-              </CardTitle>
-              <CardDescription>Month-over-month growth metrics</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold text-blue-600">+{metrics.growthTrends.clientGrowth}%</div>
-                  <p className="text-sm text-muted-foreground">Client Growth</p>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold text-green-600">+{metrics.growthTrends.revenueGrowth}%</div>
-                  <p className="text-sm text-muted-foreground">Revenue Growth</p>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold text-red-600">+{metrics.growthTrends.costGrowth}%</div>
-                  <p className="text-sm text-muted-foreground">Cost Growth</p>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold text-purple-600">+{metrics.growthTrends.profitGrowth}%</div>
-                  <p className="text-sm text-muted-foreground">Profit Growth</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="operations">
+          <Suspense fallback={<TabLoadingSkeleton />}>
+            <OperationsTab />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>
