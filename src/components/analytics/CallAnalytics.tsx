@@ -31,6 +31,7 @@ interface CallAnalyticsData {
   callVolume: Array<{ date: string, count: number }>;
   callDuration: Array<{ date: string, avgDuration: number }>;
   callOutcomes: Array<{ outcome: string, count: number, percentage: number }>;
+  callInquiries: Array<{ type: string, count: number, percentage: number }>;
   hourlyDistribution: Array<{ hour: number, count: number }>;
   dailyDistribution: Array<{ day: string, count: number }>;
   performanceMetrics: {
@@ -60,6 +61,14 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
     failed: '#ef4444',
     incomplete: '#6b7280'
   }), []);
+  
+  // Colors for call inquiry types
+  const inquiryColors = useMemo(() => ({
+    general: '#a78bfa', // Light purple shade
+    purchase: '#10b981', // Green shade
+    service: '#f59e0b', // Orange shade
+    other: '#6b7280' // Grey shade
+  }), []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -82,11 +91,20 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
           }),
           AnalyticsService.getCallPerformanceMetrics(effectiveClientId)
         ]);
+        
+        // Mock data for call inquiries
+        const mockCallInquiries = [
+          { type: 'general', count: 18, percentage: 18 },
+          { type: 'purchase', count: 52, percentage: 52 },
+          { type: 'service', count: 28, percentage: 28 },
+          { type: 'other', count: 2, percentage: 2 }
+        ];
 
         setData({
           callVolume: analyticsData.callVolume,
           callDuration: analyticsData.callDuration,
           callOutcomes: analyticsData.callOutcomes,
+          callInquiries: mockCallInquiries,
           hourlyDistribution: analyticsData.hourlyDistribution,
           dailyDistribution: analyticsData.dailyDistribution,
           performanceMetrics: performanceData
@@ -291,33 +309,37 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
           </CardContent>
         </Card>
 
-        {/* Call Outcomes */}
+        {/* Call Inquiry Types */}
         <Card>
           <CardHeader>
-            <CardTitle>Call Outcomes</CardTitle>
+            <CardTitle>Call Inquiry Types</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={data.callOutcomes}
+                    data={data.callInquiries}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
                     outerRadius={100}
                     paddingAngle={5}
                     dataKey="count"
-                    label={({ outcome, percentage }) => `${outcome} (${percentage}%)`}
+                    nameKey="type"
+                    label={({ type, percentage }) => `${type} (${percentage}%)`}
                   >
-                    {data.callOutcomes.map((entry, index) => (
+                    {data.callInquiries.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={outcomeColors[entry.outcome as keyof typeof outcomeColors] || '#6b7280'} 
+                        fill={inquiryColors[entry.type as keyof typeof inquiryColors] || '#6b7280'} 
                       />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value} calls`, 'Count']} />
+                  <Tooltip 
+                    formatter={(value, name, props) => [`${value}%`, `${props.payload.type} inquiries`]} 
+                    labelFormatter={() => ''}
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
