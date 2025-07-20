@@ -116,14 +116,28 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
             clientId: effectiveClientId,
             startDate,
             endDate,
-            timeframe: 'month'
+            timeframe: 'day' // Changed from 'month' to 'day' to get more granular data points
           }),
           AnalyticsService.getCallPerformanceMetrics(effectiveClientId)
         ]);
 
+        console.log('Call volume data:', analyticsData.callVolume);
+        console.log('Call duration data:', analyticsData.callDuration);
+
+        // Ensure we have valid date objects for the charts
+        const processedCallVolume = analyticsData.callVolume.map(item => ({
+          ...item,
+          date: item.date // Ensure date is in ISO format YYYY-MM-DD
+        }));
+
+        const processedCallDuration = analyticsData.callDuration.map(item => ({
+          ...item,
+          date: item.date // Ensure date is in ISO format YYYY-MM-DD
+        }));
+
         setData({
-          callVolume: analyticsData.callVolume,
-          callDuration: analyticsData.callDuration,
+          callVolume: processedCallVolume,
+          callDuration: processedCallDuration,
           callOutcomes: analyticsData.callOutcomes,
           callInquiries: callInquiries,
           hourlyDistribution: analyticsData.hourlyDistribution,
@@ -306,13 +320,16 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.callVolume}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis 
                     dataKey="date" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <YAxis 
+                    allowDecimals={false} 
+                    tick={{ fontSize: 12 }} 
+                  />
                   <Tooltip 
                     labelFormatter={(value) => new Date(value).toLocaleDateString()}
                     formatter={(value) => [`${value} calls`, 'Call Volume']}
@@ -323,6 +340,8 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
                     stroke="#8b5cf6" 
                     strokeWidth={2}
                     dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
+                    name="call-volume"
+                    id="call-volume-line"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -410,11 +429,11 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.callDuration}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis 
                     dataKey="date" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   />
                   <YAxis 
                     tick={{ fontSize: 12 }}
@@ -430,6 +449,8 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate }) => 
                     stroke="#10b981" 
                     strokeWidth={2}
                     dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                    name="avg-duration"
+                    id="avg-duration-line"
                   />
                 </LineChart>
               </ResponsiveContainer>
