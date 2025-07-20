@@ -579,9 +579,10 @@ export const AuditService = {
 
   logAgentStatusChange: async (
     userId: string,
-    clientId: string,
-    oldStatus?: string,
+    clientId: string | null,
+    oldStatus?: string | null,
     newStatus?: string,
+    message?: string,
     ipAddress?: string,
     userAgent?: string
   ): Promise<AuditLog> => {
@@ -589,10 +590,10 @@ export const AuditService = {
       userId,
       'agent_status_change',
       'agent_status',
-      clientId,
+      clientId || undefined,
       oldStatus ? { status: oldStatus } : undefined,
-      newStatus ? { status: newStatus } : undefined,
-      clientId,
+      { status: newStatus, message },
+      clientId || undefined,
       ipAddress,
       userAgent
     );
@@ -600,19 +601,22 @@ export const AuditService = {
 
   logSystemMessageAction: async (
     userId: string,
+    action: 'create' | 'update' | 'delete',
     messageId: string,
-    clientId?: string,
+    oldValues?: Record<string, any>,
+    newValues?: Record<string, any>,
+    clientId?: string | null,
     ipAddress?: string,
     userAgent?: string
   ): Promise<AuditLog> => {
     return AuditService.logAuditEvent(
       userId,
-      'system_message_create',
+      action === 'create' ? 'system_message_create' : action,
       'system_messages',
       messageId,
-      undefined,
-      undefined,
-      clientId,
+      oldValues,
+      newValues,
+      clientId || undefined,
       ipAddress,
       userAgent
     );

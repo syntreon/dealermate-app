@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,27 +6,52 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Circle, AlertTriangle, Wrench, Save } from 'lucide-react';
-import { AgentStatus } from '@/types/dashboard';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Circle, AlertTriangle, Wrench, Save, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { AgentStatus } from '@/types/admin';
+import { useRealtimeAgentStatus } from '@/hooks/useRealtimeAgentStatus';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface AgentStatusControlProps {
-  currentStatus: AgentStatus;
-  onUpdateStatus: (status: Omit<AgentStatus, 'lastUpdated'>) => Promise<void>;
+  clientId?: string | null;
+  onStatusChange?: (status: AgentStatus) => void;
 }
 
 const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
-  currentStatus,
-  onUpdateStatus
+  clientId,
+  onStatusChange
 }) => {
-  const [formData, setFormData] = useState({
-    status: currentStatus.status,
-    message: currentStatus.message || ''
+  const {
+    agentStatus,
+    isLoading,
+    error,
+    connectionStatus,
+    updateStatus,
+    refresh,
+    isUpdating
+  } = useRealtimeAgentStatus({
+    clientId,
+    enableNotifications: true,
+    onStatusChange
   });
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  const getStatusConfig = (status: AgentStatus['status']) => {
+  const [formData, setFormData] = useState({
+    status: 'active' as 'active' | 'inactive' | 'maintenance',
+    message: ''
+  });
+
+  // Update form data when agent status changes
+  useEffect(() => {
+    if (agentStatus) {
+      setFormData({
+        status: agentStatus.status,
+        message: agentStatus.message || ''
+      });
+    }
+  }, [agentStatus]);
+
+  const getStatusConfig = (status: 'active' | 'inactive' | 'maintenance') => {
     switch (status) {
       case 'active':
         return {
@@ -63,64 +88,116 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
     }
   };
 
-  const currentConfig = getStatusConfig(currentStatus.status);
+  const getConnectionIcon = () => {
+    switch (connectionStatus.status) {
+      case 'connected':
+        return <Wifi className="h-4 w-4 text-emerald-500" />;
+      case 'connecting':
+        return <RefreshCw className="h-4 w-4 text-amber-500 animate-spin" />;
+      case 'disconnected':
+      case 'error':
+        return <WifiOff className="h-4 w-4 text-destructive" />;
+      default:
+        return <WifiOff className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const currentConfig = agentStatus ? getStatusConfig(agentStatus.status) : getStatusConfig('active');
   const CurrentIcon = currentConfig.icon;
 
-  const handleQuickUpdate = async (status: AgentStatus['status'], message: string) => {
-    setIsUpdating(true);
+  const handleQuickUpdate = async (status: 'active' | 'inactive' | 'maintenance', message: string) => {
     try {
-      await onUpdateStatus({ status, message });
-      toast.success(`Agent status set to ${status}`);
+      await updateStatus({ status, message });
     } catch (error) {
-      toast.error('Failed to update agent status');
-    } finally {
-      setIsUpdating(false);
+      // Error handling is done in the hook
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUpdating(true);
-
     try {
-      await onUpdateStatus({
+      await updateStatus({
         status: formData.status,
         message: formData.message || undefined
       });
-      toast.success('Agent status updated successfully');
     } catch (error) {
-      toast.error('Failed to update agent status');
-    } finally {
-      setIsUpdating(false);
+      // Error handling is done in the hook
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">Agent Status Control</h2>
+        <div className="flex items-center justify-center p-8">
+          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Agent Status Control</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Agent Status Control</h2>
+        <div className="flex items-center gap-2">
+          {getConnectionIcon()}
+          <span className="text-sm text-muted-foreground">
+            {connectionStatus.status === 'connected' ? 'Live' : 'Offline'}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Connection Status Alert */}
+      {connectionStatus.status === 'error' && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Connection error: {connectionStatus.error}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Current Status Display */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={cn("flex items-center gap-3 p-4 rounded-lg", currentConfig.bgColor)}>
-            <CurrentIcon className={cn("h-6 w-6", currentConfig.color)} />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-white dark:text-emerald-100">{currentConfig.label}</span>
-                <Badge variant="outline" className="bg-white/20 text-white border-white/30 dark:bg-emerald-100/20 dark:text-emerald-100 dark:border-emerald-100/30">
-                  Last updated: {currentStatus.lastUpdated.toLocaleString()}
-                </Badge>
+      {agentStatus && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={cn("flex items-center gap-3 p-4 rounded-lg", currentConfig.bgColor)}>
+              <CurrentIcon className={cn("h-6 w-6", currentConfig.color)} />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-white dark:text-emerald-100">{currentConfig.label}</span>
+                  <Badge variant="outline" className="bg-white/20 text-white border-white/30 dark:bg-emerald-100/20 dark:text-emerald-100 dark:border-emerald-100/30">
+                    Last updated: {agentStatus.last_updated.toLocaleString()}
+                  </Badge>
+                </div>
+                <p className="text-sm text-white/80 dark:text-emerald-100/80 mt-1">
+                  {agentStatus.message || currentConfig.description}
+                </p>
               </div>
-              <p className="text-sm text-white/80 dark:text-emerald-100/80 mt-1">
-                {currentStatus.message || currentConfig.description}
-              </p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status Update Form */}
       <Card>
@@ -133,7 +210,7 @@ const AgentStatusControl: React.FC<AgentStatusControlProps> = ({
               <Label htmlFor="status">Status</Label>
               <Select 
                 value={formData.status} 
-                onValueChange={(value: AgentStatus['status']) => 
+                onValueChange={(value: 'active' | 'inactive' | 'maintenance') => 
                   setFormData(prev => ({ ...prev, status: value }))
                 }
               >
