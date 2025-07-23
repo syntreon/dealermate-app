@@ -130,24 +130,26 @@ This implementation plan breaks down the refactoring of AdminDashboard into mana
     - Implement theme-aware status badges and alert styling
     - _Requirements: 2.5, 3.1, 3.5, 7.3_
 
-- [ ] 8. Implement OperationsTab component with call analytics
-  - [ ] 8.1 Create call operations metrics
-    - Calculate total calls, leads, and conversion rates from database
-    - Show average call duration and daily call volume
-    - Display metrics with theme-aware formatting
+- [ ] 8. Implement OperationsTab component with Make.com operations analytics
+  - [ ] 8.1 Create Make.com operations database schema
+    - Design `make_operations` table to store daily operation metrics per scenario
+    - Include fields: client_id, scenario_name, date, operations_count, cost_usd, status
+    - Add migration script for the new table with proper indexes
     - _Requirements: 2.5, 2.6, 3.1_
 
-  - [ ] 8.2 Build agent status overview
-    - Display current agent operational status from database
-    - Show agent performance metrics and availability
-    - Use theme-aware status indicators and badges
-    - _Requirements: 2.5, 3.1, 3.5_
+  - [ ] 8.2 Build Make.com operations metrics dashboard
+    - Display daily/weekly/monthly operations usage per client and scenario
+    - Show operations cost breakdown and efficiency metrics
+    - Calculate operations per call ratio and cost per operation trends
+    - Use theme-aware charts and metric cards for data visualization
+    - _Requirements: 2.5, 3.1, 3.4_
 
-  - [ ] 8.3 Create platform growth trends
-    - Calculate month-over-month growth metrics from historical data
-    - Display client, revenue, cost, and profit growth trends
-    - Implement theme-aware trend indicators and charts
-    - _Requirements: 2.7, 3.1, 3.4_
+  - [ ] 8.3 Create operations monitoring and alerts
+    - Track operations usage against client limits or budgets
+    - Display scenario performance and failure rates
+    - Implement theme-aware status indicators for operation health
+    - Show operations trends and usage predictions
+    - _Requirements: 2.7, 3.1, 3.5_
 
 - [ ] 9. Add comprehensive error handling and loading states
   - [ ] 9.1 Implement error boundaries for each tab component

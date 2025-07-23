@@ -94,6 +94,7 @@ interface Call {
   tool_cost_usd: number;
   total_call_cost_usd: number;
   total_cost_cad: number | null;
+  make_com_operations: number | null; // Number of Make.com operations used
   
   created_at: Date;
   
@@ -189,6 +190,30 @@ interface MonthlyBillingSummary {
   total_finders_fees_cad: number;
   total_partner_payout_cad: number;
   net_profit_usd_cad: number;
+}
+```
+
+### Make Operations Model
+
+```typescript
+interface MakeOperation {
+  id: string; // UUID
+  client_id: string | null; // UUID, Foreign key to clients, NULL for company operations
+  call_id: string | null; // UUID, Foreign key to calls, NULL for non-call operations
+  scenario_name: string; // Human-readable scenario name
+  scenario_id: string | null; // Make.com internal scenario ID
+  operation_type: 'call' | 'admin' | 'marketing' | 'notification' | 'evaluation' | 'general'; // Type of operation
+  date: Date; // Date for the operations (YYYY-MM-DD)
+  operations_count: number; // Total operations executed
+  operations_limit: number | null; // Daily limit if applicable
+  cost_usd: number; // Cost in USD for operations
+  success_count: number; // Successful operations
+  error_count: number; // Failed operations
+  status: 'active' | 'paused' | 'error' | 'disabled'; // Scenario status
+  description: string | null; // Optional description of what this scenario does
+  last_sync_at: Date; // Last sync from Make.com
+  created_at: Date;
+  updated_at: Date;
 }
 
 create table public.leads (

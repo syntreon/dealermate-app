@@ -282,6 +282,83 @@ export interface DatabaseError extends Error {
   hint?: string;
 }
 
+// Make.com Operations Types
+export interface MakeOperation {
+  id: string;
+  client_id: string | null; // null for company operations
+  call_id: string | null; // null for non-call operations
+  scenario_name: string;
+  scenario_id: string | null;
+  operation_type: 'call' | 'admin' | 'marketing' | 'notification' | 'evaluation' | 'general';
+  date: string;
+  operations_count: number;
+  operations_limit: number | null;
+  cost_usd: number;
+  success_count: number;
+  error_count: number;
+  status: 'active' | 'paused' | 'error' | 'disabled';
+  description: string | null;
+  last_sync_at: Date;
+  created_at: Date;
+  updated_at: Date;
+
+  // Computed fields
+  success_rate?: number;
+  cost_per_operation?: number;
+  client?: Client;
+}
+
+export interface MakeOperationsMetrics {
+  totalOperations: number;
+  totalCost: number;
+  successRate: number;
+  dailyAverage: number;
+  topScenarios: Array<{
+    scenario_name: string;
+    operation_type: string;
+    operations_count: number;
+    cost_usd: number;
+    success_rate: number;
+  }>;
+  trends: Array<{
+    date: string;
+    operations_count: number;
+    cost_usd: number;
+    success_count: number;
+    error_count: number;
+  }>;
+  operationsByType: Array<{
+    operation_type: string;
+    operations_count: number;
+    cost_usd: number;
+    success_rate: number;
+  }>;
+}
+
+export interface ScenarioMetrics {
+  scenario_name: string;
+  operation_type: string;
+  total_operations: number;
+  total_cost: number;
+  success_rate: number;
+  avg_daily_operations: number;
+  status: string;
+  description: string | null;
+  last_sync_at: string;
+}
+
+export interface MakeOperationsFilters {
+  client_id?: string | 'all';
+  scenario_name?: string;
+  status?: 'active' | 'paused' | 'error' | 'disabled' | 'all';
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  sortBy?: 'date' | 'operations_count' | 'cost_usd' | 'success_rate';
+  sortDirection?: 'asc' | 'desc';
+}
+
 // Bulk Operation Types
 export interface BulkOperation {
   action: 'activate' | 'deactivate' | 'delete' | 'update';
