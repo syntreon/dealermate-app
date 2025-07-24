@@ -223,7 +223,7 @@ export const CallEvaluationTab: React.FC<CallEvaluationTabProps> = ({ call }) =>
                   >
                     {promptAdherence.prompt_adherence_score?.toFixed(0) ?? 'N/A'}
                   </span>
-                  <span className="text-xs text-muted-foreground">out of 100</span>
+                  <span className="text-xs text-muted-foreground">out of 5</span>
                 </div>
                 
                 {promptAdherence.what_went_well && Array.isArray(promptAdherence.what_went_well) && promptAdherence.what_went_well.length > 0 && (

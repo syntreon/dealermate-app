@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar, ChevronDown, ChevronUp, Clock, Filter, Phone, PhoneCall, PhoneOutgoing, Search, User, VoicemailIcon, Eye } from 'lucide-react';
 import { CallLog, CallType } from '@/integrations/supabase/call-logs-service';
 import { cn } from '@/lib/utils';
 import CallDetailsPopup from './calls/CallDetailsPopup';
 import { Button } from '@/components/ui/button';
+import InquiryTypeBadge from './calls/InquiryTypeBadge';
+import { CallIntelligenceService } from '@/services/callIntelligenceService';
 
 // Call type badge component
 const CallTypeBadge = ({ callType }: { callType: string }) => {
@@ -70,6 +72,26 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   const [selectedCallType, setSelectedCallType] = useState<string | null>(null);
   const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [inquiryTypes, setInquiryTypes] = useState<Map<string, string>>(new Map());
+
+  // Fetch inquiry types when call logs change
+  useEffect(() => {
+    const fetchInquiryTypes = async () => {
+      if (callLogs.length === 0) return;
+      
+      const callIds = callLogs.map(log => log.id).filter(Boolean);
+      if (callIds.length === 0) return;
+      
+      try {
+        const inquiryMap = await CallIntelligenceService.getCallInquiryTypes(callIds);
+        setInquiryTypes(inquiryMap);
+      } catch (error) {
+        console.error('Error fetching inquiry types:', error);
+      }
+    };
+
+    fetchInquiryTypes();
+  }, [callLogs]);
 
   // Handle sorting
   const handleSort = (field: keyof CallLog) => {
@@ -96,9 +118,9 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
         return (
           (log.caller_full_name?.toLowerCase().includes(search) || false) ||
           (log.caller_phone_number?.toLowerCase().includes(search) || false) ||
-          (log.call_summary?.toLowerCase().includes(search) || false) ||
           (log.transcript?.toLowerCase().includes(search) || false) ||
-          (log.client_id?.toLowerCase().includes(search) || false)
+          (log.client_id?.toLowerCase().includes(search) || false) ||
+          (inquiryTypes.get(log.id)?.toLowerCase().includes(search) || false)
         );
       }
       
@@ -165,7 +187,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
           </div>
           <input
             type="text"
-            placeholder="Search by name, phone, or summary..."
+            placeholder="Search by name, phone, or inquiry type..."
             className="pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -198,12 +220,12 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
             <tr>
               <SortableHeader field="caller_full_name" label="Caller" className="px-4 md:px-5 py-3 md:py-4" />
               <SortableHeader field="caller_phone_number" label="Phone" className="px-4 md:px-5 py-3 md:py-4" />
+              <th className="px-4 md:px-5 py-3 md:py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider">
+                Inquiry Type
+              </th>
               <SortableHeader field="call_start_time" label="Call Time" className="px-4 md:px-5 py-3 md:py-4" />
               <SortableHeader field="call_duration_mins" label="Duration" className="px-4 md:px-5 py-3 md:py-4 hidden md:table-cell" />
               <SortableHeader field="call_type" label="Type" className="px-4 md:px-5 py-3 md:py-4" />
-              <th className="px-4 md:px-5 py-3 md:py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider">
-                Summary
-              </th>
               <th className="px-4 md:px-5 py-3 md:py-4 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider">
                 Actions
               </th>
@@ -212,7 +234,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
           <tbody className="bg-card divide-y divide-border">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 md:px-5 py-12 md:py-16 text-center">
+                <td colSpan={7} className="px-4 md:px-5 py-12 md:py-16 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     <p className="text-foreground/70 text-sm font-medium">Loading call logs...</p>
@@ -221,7 +243,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
               </tr>
             ) : filteredAndSortedLogs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 md:px-5 py-12 md:py-16 text-center">
+                <td colSpan={7} className="px-4 md:px-5 py-12 md:py-16 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <Phone className="h-10 w-10 text-foreground/30" />
                     <div className="space-y-1">
@@ -268,6 +290,9 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                     </div>
                   </td>
                   <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap">
+                    <InquiryTypeBadge inquiryType={inquiryTypes.get(log.id) || null} />
+                  </td>
+                  <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-foreground/50 mr-2 md:mr-3" />
                       <span className="text-sm text-foreground">
@@ -289,11 +314,6 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                   </td>
                   <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap">
                     <CallTypeBadge callType={log.call_type || 'unknown'} />
-                  </td>
-                  <td className="px-4 md:px-5 py-4 md:py-5">
-                    <p className="text-sm text-foreground/80 line-clamp-2 md:line-clamp-3">
-                      {log.call_summary || 'No summary'}
-                    </p>
                   </td>
                   <td className="px-4 md:px-5 py-4 md:py-5 text-right">
                     <Button

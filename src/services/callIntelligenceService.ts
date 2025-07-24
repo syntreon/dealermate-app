@@ -75,6 +75,70 @@ export const CallIntelligenceService = {
   },
   
   /**
+   * Get inquiry type for a specific call
+   * 
+   * @param callId - The call ID to get inquiry type for
+   * @returns The inquiry type or null if not found
+   */
+  async getCallInquiryType(callId: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('call_intelligence')
+        .select('inquiry_type')
+        .eq('call_id', callId)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No intelligence data found for this call
+          return null;
+        }
+        console.error('Error fetching call inquiry type:', error);
+        return null;
+      }
+      
+      return data?.inquiry_type || null;
+    } catch (error) {
+      console.error('Exception in getCallInquiryType:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get inquiry types for multiple calls in batch
+   * 
+   * @param callIds - Array of call IDs to get inquiry types for
+   * @returns Map of call ID to inquiry type
+   */
+  async getCallInquiryTypes(callIds: string[]): Promise<Map<string, string>> {
+    try {
+      if (callIds.length === 0) return new Map();
+      
+      const { data, error } = await supabase
+        .from('call_intelligence')
+        .select('call_id, inquiry_type')
+        .in('call_id', callIds);
+      
+      if (error) {
+        console.error('Error fetching call inquiry types:', error);
+        return new Map();
+      }
+      
+      const inquiryMap = new Map<string, string>();
+      data?.forEach(item => {
+        if (item.call_id && item.inquiry_type) {
+          inquiryMap.set(item.call_id, item.inquiry_type);
+        }
+      });
+      
+      return inquiryMap;
+    } catch (error) {
+      console.error('Exception in getCallInquiryTypes:', error);
+      return new Map();
+    }
+  },
+
+  /**
    * Process raw call inquiry data into a format suitable for charts
    * 
    * @param inquiryData - Raw inquiry data from the database

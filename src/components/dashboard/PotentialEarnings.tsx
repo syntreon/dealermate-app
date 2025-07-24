@@ -62,13 +62,13 @@ export const PotentialEarnings: React.FC<PotentialEarningsProps> = ({ totalCalls
   return (
     <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium text-card-foreground">Potential Earnings</CardTitle>
+        <CardTitle className="text-lg font-medium text-card-foreground">Opportunity Value</CardTitle> {/* OLD value: Potential Earnings */}
         <CardDescription>Based on lead value and call volume.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-4">
         <div className="flex items-center justify-center p-6 rounded-lg bg-muted/50 border border-dashed">
           <div className="text-center">
-            <p className="text-sm text-muted-foreground">Potential Earning</p>
+            <p className="text-sm text-muted-foreground">Opportunity Value</p> {/* OLD value: Potential Earnings */}
             <p className="text-4xl font-bold text-primary">{formatCurrency(potentialEarnings)}</p>
           </div>
         </div>
