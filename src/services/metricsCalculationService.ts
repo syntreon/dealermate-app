@@ -16,6 +16,9 @@ export interface CostBreakdown {
   aiCosts: number; // SUM(openai_api_cost_usd * 1.35) - subcategory of call costs
   vapiCosts: number; // SUM(vapi_call_cost_usd * 1.35) - subcategory of call costs
   vapiLlmCosts: number; // SUM(vapi_llm_cost_usd * 1.35) - subcategory of vapi costs
+  ttsCosts: number; // SUM(tts_cost_usd * 1.35) - subcategory of vapi costs
+  transcriberCosts: number; // SUM(transcriber_cost_usd * 1.35) - subcategory of vapi costs
+  callSummaryCosts: number; // SUM(call_summary_cost_usd * 1.35) - subcategory of vapi costs
   twilioCosts: number; // SUM(twillio_call_cost_usd * 1.35) - subcategory of call costs
   smsCosts: number; // SUM(sms_cost_usd * 1.35) - subcategory of call costs
   toolCosts: number; // SUM(tool_cost_usd * 1.35)
@@ -122,7 +125,10 @@ export const MetricsCalculationService = {
           vapi_llm_cost_usd,
           twillio_call_cost_usd,
           sms_cost_usd,
-          tool_cost_usd
+          tool_cost_usd,
+          tts_cost,
+          transcriber_cost,
+          call_summary_cost
         `)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
@@ -133,12 +139,18 @@ export const MetricsCalculationService = {
       const costTotals = (calls || []).reduce((acc, call) => {
         const vapiCallCost = (call.vapi_call_cost_usd || 0) * USD_TO_CAD_RATE;
         const vapiLlmCost = (call.vapi_llm_cost_usd || 0) * USD_TO_CAD_RATE;
+        const ttsCost = (call.tts_cost || 0) * USD_TO_CAD_RATE;
+        const transcriberCost = (call.transcriber_cost || 0) * USD_TO_CAD_RATE;
+        const callSummaryCost = (call.call_summary_cost || 0) * USD_TO_CAD_RATE;
         
         return {
           totalCallCosts: acc.totalCallCosts + ((call.total_call_cost_usd || 0) * USD_TO_CAD_RATE),
           aiCosts: acc.aiCosts + ((call.openai_api_cost_usd || 0) * USD_TO_CAD_RATE),
           vapiCosts: acc.vapiCosts + vapiCallCost, // VAPI call costs only (LLM separate)
           vapiLlmCosts: acc.vapiLlmCosts + vapiLlmCost, // Track LLM separately
+          ttsCosts: acc.ttsCosts + ttsCost, // TTS costs
+          transcriberCosts: acc.transcriberCosts + transcriberCost, // Transcriber costs
+          callSummaryCosts: acc.callSummaryCosts + callSummaryCost, // Call summary costs
           twilioCosts: acc.twilioCosts + ((call.twillio_call_cost_usd || 0) * USD_TO_CAD_RATE),
           smsCosts: acc.smsCosts + ((call.sms_cost_usd || 0) * USD_TO_CAD_RATE),
           toolCosts: acc.toolCosts + ((call.tool_cost_usd || 0) * USD_TO_CAD_RATE),
@@ -148,6 +160,9 @@ export const MetricsCalculationService = {
         aiCosts: 0,
         vapiCosts: 0,
         vapiLlmCosts: 0,
+        ttsCosts: 0,
+        transcriberCosts: 0,
+        callSummaryCosts: 0,
         twilioCosts: 0,
         smsCosts: 0,
         toolCosts: 0,

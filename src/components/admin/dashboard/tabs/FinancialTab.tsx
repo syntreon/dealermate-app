@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PieChart, Calculator, TrendingUp, TrendingDown, DollarSign, Users, AlertCircle } from 'lucide-react';
 import { MetricsCalculationService, FinancialMetrics, CostBreakdown, ClientProfitability } from '@/services/metricsCalculationService';
-import { formatCurrency, formatNumber } from '@/utils/formatting';
+import { formatNumber } from '@/utils/formatting';
+import { formatCurrency, convertUsdToCad } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -82,9 +83,32 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
         value: costs.vapiCosts + costs.vapiLlmCosts, // Total VAPI including LLM
         percentage: ((costs.vapiCosts + costs.vapiLlmCosts) / costs.totalCallCosts) * 100, 
         color: 'text-green-600 dark:text-green-400',
-        subcategories: costs.vapiLlmCosts > 0 ? [
-          { name: 'VAPI LLM', value: costs.vapiLlmCosts, percentage: (costs.vapiLlmCosts / (costs.vapiCosts + costs.vapiLlmCosts)) * 100, color: 'text-emerald-600 dark:text-emerald-400' }
-        ] : []
+        subcategories: [
+          { 
+            name: 'VAPI LLM', 
+            value: costs.vapiLlmCosts, 
+            percentage: (costs.vapiLlmCosts / (costs.vapiCosts + costs.vapiLlmCosts)) * 100, 
+            color: 'text-emerald-600 dark:text-emerald-400' 
+          },
+          { 
+            name: 'TTS Cost', 
+            value: costs.ttsCosts || 0, 
+            percentage: ((costs.ttsCosts || 0) / (costs.vapiCosts + costs.vapiLlmCosts)) * 100, 
+            color: 'text-teal-600 dark:text-teal-400' 
+          },
+          { 
+            name: 'STT Cost', 
+            value: costs.transcriberCosts || 0, 
+            percentage: ((costs.transcriberCosts || 0) / (costs.vapiCosts + costs.vapiLlmCosts)) * 100, 
+            color: 'text-cyan-600 dark:text-cyan-400' 
+          },
+          { 
+            name: 'Call Summary', 
+            value: costs.callSummaryCosts || 0, 
+            percentage: ((costs.callSummaryCosts || 0) / (costs.vapiCosts + costs.vapiLlmCosts)) * 100, 
+            color: 'text-indigo-600 dark:text-indigo-400' 
+          }
+        ].filter(subItem => subItem.value > 0)
       },
       { name: 'Twilio Costs', value: costs.twilioCosts, percentage: (costs.twilioCosts / costs.totalCallCosts) * 100, color: 'text-purple-600 dark:text-purple-400', subcategories: [] },
       { name: 'SMS Costs', value: costs.smsCosts, percentage: (costs.smsCosts / costs.totalCallCosts) * 100, color: 'text-orange-600 dark:text-orange-400', subcategories: [] },
