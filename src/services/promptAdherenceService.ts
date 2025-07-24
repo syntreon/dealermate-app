@@ -58,6 +58,40 @@ export class PromptAdherenceService {
   }
 
   /**
+   * Get prompt adherence scores for multiple calls in batch
+   * 
+   * @param callIds - Array of call IDs to get adherence scores for
+   * @returns Map of call ID to adherence score
+   */
+  static async getAdherenceScoresByCallIds(callIds: string[]): Promise<Map<string, number>> {
+    try {
+      if (callIds.length === 0) return new Map();
+      
+      const { data, error } = await supabase
+        .from('prompt_adherence_reviews')
+        .select('call_id, prompt_adherence_score')
+        .in('call_id', callIds);
+
+      if (error) {
+        console.error('Error fetching prompt adherence scores:', error);
+        return new Map();
+      }
+
+      const adherenceMap = new Map<string, number>();
+      data?.forEach(item => {
+        if (item.call_id && item.prompt_adherence_score !== null) {
+          adherenceMap.set(item.call_id, item.prompt_adherence_score);
+        }
+      });
+
+      return adherenceMap;
+    } catch (error) {
+      console.error('Exception in getAdherenceScoresByCallIds:', error);
+      return new Map();
+    }
+  }
+
+  /**
    * Transform raw database data (with JSONB) to the expected interface format
    */
   private static transformRawData(raw: PromptAdherenceReviewRaw): PromptAdherenceReview {

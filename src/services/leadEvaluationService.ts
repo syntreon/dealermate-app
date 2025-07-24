@@ -30,6 +30,43 @@ export class LeadEvaluationService {
   }
 
   /**
+   * Get lead evaluations for multiple calls in batch
+   * 
+   * @param callIds - Array of call IDs to get evaluations for
+   * @returns Map of call ID to evaluation summary
+   */
+  static async getEvaluationsByCallIds(callIds: string[]): Promise<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>> {
+    try {
+      if (callIds.length === 0) return new Map();
+      
+      const { data, error } = await supabase
+        .from('lead_evaluations' as any)
+        .select('call_id, overall_evaluation_score, sentiment')
+        .in('call_id', callIds);
+
+      if (error) {
+        console.error('Error fetching lead evaluations:', error);
+        return new Map();
+      }
+
+      const evaluationMap = new Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>();
+      data?.forEach(item => {
+        if (item.call_id) {
+          evaluationMap.set(item.call_id, {
+            overallScore: item.overall_evaluation_score,
+            sentiment: item.sentiment
+          });
+        }
+      });
+
+      return evaluationMap;
+    } catch (error) {
+      console.error('Exception in getEvaluationsByCallIds:', error);
+      return new Map();
+    }
+  }
+
+  /**
    * Transform lead evaluation data into a summary format for display
    */
   static transformToSummary(evaluation: LeadEvaluation): LeadEvaluationSummary {

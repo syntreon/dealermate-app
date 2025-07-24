@@ -46,6 +46,14 @@
     --input: 214 32% 91%; /* Light input border Hex: #E2E8F0 */
     --ring: 252 86% 67%; /* Purple ring Hex: #6366F1 */
     
+    /* Semantic colors for consistent theming */
+    --success: 142 76% 36%; /* Green Hex: #16A34A */
+    --success-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
+    --warning: 38 92% 50%; /* Orange/Yellow Hex: #F59E0B */
+    --warning-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
+    --info: 217 91% 60%; /* Blue Hex: #3B82F6 */
+    --info-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
+    
     --radius: 0.75rem;
   }
 
@@ -78,6 +86,14 @@
     --border: 240 5% 20%; /* Dark zinc border Hex: #3F3F46 */
     --input: 240 5% 20%; /* Dark zinc input border Hex: #3F3F46 */
     --ring: 252 87% 67%; /* Vibrant purple Hex: #6366F1 */
+    
+    /* Semantic colors for dark mode */
+    --success: 142 69% 58%; /* Lighter green for dark mode Hex: #22C55E */
+    --success-foreground: 240 5% 10%; /* Dark zinc text Hex: #18181B */
+    --warning: 38 92% 50%; /* Orange/Yellow Hex: #F59E0B */
+    --warning-foreground: 240 5% 10%; /* Dark zinc text Hex: #18181B */
+    --info: 217 91% 60%; /* Blue Hex: #3B82F6 */
+    --info-foreground: 240 5% 10%; /* Dark zinc text Hex: #18181B */
   }
 }
 

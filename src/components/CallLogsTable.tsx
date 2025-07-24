@@ -6,7 +6,12 @@ import { cn } from '@/lib/utils';
 import CallDetailsPopup from './calls/CallDetailsPopup';
 import { Button } from '@/components/ui/button';
 import InquiryTypeBadge from './calls/InquiryTypeBadge';
+import { OverallScoreBadge, SentimentBadge, PromptAdherenceBadge } from './calls/EvaluationBadges';
 import { CallIntelligenceService } from '@/services/callIntelligenceService';
+import { LeadEvaluationService } from '@/services/leadEvaluationService';
+import { PromptAdherenceService } from '@/services/promptAdherenceService';
+import { useAuth } from '@/context/AuthContext';
+import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
 // Call type badge component
 const CallTypeBadge = ({ callType }: { callType: string }) => {
@@ -66,6 +71,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   loading,
   onRefresh
 }) => {
+  const { user } = useAuth();
   const [sortField, setSortField] = useState<keyof CallLog>('call_start_time');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,25 +79,41 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [inquiryTypes, setInquiryTypes] = useState<Map<string, string>>(new Map());
+  const [evaluations, setEvaluations] = useState<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>>(new Map());
+  const [adherenceScores, setAdherenceScores] = useState<Map<string, number>>(new Map());
 
-  // Fetch inquiry types when call logs change
+  const isAdmin = canViewSensitiveInfo(user);
+
+  // Fetch inquiry types and evaluation data when call logs change
   useEffect(() => {
-    const fetchInquiryTypes = async () => {
+    const fetchCallData = async () => {
       if (callLogs.length === 0) return;
       
       const callIds = callLogs.map(log => log.id).filter(Boolean);
       if (callIds.length === 0) return;
       
       try {
+        // Always fetch inquiry types
         const inquiryMap = await CallIntelligenceService.getCallInquiryTypes(callIds);
         setInquiryTypes(inquiryMap);
+
+        // Only fetch evaluation data for admin users
+        if (isAdmin) {
+          const [evaluationMap, adherenceMap] = await Promise.all([
+            LeadEvaluationService.getEvaluationsByCallIds(callIds),
+            PromptAdherenceService.getAdherenceScoresByCallIds(callIds)
+          ]);
+          
+          setEvaluations(evaluationMap);
+          setAdherenceScores(adherenceMap);
+        }
       } catch (error) {
-        console.error('Error fetching inquiry types:', error);
+        console.error('Error fetching call data:', error);
       }
     };
 
-    fetchInquiryTypes();
-  }, [callLogs]);
+    fetchCallData();
+  }, [callLogs, isAdmin]);
 
   // Handle sorting
   const handleSort = (field: keyof CallLog) => {
@@ -226,6 +248,19 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
               <SortableHeader field="call_start_time" label="Call Time" className="px-4 md:px-5 py-3 md:py-4" />
               <SortableHeader field="call_duration_mins" label="Duration" className="px-4 md:px-5 py-3 md:py-4 hidden md:table-cell" />
               <SortableHeader field="call_type" label="Type" className="px-4 md:px-5 py-3 md:py-4" />
+              {isAdmin && (
+                <>
+                  <th className="px-4 md:px-5 py-3 md:py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden lg:table-cell">
+                    Overall Score
+                  </th>
+                  <th className="px-4 md:px-5 py-3 md:py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden lg:table-cell">
+                    Sentiment
+                  </th>
+                  <th className="px-4 md:px-5 py-3 md:py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden xl:table-cell">
+                    AI Adherence
+                  </th>
+                </>
+              )}
               <th className="px-4 md:px-5 py-3 md:py-4 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider">
                 Actions
               </th>
@@ -234,7 +269,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
           <tbody className="bg-card divide-y divide-border">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 md:px-5 py-12 md:py-16 text-center">
+                <td colSpan={isAdmin ? 10 : 7} className="px-4 md:px-5 py-12 md:py-16 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     <p className="text-foreground/70 text-sm font-medium">Loading call logs...</p>
@@ -243,7 +278,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
               </tr>
             ) : filteredAndSortedLogs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 md:px-5 py-12 md:py-16 text-center">
+                <td colSpan={isAdmin ? 10 : 7} className="px-4 md:px-5 py-12 md:py-16 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <Phone className="h-10 w-10 text-foreground/30" />
                     <div className="space-y-1">
@@ -315,6 +350,19 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                   <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap">
                     <CallTypeBadge callType={log.call_type || 'unknown'} />
                   </td>
+                  {isAdmin && (
+                    <>
+                      <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap hidden lg:table-cell">
+                        <OverallScoreBadge score={evaluations.get(log.id)?.overallScore || null} />
+                      </td>
+                      <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap hidden lg:table-cell">
+                        <SentimentBadge sentiment={evaluations.get(log.id)?.sentiment || null} />
+                      </td>
+                      <td className="px-4 md:px-5 py-4 md:py-5 whitespace-nowrap hidden xl:table-cell">
+                        <PromptAdherenceBadge score={adherenceScores.get(log.id) || null} />
+                      </td>
+                    </>
+                  )}
                   <td className="px-4 md:px-5 py-4 md:py-5 text-right">
                     <Button
                       variant="ghost"
