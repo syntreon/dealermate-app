@@ -35,6 +35,7 @@ export interface LeadEvaluationCard {
 export interface LeadEvaluationSummary {
   overallScore: number | null;
   sentiment: 'positive' | 'neutral' | 'negative';
+  summary: string | null;
   humanReviewRequired: boolean;
   negativeCallFlag: boolean;
   evaluatedAt: Date;

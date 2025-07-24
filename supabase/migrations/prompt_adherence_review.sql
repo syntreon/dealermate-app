@@ -1,5 +1,11 @@
+-- This script will first drop the existing 'prompt_adherence_reviews' table 
+-- to avoid conflicts, and then recreate it with the updated JSONB schema.
+-- WARNING: This will delete all existing data in the table.
+
+DROP TABLE IF EXISTS public.prompt_adherence_reviews;
+
 -- This table stores a detailed, qualitative review of the AI's performance 
--- against its prompt, including a quantitative score for trend analysis.
+-- against its prompt, using JSONB for flexible, powerful querying.
 
 CREATE TABLE public.prompt_adherence_reviews (
     id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
@@ -9,14 +15,12 @@ CREATE TABLE public.prompt_adherence_reviews (
     -- A score from 1-5 indicating how strictly the agent followed its prompt.
     prompt_adherence_score integer NOT NULL,
     
-    -- An array of strings detailing what the agent did correctly.
-    what_went_well text[] NULL,
+    -- Using JSONB to store arrays of strings for powerful querying and future flexibility.
+    what_went_well jsonb NULL,
     
-    -- An array of strings detailing where the agent deviated from its prompt.
-    what_went_wrong text[] NULL,
+    what_went_wrong jsonb NULL,
     
-    -- An array of actionable suggestions to improve the agent's prompt.
-    recommendations_for_improvement text[] NULL,
+    recommendations_for_improvement jsonb NULL,
     
     -- A text summary of any critical failures, like hallucinations.
     critical_failures_summary text NULL,
@@ -34,3 +38,5 @@ CREATE INDEX IF NOT EXISTS idx_prompt_adherence_reviews_client_id ON public.prom
 CREATE INDEX IF NOT EXISTS idx_prompt_adherence_reviews_call_id ON public.prompt_adherence_reviews USING btree (call_id);
 CREATE INDEX IF NOT EXISTS idx_prompt_adherence_reviews_score ON public.prompt_adherence_reviews USING btree (prompt_adherence_score);
 
+-- A GIN index is highly recommended for querying inside JSONB columns.
+CREATE INDEX IF NOT EXISTS idx_prompt_adherence_reviews_wrong_gin ON public.prompt_adherence_reviews USING gin (what_went_wrong);

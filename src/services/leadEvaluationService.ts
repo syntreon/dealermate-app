@@ -87,6 +87,7 @@ export class LeadEvaluationService {
     return {
       overallScore: evaluation.overall_evaluation_score,
       sentiment: evaluation.sentiment,
+      summary: evaluation.sentiment_rationale,
       humanReviewRequired: evaluation.human_review_required,
       negativeCallFlag: evaluation.negative_call_flag,
       evaluatedAt: new Date(evaluation.evaluated_at),
