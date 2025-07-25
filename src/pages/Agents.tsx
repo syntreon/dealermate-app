@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Clock, MessageSquare, Phone, Calendar, Globe, RefreshCw, Search, UserCheck, ArrowRightLeft, Zap, BarChart } from 'lucide-react';
+import { Bot, Clock, MessageSquare, Phone, Calendar, Globe, RefreshCw, Search, UserCheck, ArrowRightLeft, Zap, BarChart, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 import ClientSelector from '@/components/ClientSelector';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { useSystemStatus } from '@/hooks/use-system-status';
+import { cn } from '@/lib/utils';
 
 interface Agent {
   id: string;
@@ -29,6 +31,12 @@ const Agents: React.FC = () => {
   const [selectedAgentName, setSelectedAgentName] = useState<string>('');
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedAgentDetails, setSelectedAgentDetails] = useState<Agent | null>(null);
+
+  // Get client ID from user if available
+  const clientId = user?.client_id || undefined;
+  
+  // Use the system status hook to get real-time status updates
+  const { status, statusMessage, isLoading } = useSystemStatus(clientId);
 
   // Check if user can view all clients (admin)
   const canViewAllClients = canViewSensitiveInfo(user);
@@ -218,6 +226,58 @@ const Agents: React.FC = () => {
         return <Bot className="h-4 w-4 text-gray-500" />;
     }
   };
+
+  // Helper function to get background color based on status
+  const getStatusBackgroundColor = () => {
+    switch (status) {
+      case 'maintenance':
+        return 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800';
+      case 'inactive':
+        return 'bg-destructive/10 border-destructive/30';
+      default:
+        return '';
+    }
+  };
+
+  // If system is in maintenance or inactive mode, show full-page message
+  if (!isLoading && (status === 'maintenance' || status === 'inactive')) {
+    return (
+      <div className={cn(
+        "flex flex-col items-center justify-center h-[calc(100vh-10rem)] p-8 rounded-lg border",
+        getStatusBackgroundColor()
+      )}>
+        <div className="text-center max-w-md space-y-6">
+          <div className="mx-auto rounded-full w-16 h-16 flex items-center justify-center bg-background border">
+            {status === 'maintenance' ? (
+              <AlertTriangle className="h-8 w-8 text-amber-500" />
+            ) : (
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            )}
+          </div>
+          
+          <h2 className="text-2xl font-bold">
+            {status === 'maintenance' ? 'System Maintenance' : 'System Unavailable'}
+          </h2>
+          
+          <p className="text-muted-foreground">
+            {statusMessage || 
+              (status === 'maintenance' 
+                ? 'The system is currently undergoing maintenance. Agents are temporarily unavailable.'
+                : 'The agent system is currently offline. Please try again later.')
+            }
+          </p>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+            className="mt-4"
+          >
+            Refresh Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-8">

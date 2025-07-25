@@ -54,6 +54,13 @@
     --info: 217 91% 60%; /* Blue Hex: #3B82F6 */
     --info-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
     
+    /* Chart colors for visualizations */
+    --chart-1: 217 91% 60%; /* Blue Hex: #3B82F6 */
+    --chart-2: 142 76% 36%; /* Green Hex: #16A34A */
+    --chart-3: 38 92% 50%; /* Orange Hex: #F59E0B */
+    --chart-4: 0 75% 50%; /* Red Hex: #D42F2F */
+    --chart-5: 252 86% 67%; /* Purple Hex: #6366F1 */
+    
     --radius: 0.75rem;
   }
 
@@ -94,6 +101,13 @@
     --warning-foreground: 240 5% 10%; /* Dark zinc text Hex: #18181B */
     --info: 217 91% 60%; /* Blue Hex: #3B82F6 */
     --info-foreground: 240 5% 10%; /* Dark zinc text Hex: #18181B */
+    
+    /* Chart colors for dark mode */
+    --chart-1: 217 91% 60%; /* Blue Hex: #3B82F6 */
+    --chart-2: 142 69% 58%; /* Green Hex: #22C55E */
+    --chart-3: 38 92% 50%; /* Orange Hex: #F59E0B */
+    --chart-4: 0 84% 60%; /* Red Hex: #EF4444 */
+    --chart-5: 252 87% 67%; /* Purple Hex: #6366F1 */
   }
 }
 

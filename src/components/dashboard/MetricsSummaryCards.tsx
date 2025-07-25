@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, Clock, ArrowRightLeft, Users, Calendar, Headphones, Bot, HelpCircle, Timer, Search, UserCheck, Calendar as CalendarIcon, Zap, BarChart, Globe } from 'lucide-react';
+import { Phone, Clock, ArrowRightLeft, Users, Calendar, Headphones, Bot, HelpCircle, Timer, Search, UserCheck, Calendar as CalendarIcon, Zap, BarChart, Globe, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useSystemStatus } from '@/hooks/use-system-status';
+import { useAuth } from '@/context/AuthContext';
 
 interface MetricsSummaryCardsProps {
   metrics: {
@@ -38,6 +40,13 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
 }) => {
   const [isLinesDialogOpen, setIsLinesDialogOpen] = useState(false);
   const [isAgentDialogOpen, setIsAgentDialogOpen] = useState(false);
+  
+  // Get user info to determine client ID
+  const { user } = useAuth();
+  const clientId = user?.client_id || undefined;
+  
+  // Use the system status hook to get real-time status updates
+  const { status, statusMessage, isLoading: statusLoading } = useSystemStatus(clientId);
 
   // Mock active agents data
   const activeAgents: AgentInfo[] = [
@@ -126,16 +135,27 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
     },
     {
       title: "Agents Available",
-      value: metrics.agentsAvailable || 1,
+      // Show 0 agents if system status is inactive or maintenance
+      value: (!statusLoading && (status === 'inactive' || status === 'maintenance')) 
+        ? 0 
+        : (metrics.agentsAvailable || 1),
       icon: <Bot className="h-5 w-5 text-primary" />,
       growth: undefined,
       format: (value: number) => value.toLocaleString(),
-      subtitle: "Active AI agents",
+      subtitle: (!statusLoading && (status === 'inactive' || status === 'maintenance')) 
+        ? (status === 'maintenance' ? "System maintenance" : "System offline") 
+        : "Active AI agents",
       hasAction: true,
       actionText: "View Details",
       onAction: () => {
         setIsAgentDialogOpen(true);
-      }
+      },
+      // Add status indicator for system status
+      statusIndicator: (!statusLoading && (status === 'inactive' || status === 'maintenance')) 
+        ? (status === 'maintenance' 
+            ? <AlertTriangle className="h-4 w-4 text-amber-500 ml-1" /> 
+            : <AlertCircle className="h-4 w-4 text-destructive ml-1" />) 
+        : undefined
     },
     {
       title: "Lines Available",
@@ -194,6 +214,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
     hasAction?: boolean;
     actionText?: string;
     onAction?: () => void;
+    statusIndicator?: React.ReactNode;
   }, index: number) => (
     <Card key={index} className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
       <CardContent className="pt-6">
@@ -203,8 +224,9 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
             {card.icon}
           </div>
         </div>
-        <h3 className="text-3xl font-bold mb-2 text-card-foreground">
+        <h3 className="text-3xl font-bold mb-2 text-card-foreground flex items-center">
           {card.format(card.value as string | number)}
+          {card.statusIndicator}
         </h3>
         {card.subtitle && (
           <p className="text-xs text-muted-foreground mb-2">{card.subtitle}</p>

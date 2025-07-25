@@ -5,6 +5,7 @@ import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import LeadAnalytics from '@/components/analytics/LeadAnalytics';
 import CallAnalytics from '@/components/analytics/CallAnalytics';
 import QualityAnalytics from '@/components/analytics/QualityAnalytics';
+import AIAccuracyAnalytics from '@/components/analytics/AIAccuracyAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import ClientSelector from '@/components/ClientSelector';
 import { useDateRange } from '@/hooks/useDateRange';
@@ -30,7 +31,7 @@ const Analytics = () => {
   const tabOptions = [
     { id: 'calls', label: 'Call Analytics', shortLabel: 'Calls' },
     { id: 'quality', label: 'Quality Analytics', shortLabel: 'Quality' },
-    { id: 'costs', label: 'Cost Analytics', shortLabel: 'Cost' },
+    { id: 'ai-accuracy', label: 'AI Accuracy', shortLabel: 'AI Accuracy' },
   ];
   
   // Handle client selection change
@@ -163,19 +164,16 @@ const Analytics = () => {
           />
         </TabsContent>
 
-        <TabsContent value="costs">
-          <Card>
-            <CardContent className="pt-6 flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <ComingSoonBadge />
-                <p className="mt-4 text-muted-foreground">Cost analytics will be available soon.</p>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="ai-accuracy">
+          <AIAccuracyAnalytics 
+            startDate={dateFilters.start} 
+            endDate={dateFilters.end}
+            clientId={selectedClientId}
+          />
         </TabsContent>
         
         {/* Mobile-only date range indicator */}
-        {isMobile && activeTab !== 'costs' && (
+        {isMobile && activeTab !== 'ai-accuracy' && (
           <div className="mt-6 pt-4 border-t border-border">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Date Range:</span>

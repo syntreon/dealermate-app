@@ -18,9 +18,15 @@ import {
   RefreshCw,
   Zap,
   Globe,
-  Settings
+  Settings,
+  MessageSquare
 } from 'lucide-react';
+import ClientSelector from '@/components/ClientSelector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useSupabase } from '@/hooks/use-supabase';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // System Health Types
@@ -67,12 +73,70 @@ interface SystemTabProps {
 }
 
 export const SystemTab: React.FC<SystemTabProps> = () => {
+  // State for Agent Status & Messaging
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [status, setStatus] = useState<'active' | 'inactive' | 'maintenance'>('active');
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'info' | 'warning' | 'error' | 'success'>('info');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { supabase } = useSupabase();
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [serviceHealth, setServiceHealth] = useState<ServiceHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  const handlePublish = async () => {
+    if (!status && !message) {
+      toast({
+        title: 'Nothing to publish',
+        description: 'Please select a status or enter a message.',
+        variant: 'default',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Import the SystemStatusService to handle the update
+      const { SystemStatusService } = await import('@/services/systemStatusService');
+      
+      // Update agent status if provided
+      if (status) {
+        await SystemStatusService.updateAgentStatus({
+          status: status,
+          message: message || undefined
+        }, selectedClientId);
+      }
+      
+      // Create system message if provided
+      if (message && messageType) {
+        await SystemStatusService.createSystemMessage({
+          type: messageType,
+          message: message,
+          expiresAt: null
+        }, selectedClientId);
+      }
+
+      toast({
+        title: 'Success',
+        description: 'System status and/or message has been published successfully.',
+        variant: 'default',
+      });
+      setMessage(''); // Clear message after successful publish
+    } catch (err) {
+      console.error('Error publishing system status:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      toast({
+        title: 'Publishing Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     fetchSystemData();
@@ -361,6 +425,72 @@ export const SystemTab: React.FC<SystemTabProps> = () => {
           ) : (
             <p className="text-muted-foreground">No system metrics available</p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Agent Status & Messaging */}
+      <Card className="bg-card text-card-foreground border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-card-foreground">
+            <MessageSquare className="h-5 w-5" />
+            Agent Status & Messaging
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Set system-wide or client-specific agent status and broadcast messages.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="client-selector">Target Client</Label>
+              <ClientSelector
+                selectedClientId={selectedClientId}
+                onClientChange={setSelectedClientId}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status-selector">Agent Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as any)}>
+                <SelectTrigger id="status-selector">
+                  <SelectValue placeholder="Select a status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="message-textarea">Broadcast Message (Optional)</Label>
+            <Textarea
+              id="message-textarea"
+              placeholder="Enter a message to display to users..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+             <div className="space-y-2">
+                <Label htmlFor="message-type-selector">Message Type</Label>
+                <Select value={messageType} onValueChange={(value) => setMessageType(value as any)} disabled={!message}>
+                    <SelectTrigger id="message-type-selector" className="w-[180px]">
+                        <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="error">Error</SelectItem>
+                        <SelectItem value="success">Success</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <Button onClick={handlePublish} disabled={isSubmitting}>
+              {isSubmitting ? 'Publishing...' : 'Publish Changes'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

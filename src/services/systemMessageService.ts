@@ -189,76 +189,47 @@ export const SystemMessageService = {
   /**
    * Create a new system message
    */
-  createSystemMessage: async (
-    messageData: CreateSystemMessageData,
-    createdBy?: string
-  ): Promise<SystemMessage> => {
+  createSystemMessage: async (messageData: CreateSystemMessageData): Promise<SystemMessage> => {
     try {
-      const userId = createdBy || await getCurrentUserId();
-      if (!userId) {
-        throw new Error('User authentication required');
-      }
-
-      console.log('Creating system message:', { messageData, userId });
-
-      const now = new Date().toISOString();
-
-      const insertData = {
-        client_id: messageData.client_id || null,
+      const userId = await getCurrentUserId();
+      
+      // Import SystemStatusService dynamically to avoid circular dependencies
+      const { SystemStatusService } = await import('./systemStatusService');
+      
+      // Use SystemStatusService to create the message
+      const message = await SystemStatusService.createSystemMessage({
         type: messageData.type,
         message: messageData.message,
-        timestamp: now,
-        expires_at: messageData.expires_at?.toISOString() || null,
-        created_by: userId,
-        updated_by: userId,
-        created_at: now,
-        updated_at: now
+        expiresAt: messageData.expires_at ? new Date(messageData.expires_at) : null
+      }, messageData.client_id || null, userId || undefined);
+      
+      // Log the action
+      await AuditService.logAuditEvent(
+        userId,
+        'system_message_create',
+        'system_messages',
+        message.id,
+        null,
+        { message: messageData.message, type: messageData.type },
+        messageData.client_id || null
+      );
+
+      // Transform to expected format
+      return {
+        id: message.id,
+        client_id: messageData.client_id || null,
+        type: message.type,
+        message: message.message,
+        timestamp: message.timestamp,
+        expires_at: message.expiresAt,
+        created_by: userId || '',
+        updated_by: userId || null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        isExpired: message.expiresAt ? message.expiresAt < new Date() : false,
+        isGlobal: messageData.client_id === null
       };
-
-      console.log('Insert data:', insertData);
-
-      const { data, error } = await supabase
-        .from('system_messages')
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('System message creation error:', error);
-        console.error('Error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        throw handleDatabaseError(error);
-      }
-
-      console.log('System message created successfully:', data);
-
-      const systemMessage = transformSystemMessage(data);
-
-      // Log audit event
-      try {
-        await AuditService.logSystemMessageAction(
-          userId,
-          'create',
-          systemMessage.id,
-          undefined,
-          {
-            type: systemMessage.type,
-            message: systemMessage.message,
-            client_id: systemMessage.client_id
-          },
-          systemMessage.client_id
-        );
-      } catch (auditError) {
-        console.error('Failed to log system message audit event:', auditError);
-      }
-
-      return systemMessage;
     } catch (error) {
-      console.error('SystemMessageService.createSystemMessage error:', error);
       throw handleDatabaseError(error);
     }
   },
@@ -266,72 +237,54 @@ export const SystemMessageService = {
   /**
    * Update an existing system message
    */
-  updateSystemMessage: async (
-    id: string,
-    messageData: UpdateSystemMessageData,
-    updatedBy?: string
-  ): Promise<SystemMessage> => {
+  updateSystemMessage: async (id: string, messageData: UpdateSystemMessageData): Promise<SystemMessage> => {
     try {
-      const userId = updatedBy || await getCurrentUserId();
-      if (!userId) {
-        throw new Error('User authentication required');
-      }
-
-      // Get existing message for audit logging
+      const userId = await getCurrentUserId();
+      
+      // Get existing message first to have complete data
       const existingMessage = await SystemMessageService.getSystemMessageById(id);
       if (!existingMessage) {
         throw new Error('System message not found');
       }
+      
+      // Import SystemStatusService dynamically to avoid circular dependencies
+      const { SystemStatusService } = await import('./systemStatusService');
+      
+      // Use SystemStatusService to update the message
+      const message = await SystemStatusService.updateSystemMessage(id, {
+        type: messageData.type || existingMessage.type,
+        message: messageData.message || existingMessage.message,
+        expiresAt: messageData.expires_at !== undefined 
+          ? (messageData.expires_at ? new Date(messageData.expires_at) : null)
+          : existingMessage.expires_at
+      });
+      
+      // Log the action
+      await AuditService.logAuditEvent(
+        userId,
+        'update',
+        'system_messages',
+        id,
+        { type: existingMessage.type, message: existingMessage.message },
+        { type: message.type, message: message.message },
+        existingMessage.client_id
+      );
 
-      const updateData: any = {
-        updated_by: userId,
-        updated_at: new Date().toISOString()
+      // Return in expected format
+      return {
+        id: message.id,
+        client_id: existingMessage.client_id,
+        type: message.type,
+        message: message.message,
+        timestamp: message.timestamp,
+        expires_at: message.expiresAt,
+        created_by: existingMessage.created_by,
+        updated_by: userId || existingMessage.updated_by,
+        created_at: existingMessage.created_at,
+        updated_at: new Date(),
+        isExpired: message.expiresAt ? message.expiresAt < new Date() : false,
+        isGlobal: existingMessage.client_id === null
       };
-
-      // Only include defined fields in the update
-      if (messageData.type !== undefined) updateData.type = messageData.type;
-      if (messageData.message !== undefined) updateData.message = messageData.message;
-      if (messageData.client_id !== undefined) updateData.client_id = messageData.client_id;
-      if (messageData.expires_at !== undefined) {
-        updateData.expires_at = messageData.expires_at?.toISOString() || null;
-      }
-
-      const { data, error } = await supabase
-        .from('system_messages')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        throw handleDatabaseError(error);
-      }
-
-      const systemMessage = transformSystemMessage(data);
-
-      // Log audit event
-      try {
-        await AuditService.logSystemMessageAction(
-          userId,
-          'update',
-          systemMessage.id,
-          {
-            type: existingMessage.type,
-            message: existingMessage.message,
-            client_id: existingMessage.client_id
-          },
-          {
-            type: systemMessage.type,
-            message: systemMessage.message,
-            client_id: systemMessage.client_id
-          },
-          systemMessage.client_id
-        );
-      } catch (auditError) {
-        console.error('Failed to log system message audit event:', auditError);
-      }
-
-      return systemMessage;
     } catch (error) {
       throw handleDatabaseError(error);
     }
@@ -340,45 +293,32 @@ export const SystemMessageService = {
   /**
    * Delete a system message
    */
-  deleteSystemMessage: async (id: string, deletedBy?: string): Promise<void> => {
+  deleteSystemMessage: async (id: string): Promise<void> => {
     try {
-      const userId = deletedBy || await getCurrentUserId();
-      if (!userId) {
-        throw new Error('User authentication required');
-      }
-
-      // Get existing message for audit logging
+      const userId = await getCurrentUserId();
+      
+      // Get existing message first for audit logging
       const existingMessage = await SystemMessageService.getSystemMessageById(id);
       if (!existingMessage) {
         throw new Error('System message not found');
       }
-
-      const { error } = await supabase
-        .from('system_messages')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw handleDatabaseError(error);
-      }
-
-      // Log audit event
-      try {
-        await AuditService.logSystemMessageAction(
-          userId,
-          'delete',
-          id,
-          {
-            type: existingMessage.type,
-            message: existingMessage.message,
-            client_id: existingMessage.client_id
-          },
-          undefined,
-          existingMessage.client_id
-        );
-      } catch (auditError) {
-        console.error('Failed to log system message audit event:', auditError);
-      }
+      
+      // Import SystemStatusService dynamically to avoid circular dependencies
+      const { SystemStatusService } = await import('./systemStatusService');
+      
+      // Use SystemStatusService to delete the message
+      await SystemStatusService.deleteSystemMessage(id);
+      
+      // Log the action
+      await AuditService.logAuditEvent(
+        userId,
+        'delete',
+        'system_messages',
+        id,
+        { type: existingMessage.type, message: existingMessage.message },
+        null,
+        existingMessage.client_id
+      );
     } catch (error) {
       throw handleDatabaseError(error);
     }
@@ -498,7 +438,7 @@ export const SystemMessageService = {
         type,
         message,
         expires_at: expiresAt
-      }, createdBy);
+      });
     } catch (error) {
       throw handleDatabaseError(error);
     }

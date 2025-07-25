@@ -25,3 +25,5 @@ Never run `npm run dev`. as we are using Vite with HMR and dev server is already
 for project info, check the project.md file
 for project structure, check the project structure.md file
 for tech stack, check the tech tech.md file
+All documents are in docs folder D:\AI\NewApp\docs
+

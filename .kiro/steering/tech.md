@@ -48,3 +48,44 @@ This document provides an overview of the technologies, libraries, and services 
 *   **[ESLint](https://eslint.org/)**: A pluggable and configurable linter tool for identifying and reporting on patterns in JavaScript and TypeScript. It helps us maintain a consistent code style and avoid common errors.
 *   **[PostCSS](https://postcss.org/)**: A tool for transforming CSS with JavaScript plugins. It's used by Tailwind CSS to process our styles.
 *   **[Bun](https://bun.sh/)**: While `package.json` defines scripts runnable by npm/yarn, the presence of `bun.lockb` indicates that Bun is likely used for package management, offering faster installation and script execution.
+
+## Run Tests
+1. Run Tests in Watch Mode
+bash
+`npm test`
+* Runs tests using Vitest in watch mode
+* Great for development as it re-runs tests on file changes
+
+2. Run Tests Once
+bash
+`npm run test:run`
+* Runs tests once and exits
+* Useful for CI/CD pipelines
+
+3. Run Tests with UI
+bash
+`npm run test:ui`
+* Launches the Vitest UI for a visual testing experience
+* Helpful for debugging and exploring tests
+
+4. Linting
+bash
+`npm run lint`
+* Runs ESLint to check code quality and style
+* Helps maintain consistent code style
+
+5. Type Checking
+For type checking, you can use TypeScript's built-in type checker:
+
+bash
+`npx tsc --noEmit`
+This will check your TypeScript code for type errors without emitting any JavaScript files.
+
+### Additional Notes
+This project uses Vitest as the testing framework
+Testing libraries included:
+@testing-library/react (v16.3.0)
+@testing-library/jest-dom (v6.6.3)
+jsdom (v26.1.0) for DOM testing
+TypeScript version: 5.5.3
+React version: 18.3.1
