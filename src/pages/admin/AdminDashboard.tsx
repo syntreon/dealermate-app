@@ -11,6 +11,9 @@ import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { FinancialOverview } from '@/components/admin/dashboard/FinancialOverview';
 import { BusinessMetrics } from '@/components/admin/dashboard/BusinessMetrics';
 import { TabLoadingSkeleton } from '@/components/admin/dashboard/TabLoadingSkeleton';
+import TabErrorBoundary from '@/components/admin/dashboard/TabErrorBoundary';
+import ErrorFallback from '@/components/admin/dashboard/ErrorFallback';
+import PartialDataProvider from '@/components/admin/dashboard/PartialDataProvider';
 
 // Lazy load tab components for better performance
 const FinancialTab = React.lazy(() => import('@/components/admin/dashboard/tabs/FinancialTab').then(m => ({ default: m.FinancialTab })));
@@ -333,7 +336,8 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-6 pb-8">
+    <PartialDataProvider staleThreshold={5}>
+      <div className="space-y-6 pb-8">
       {/* Header Component */}
       <DashboardHeader 
         lastUpdated={lastUpdated}
@@ -419,36 +423,47 @@ const AdminDashboard = () => {
         )}
 
         <TabsContent value="financial">
-          <Suspense fallback={<TabLoadingSkeleton />}>
-            <FinancialTab />
-          </Suspense>
+          <TabErrorBoundary tabName="Financial Analysis" fallback={ErrorFallback}>
+            <Suspense fallback={<TabLoadingSkeleton />}>
+              <FinancialTab />
+            </Suspense>
+          </TabErrorBoundary>
         </TabsContent>
 
         <TabsContent value="clients">
-          <Suspense fallback={<TabLoadingSkeleton />}>
-            <ClientsTab />
-          </Suspense>
+          <TabErrorBoundary tabName="Client Analytics" fallback={ErrorFallback}>
+            <Suspense fallback={<TabLoadingSkeleton />}>
+              <ClientsTab />
+            </Suspense>
+          </TabErrorBoundary>
         </TabsContent>
 
         <TabsContent value="users">
-          <Suspense fallback={<TabLoadingSkeleton />}>
-            <UsersTab />
-          </Suspense>
+          <TabErrorBoundary tabName="User Analytics" fallback={ErrorFallback}>
+            <Suspense fallback={<TabLoadingSkeleton />}>
+              <UsersTab />
+            </Suspense>
+          </TabErrorBoundary>
         </TabsContent>
 
         <TabsContent value="system">
-          <Suspense fallback={<TabLoadingSkeleton />}>
-            <SystemTab />
-          </Suspense>
+          <TabErrorBoundary tabName="System Health" fallback={ErrorFallback}>
+            <Suspense fallback={<TabLoadingSkeleton />}>
+              <SystemTab />
+            </Suspense>
+          </TabErrorBoundary>
         </TabsContent>
 
         <TabsContent value="operations">
-          <Suspense fallback={<TabLoadingSkeleton />}>
-            <OperationsTab />
-          </Suspense>
+          <TabErrorBoundary tabName="Operations" fallback={ErrorFallback}>
+            <Suspense fallback={<TabLoadingSkeleton />}>
+              <OperationsTab />
+            </Suspense>
+          </TabErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>
+    </PartialDataProvider>
   );
 };
 

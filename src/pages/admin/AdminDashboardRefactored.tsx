@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { FinancialOverview } from '@/components/admin/dashboard/FinancialOverview';
 import { BusinessMetrics } from '@/components/admin/dashboard/BusinessMetrics';
+import TabErrorBoundary from '@/components/admin/dashboard/TabErrorBoundary';
+import ErrorFallback from '@/components/admin/dashboard/ErrorFallback';
 
 // Lazy load tab components for better performance
 const FinancialTab = React.lazy(() => import('@/components/admin/dashboard/tabs/FinancialTab').then(m => ({ default: m.FinancialTab })));
@@ -156,32 +158,66 @@ const AdminDashboardRefactored = () => {
           </TabsList>
         )}
 
-        {/* Tab Content with Suspense for lazy loading */}
-        <React.Suspense fallback={
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        }>
-          <TabsContent value="financial">
-            <FinancialTab />
-          </TabsContent>
+        {/* Tab Content with Error Boundaries and Suspense for lazy loading */}
+        <TabsContent value="financial">
+          <TabErrorBoundary tabName="Financial Analysis" fallback={ErrorFallback}>
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <FinancialTab />
+            </React.Suspense>
+          </TabErrorBoundary>
+        </TabsContent>
 
-          <TabsContent value="clients">
-            <ClientsTab />
-          </TabsContent>
+        <TabsContent value="clients">
+          <TabErrorBoundary tabName="Client Analytics" fallback={ErrorFallback}>
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <ClientsTab />
+            </React.Suspense>
+          </TabErrorBoundary>
+        </TabsContent>
 
-          <TabsContent value="users">
-            <UsersTab />
-          </TabsContent>
+        <TabsContent value="users">
+          <TabErrorBoundary tabName="User Analytics" fallback={ErrorFallback}>
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <UsersTab />
+            </React.Suspense>
+          </TabErrorBoundary>
+        </TabsContent>
 
-          <TabsContent value="system">
-            <SystemTab />
-          </TabsContent>
+        <TabsContent value="system">
+          <TabErrorBoundary tabName="System Health" fallback={ErrorFallback}>
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <SystemTab />
+            </React.Suspense>
+          </TabErrorBoundary>
+        </TabsContent>
 
-          <TabsContent value="operations">
-            <OperationsTab />
-          </TabsContent>
-        </React.Suspense>
+        <TabsContent value="operations">
+          <TabErrorBoundary tabName="Operations" fallback={ErrorFallback}>
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <OperationsTab />
+            </React.Suspense>
+          </TabErrorBoundary>
+        </TabsContent>
       </Tabs>
     </div>
   );

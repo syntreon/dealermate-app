@@ -9,6 +9,10 @@ import { formatNumber } from '@/utils/formatting';
 import { formatCurrency, convertUsdToCad } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { FinancialTabSkeleton, RefreshLoadingIndicator } from '../LoadingSkeletons';
+import PartialDataHandler from '../PartialDataHandler';
+import DataStatusIndicator from '../DataStatusIndicator';
+import { useDataSection } from '../PartialDataProvider';
 
 interface FinancialTabProps {
   // No props needed - component fetches its own data
@@ -19,32 +23,75 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
   const [costBreakdown, setCostBreakdown] = useState<CostBreakdown | null>(null);
   const [clientProfitability, setClientProfitability] = useState<ClientProfitability[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Use partial data sections for different parts of the financial data
+  const metricsSection = useDataSection('financial-metrics', 'Financial Metrics');
+  const costsSection = useDataSection('cost-breakdown', 'Cost Breakdown');
+  const profitabilitySection = useDataSection('client-profitability', 'Client Profitability');
 
   useEffect(() => {
     fetchFinancialData();
   }, []);
 
-  const fetchFinancialData = async () => {
+  const fetchFinancialData = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
-      // Fetch all financial data in parallel
-      const [metrics, costs, profitability] = await Promise.all([
-        MetricsCalculationService.getFinancialMetrics('current_month'),
-        MetricsCalculationService.getCostBreakdown(
-          new Date(new Date().getFullYear(), new Date().getMonth(), 1), // Start of current month
-          new Date() // Current date
-        ),
-        MetricsCalculationService.getClientProfitability('current_month')
+      // Load data sections independently with partial data handling
+      const [metrics, costs, profitability] = await Promise.allSettled([
+        metricsSection.load(() => MetricsCalculationService.getFinancialMetrics('current_month')),
+        costsSection.load(() => MetricsCalculationService.getCostBreakdown(
+          new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          new Date()
+        )),
+        profitabilitySection.load(() => MetricsCalculationService.getClientProfitability('current_month'))
       ]);
 
-      setFinancialMetrics(metrics);
-      setCostBreakdown(costs);
-      setClientProfitability(profitability);
+      // Update local state with successful results
+      if (metrics.status === 'fulfilled' && metrics.value) {
+        setFinancialMetrics(metrics.value);
+      }
+      if (costs.status === 'fulfilled' && costs.value) {
+        setCostBreakdown(costs.value);
+      }
+      if (profitability.status === 'fulfilled' && profitability.value) {
+        setClientProfitability(profitability.value);
+      }
+
+      // Check if any section failed
+      const failedSections = [
+        { name: 'Financial Metrics', result: metrics },
+        { name: 'Cost Breakdown', result: costs },
+        { name: 'Client Profitability', result: profitability }
+      ].filter(section => section.result.status === 'rejected');
+
+      if (failedSections.length > 0 && failedSections.length < 3) {
+        // Partial failure - show toast but continue with available data
+        toast({
+          title: 'Partial Data Load',
+          description: `Some sections failed to load: ${failedSections.map(s => s.name).join(', ')}`,
+          variant: 'default',
+        });
+      } else if (failedSections.length === 3) {
+        // Complete failure
+        const firstError = failedSections[0].result.status === 'rejected' ? failedSections[0].result.reason : new Error('Unknown error');
+        const errorMessage = firstError instanceof Error ? firstError.message : 'Failed to load financial data';
+        setError(errorMessage);
+        toast({
+          title: 'Error Loading Financial Data',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
     } catch (err) {
       console.error('Error fetching financial data:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load financial data';
@@ -56,7 +103,13 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    fetchFinancialData(true);
   };
 
   // Calculate main cost categories for high-level overview
@@ -116,39 +169,7 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          {[...Array(2)].map((_, i) => (
-            <Card key={i} className="bg-card text-card-foreground border-border">
-              <CardHeader>
-                <div className="h-6 bg-muted rounded animate-pulse" />
-                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[...Array(4)].map((_, j) => (
-                    <div key={j} className="h-4 bg-muted rounded animate-pulse" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card className="bg-card text-card-foreground border-border">
-          <CardHeader>
-            <div className="h-6 bg-muted rounded animate-pulse" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 bg-muted rounded animate-pulse" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <FinancialTabSkeleton />;
   }
 
   if (error) {
@@ -171,19 +192,34 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
   const callCostBreakdown = costBreakdown ? getCallCostBreakdown(costBreakdown) : [];
 
   return (
-    <div className="space-y-6">
+    <>
+      <RefreshLoadingIndicator isVisible={refreshing} />
+      <div className="space-y-6">
       {/* Cost Breakdown and Profitability Analysis */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* 4.1 Cost Breakdown Visualization */}
         <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <PieChart className="h-5 w-5" />
-              Cost Breakdown
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Monthly operational costs by category
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <PieChart className="h-5 w-5" />
+                  Cost Breakdown
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Monthly operational costs by category
+                </CardDescription>
+              </div>
+              <DataStatusIndicator
+                isLoading={costsSection.isLoading}
+                error={costsSection.error}
+                lastUpdated={costsSection.lastUpdated}
+                isStale={costsSection.isStale}
+                onRefresh={() => costsSection.refresh()}
+                size="sm"
+                variant="badge"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {costBreakdown && mainCostCategories.length > 0 ? (
@@ -275,13 +311,26 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
         {/* 4.2 Profitability Analysis */}
         <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <Calculator className="h-5 w-5" />
-              Profitability Analysis
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Revenue vs costs breakdown
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Calculator className="h-5 w-5" />
+                  Profitability Analysis
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Revenue vs costs breakdown
+                </CardDescription>
+              </div>
+              <DataStatusIndicator
+                isLoading={metricsSection.isLoading}
+                error={metricsSection.error}
+                lastUpdated={metricsSection.lastUpdated}
+                isStale={metricsSection.isStale}
+                onRefresh={() => metricsSection.refresh()}
+                size="sm"
+                variant="badge"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {financialMetrics ? (
@@ -344,13 +393,26 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
       {/* 4.3 Client Profitability Ranking */}
       <Card className="bg-card text-card-foreground border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Users className="h-5 w-5" />
-            Client Profitability Ranking
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Revenue, costs, profit, and margin by client
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Users className="h-5 w-5" />
+                Client Profitability Ranking
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Revenue, costs, profit, and margin by client
+              </CardDescription>
+            </div>
+            <DataStatusIndicator
+              isLoading={profitabilitySection.isLoading}
+              error={profitabilitySection.error}
+              lastUpdated={profitabilitySection.lastUpdated}
+              isStale={profitabilitySection.isStale}
+              onRefresh={() => profitabilitySection.refresh()}
+              size="sm"
+              variant="badge"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {clientProfitability.length > 0 ? (
@@ -480,5 +542,6 @@ export const FinancialTab: React.FC<FinancialTabProps> = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
