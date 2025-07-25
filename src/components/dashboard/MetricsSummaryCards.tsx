@@ -38,27 +38,19 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
 }) => {
   const [isLinesDialogOpen, setIsLinesDialogOpen] = useState(false);
   const [isAgentDialogOpen, setIsAgentDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<AgentInfo | null>(null);
-  const [isAgentUpgradeDialogOpen, setIsAgentUpgradeDialogOpen] = useState(false);
 
-  // Mock agent data
-  const agentInfo: AgentInfo = {
-    id: 'inbound-call-agent',
-    name: 'Inbound Call Agent',
-    description: 'Advanced AI agent that handles all inbound customer calls with professional expertise. Capable of understanding customer needs, providing information, and taking appropriate actions.',
-    capabilities: [
-      'Appointment Booking',
-      'Inventory Search',
-      'Lead Qualification',
-      'Customer Support',
-      'Call Transfer',
-      'CRM Integration',
-      'Real-time Analytics',
-      'Multi-language Support'
-    ],
-    workTime: 'Full Time (24/7)',
-    status: 'active'
-  };
+  // Mock active agents data
+  const activeAgents: AgentInfo[] = [
+    {
+      id: 'inbound-call-agent',
+      name: 'Inbound Call Agent',
+      description: 'Handles all inbound customer calls with professional expertise.',
+      capabilities: ['Appointment Booking', 'Lead Qualification', 'Customer Support'],
+      workTime: 'Full Time (24/7)',
+      status: 'active'
+    }
+    // Add more active agents here as they become active
+  ];
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -142,7 +134,6 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
       hasAction: true,
       actionText: "View Details",
       onAction: () => {
-        setSelectedAgent(agentInfo);
         setIsAgentDialogOpen(true);
       }
     },
@@ -191,10 +182,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
     }
   ];
 
-  const handleAgentTurnOn = () => {
-    setIsAgentDialogOpen(false);
-    setIsAgentUpgradeDialogOpen(true);
-  };
+
 
   const renderCard = (card: {
     title: string;
@@ -256,90 +244,69 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
         </div>
       </div>
 
-      {/* Agent Details Dialog */}
+      {/* Active Agents List Dialog */}
       <Dialog open={isAgentDialogOpen} onOpenChange={setIsAgentDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary">
                 <Bot className="h-6 w-6" />
               </div>
-              {selectedAgent?.name}
+              Active Agents
             </DialogTitle>
             <DialogDescription>
-              {selectedAgent?.description}
+              Currently active AI agents in your system
             </DialogDescription>
           </DialogHeader>
 
-          {selectedAgent && (
-            <div className="space-y-6">
-              {/* Work Schedule */}
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
-                  {selectedAgent.workTime}
-                </Badge>
-              </div>
-
-              {/* Capabilities */}
-              <div>
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  Capabilities & Integrations
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedAgent.capabilities.map((capability, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
-                      {capability === 'Appointment Booking' && <CalendarIcon className="h-4 w-4 text-blue-500" />}
-                      {capability === 'Inventory Search' && <Search className="h-4 w-4 text-green-500" />}
-                      {capability === 'Lead Qualification' && <UserCheck className="h-4 w-4 text-purple-500" />}
-                      {capability === 'Customer Support' && <Users className="h-4 w-4 text-orange-500" />}
-                      {capability === 'Call Transfer' && <ArrowRightLeft className="h-4 w-4 text-red-500" />}
-                      {capability === 'CRM Integration' && <Zap className="h-4 w-4 text-yellow-500" />}
-                      {capability === 'Real-time Analytics' && <BarChart className="h-4 w-4 text-indigo-500" />}
-                      {capability === 'Multi-language Support' && <Globe className="h-4 w-4 text-pink-500" />}
-                      <span className="text-sm font-medium">{capability}</span>
-                    </div>
-                  ))}
+          <div className="space-y-4">
+            {activeAgents.map((agent) => (
+              <div key={agent.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Bot className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-sm">{agent.name}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">{agent.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <Badge variant="secondary" className="text-xs">
+                      {agent.workTime}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {agent.capabilities.slice(0, 3).map((capability, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {capability}
+                      </Badge>
+                    ))}
+                    {agent.capabilities.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{agent.capabilities.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
-                <Button
-                  onClick={handleAgentTurnOn}
-                  className="flex-1"
-                >
-                  Turn On & Schedule Agent
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAgentDialogOpen(false)}
-                >
-                  Close
-                </Button>
+            ))}
+            
+            {activeAgents.length === 0 && (
+              <div className="text-center py-8">
+                <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No active agents</p>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </div>
 
-      {/* Agent Upgrade Dialog */}
-      <Dialog open={isAgentUpgradeDialogOpen} onOpenChange={setIsAgentUpgradeDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Need This Agent?</DialogTitle>
-            <DialogDescription>
-              Contact your account manager to add more agents to your plan.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end">
-            <Button onClick={() => setIsAgentUpgradeDialogOpen(false)}>
-              Got it
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={() => setIsAgentDialogOpen(false)}>
+              Close
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+
 
       {/* Lines Dialog */}
       <Dialog open={isLinesDialogOpen} onOpenChange={setIsLinesDialogOpen}>

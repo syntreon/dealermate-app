@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { DollarSign } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { type TooltipProps } from 'recharts';
 
@@ -31,9 +30,8 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
 
 export const PotentialEarnings: React.FC<PotentialEarningsProps> = ({ totalCalls, totalLeads, isLoading }) => {
   const isDesktop = useMediaQuery('(min-width: 768px)');
-    const CONVERSION_RATE = 0.20;
-  const convertedLeads = Math.floor(totalLeads * CONVERSION_RATE);
-  const potentialEarnings = convertedLeads * LEAD_VALUE;
+  
+  const potentialEarnings = totalLeads * LEAD_VALUE;
 
   const chartData = [
     {
@@ -43,10 +41,6 @@ export const PotentialEarnings: React.FC<PotentialEarningsProps> = ({ totalCalls
     {
       name: 'Leads',
       value: totalLeads,
-    },
-    {
-      name: 'Converted Leads',
-      value: convertedLeads,
     },
   ];
 
@@ -60,19 +54,19 @@ export const PotentialEarnings: React.FC<PotentialEarningsProps> = ({ totalCalls
   };
 
   return (
-    <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium text-card-foreground">Opportunity Value</CardTitle> {/* OLD value: Potential Earnings */}
-        <CardDescription>Based on lead value and call volume.</CardDescription>
+    <Card>
+      <CardHeader>
+        <CardTitle>Opportunity Value</CardTitle>
+        <CardDescription>
+          Based on a potential value of {formatCurrency(LEAD_VALUE)} per lead.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6 pt-4">
-        <div className="flex items-center justify-center p-6 rounded-lg bg-muted/50 border border-dashed">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">Opportunity Value</p> {/* OLD value: Potential Earnings */}
+      <CardContent>
+        <div className="text-center my-4">
+            <p className="text-sm text-muted-foreground">Potential Value</p>
             <p className="text-4xl font-bold text-primary">{formatCurrency(potentialEarnings)}</p>
-          </div>
         </div>
-
+        
         <div className="h-[150px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 5, left: isDesktop ? 5 : -25, bottom: 5 }}>
@@ -99,17 +93,13 @@ export const PotentialEarnings: React.FC<PotentialEarningsProps> = ({ totalCalls
               <Bar dataKey="value" barSize={18} radius={[4, 4, 4, 4]}>
                 {chartData.map((entry) => {
                   let color = 'hsl(var(--primary))'; // Default for Calls
-                  if (entry.name === 'Leads') color = '#f59e0b'; // Orange from Quality Analytics
-                  if (entry.name === 'Converted Leads') color = '#10b981'; // Green from Quality Analytics
+                  if (entry.name === 'Leads') color = '#f59e0b'; // Orange
                   return <Cell key={entry.name} fill={color} />;
                 })}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <p className="text-xs text-center text-muted-foreground pt-2">
-          *Calculations use a 20% conversion rate and a potential value of {formatCurrency(LEAD_VALUE)} per converted lead.
-        </p>
       </CardContent>
     </Card>
   );

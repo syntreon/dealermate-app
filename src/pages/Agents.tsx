@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Clock, MessageSquare, Phone, Calendar, Globe, RefreshCw } from 'lucide-react';
+import { Bot, Clock, MessageSquare, Phone, Calendar, Globe, RefreshCw, Search, UserCheck, ArrowRightLeft, Zap, BarChart } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 import ClientSelector from '@/components/ClientSelector';
@@ -18,69 +18,126 @@ interface Agent {
   status: 'active' | 'inactive';
   isDefault?: boolean;
   isAvailable?: boolean;
+  capabilities: string[];
+  detailedDescription: string;
 }
 
 const Agents: React.FC = () => {
   const { user } = useAuth();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<string>('');
+  const [selectedAgentName, setSelectedAgentName] = useState<string>('');
+  const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
+  const [selectedAgentDetails, setSelectedAgentDetails] = useState<Agent | null>(null);
 
   // Check if user can view all clients (admin)
   const canViewAllClients = canViewSensitiveInfo(user);
 
-  // Mock agents data
+  // Mock agents data with detailed information
   const agents: Agent[] = [
     {
       id: 'inbound-call-agent',
       name: 'Inbound Call Agent',
       description: 'Helps with answering inbound calls from customers, handling inquiries, and scheduling appointments.',
+      detailedDescription: 'Advanced AI agent that handles all inbound customer calls with professional expertise. Capable of understanding customer needs, providing information, and taking appropriate actions.',
       workTime: 'Full Time (24/7)',
       status: 'active',
       isDefault: true,
-      isAvailable: true
+      isAvailable: true,
+      capabilities: [
+        'Appointment Booking',
+        'Inventory Search',
+        'Lead Qualification',
+        'Customer Support',
+        'Call Transfer',
+        'CRM Integration',
+        'Real-time Analytics',
+        'Multi-language Support'
+      ]
     },
     {
       id: 'outbound-service-agent',
       name: 'Outbound Service Call Agent',
       description: 'Makes outbound calls for service reminders, follow-ups, and customer satisfaction surveys.',
+      detailedDescription: 'Proactive AI agent that handles outbound communications to maintain customer relationships and ensure service satisfaction.',
       workTime: 'Part Time (off-hours)',
       status: 'inactive',
       isDefault: false,
-      isAvailable: true
+      isAvailable: true,
+      capabilities: [
+        'Service Reminders',
+        'Follow-up Calls',
+        'Customer Surveys',
+        'Appointment Scheduling',
+        'CRM Integration',
+        'Call Analytics'
+      ]
     },
     {
       id: 'appointment-confirmation-agent',
       name: 'Appointment Confirmation Call Agent',
       description: 'Automatically calls customers to confirm upcoming appointments and reschedule if needed.',
+      detailedDescription: 'Specialized AI agent focused on appointment management, ensuring optimal scheduling and reducing no-shows.',
       workTime: 'Part Time (off-hours)',
       status: 'inactive',
       isDefault: false,
-      isAvailable: true
+      isAvailable: true,
+      capabilities: [
+        'Appointment Confirmation',
+        'Rescheduling',
+        'Reminder Calls',
+        'Calendar Integration',
+        'SMS Notifications',
+        'Customer Preferences'
+      ]
     },
     {
       id: 'messaging-agent',
       name: 'Messaging Agent',
       description: 'Handles SMS and messaging communications with customers for quick responses and updates.',
+      detailedDescription: 'Multi-channel messaging AI that provides instant responses across SMS, chat, and messaging platforms.',
       workTime: 'Full Time (24/7)',
       status: 'inactive',
       isDefault: false,
-      isAvailable: true
+      isAvailable: true,
+      capabilities: [
+        'SMS Messaging',
+        'Instant Responses',
+        'Multi-platform Support',
+        'Message Routing',
+        'Customer History',
+        'Automated Workflows'
+      ]
     },
     {
       id: 'website-chat-agent',
       name: 'Website Chat Agent',
       description: 'Provides real-time chat support on your website to assist visitors and capture leads.',
+      detailedDescription: 'Web-integrated AI agent that engages website visitors, answers questions, and converts traffic into leads.',
       workTime: 'Full Time (24/7)',
       status: 'inactive',
       isDefault: false,
-      isAvailable: true
+      isAvailable: true,
+      capabilities: [
+        'Live Chat Support',
+        'Lead Capture',
+        'Website Integration',
+        'Visitor Analytics',
+        'Proactive Engagement',
+        'Handoff to Human'
+      ]
     }
   ];
 
   // Handle client selection change
   const handleClientChange = (clientId: string | null) => {
     setSelectedClientId(clientId);
+  };
+
+  // Handle agent card click to show details
+  const handleAgentCardClick = (agent: Agent) => {
+    setSelectedAgentDetails(agent);
+    setIsAgentDetailsOpen(true);
   };
 
   // Handle agent toggle
@@ -94,7 +151,14 @@ const Agents: React.FC = () => {
     }
 
     // For other agents, show upgrade dialog
-    setSelectedAgent(agent?.name || '');
+    setSelectedAgentName(agent?.name || '');
+    setIsUpgradeDialogOpen(true);
+  };
+
+  // Handle turn on agent from details popup
+  const handleTurnOnAgent = () => {
+    setIsAgentDetailsOpen(false);
+    setSelectedAgentName(selectedAgentDetails?.name || '');
     setIsUpgradeDialogOpen(true);
   };
 
@@ -121,6 +185,38 @@ const Agents: React.FC = () => {
     return workTime.includes('24/7') 
       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400'
       : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+  };
+
+  // Get capability icon
+  const getCapabilityIcon = (capability: string) => {
+    switch (capability) {
+      case 'Appointment Booking':
+      case 'Appointment Confirmation':
+      case 'Appointment Scheduling':
+        return <Calendar className="h-4 w-4 text-blue-500" />;
+      case 'Inventory Search':
+        return <Search className="h-4 w-4 text-green-500" />;
+      case 'Lead Qualification':
+      case 'Lead Capture':
+        return <UserCheck className="h-4 w-4 text-purple-500" />;
+      case 'Customer Support':
+      case 'Live Chat Support':
+        return <MessageSquare className="h-4 w-4 text-orange-500" />;
+      case 'Call Transfer':
+        return <ArrowRightLeft className="h-4 w-4 text-red-500" />;
+      case 'CRM Integration':
+      case 'Calendar Integration':
+      case 'Website Integration':
+        return <Zap className="h-4 w-4 text-yellow-500" />;
+      case 'Real-time Analytics':
+      case 'Call Analytics':
+      case 'Visitor Analytics':
+        return <BarChart className="h-4 w-4 text-indigo-500" />;
+      case 'Multi-language Support':
+        return <Globe className="h-4 w-4 text-pink-500" />;
+      default:
+        return <Bot className="h-4 w-4 text-gray-500" />;
+    }
   };
 
   return (
@@ -150,37 +246,41 @@ const Agents: React.FC = () => {
         <h2 className="text-xl font-semibold text-foreground">Active Agents</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {agents.filter(agent => agent.status === 'active').map((agent) => (
-            <Card key={agent.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      {getAgentIcon(agent.id)}
+            <Card key={agent.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer">
+              <div onClick={() => handleAgentCardClick(agent)}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        {getAgentIcon(agent.id)}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{agent.name}</CardTitle>
+                        {agent.isDefault && (
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            Default
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{agent.name}</CardTitle>
-                      {agent.isDefault && (
-                        <Badge variant="secondary" className="mt-1 text-xs">
-                          Default
-                        </Badge>
-                      )}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={agent.status === 'active'}
+                        onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
+                      />
                     </div>
                   </div>
-                  <Switch
-                    checked={agent.status === 'active'}
-                    onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">{agent.description}</p>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <Badge className={getWorkTimeBadgeColor(agent.workTime)}>
-                    {agent.workTime}
-                  </Badge>
-                </div>
-              </CardContent>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">{agent.description}</p>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Badge className={getWorkTimeBadgeColor(agent.workTime)}>
+                      {agent.workTime}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </div>
             </Card>
           ))}
         </div>
@@ -191,36 +291,103 @@ const Agents: React.FC = () => {
         <h2 className="text-xl font-semibold text-foreground">Available Agents</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {agents.filter(agent => agent.status === 'inactive').map((agent) => (
-            <Card key={agent.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all duration-300">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      {getAgentIcon(agent.id)}
+            <Card key={agent.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer">
+              <div onClick={() => handleAgentCardClick(agent)}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        {getAgentIcon(agent.id)}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{agent.name}</CardTitle>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{agent.name}</CardTitle>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={false}
+                        onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
+                      />
                     </div>
                   </div>
-                  <Switch
-                    checked={false}
-                    onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">{agent.description}</p>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <Badge className={getWorkTimeBadgeColor(agent.workTime)}>
-                    {agent.workTime}
-                  </Badge>
-                </div>
-              </CardContent>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">{agent.description}</p>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Badge className={getWorkTimeBadgeColor(agent.workTime)}>
+                      {agent.workTime}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </div>
             </Card>
           ))}
         </div>
       </div>
+
+      {/* Agent Details Dialog */}
+      <Dialog open={isAgentDetailsOpen} onOpenChange={setIsAgentDetailsOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                {selectedAgentDetails && getAgentIcon(selectedAgentDetails.id)}
+              </div>
+              {selectedAgentDetails?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedAgentDetails?.detailedDescription}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAgentDetails && (
+            <div className="space-y-6">
+              {/* Work Schedule */}
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Badge className={getWorkTimeBadgeColor(selectedAgentDetails.workTime)}>
+                  {selectedAgentDetails.workTime}
+                </Badge>
+              </div>
+
+              {/* Capabilities */}
+              <div>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  Capabilities & Integrations
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedAgentDetails.capabilities.map((capability, index) => (
+                    <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                      {getCapabilityIcon(capability)}
+                      <span className="text-sm font-medium">{capability}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                {selectedAgentDetails.status === 'inactive' && (
+                  <Button 
+                    onClick={handleTurnOnAgent}
+                    className="flex-1"
+                  >
+                    Turn On & Schedule Agent
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsAgentDetailsOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Upgrade Dialog */}
       <Dialog open={isUpgradeDialogOpen} onOpenChange={setIsUpgradeDialogOpen}>
@@ -228,7 +395,7 @@ const Agents: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Agent Not Available</DialogTitle>
             <DialogDescription>
-              The {selectedAgent} is not available in your current business plan. Contact your account manager to enable this agent.
+              The {selectedAgentName} is not available in your current business plan. Contact your account manager to enable this agent.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">
