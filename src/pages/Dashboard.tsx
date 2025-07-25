@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import { useNavigate } from 'react-router-dom';
+import ClientSelector from '@/components/ClientSelector';
+import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
 import MetricsSummaryCards from '@/components/dashboard/MetricsSummaryCards';
 import useDashboardMetrics from '@/hooks/useDashboardMetrics';
@@ -24,18 +26,33 @@ const Dashboard = () => {
   const [calls, setCalls] = useState<Call[]>([]);
   const [stats, setStats] = useState<CallStats>({ totalCalls: 0, sent: 0, answered: 0, failed: 0 });
   const [loadingCalls, setLoadingCalls] = useState(true);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
   
   // State for call details popup
   const [selectedCallId, setSelectedCallId] = useState<string | null>(null);
-  const [selectedCallDetails, setSelectedCallDetails] = useState<any>(null);
+  const [selectedCallDetails, setSelectedCallDetails] = useState<unknown>(null);
   const [isCallDetailsOpen, setIsCallDetailsOpen] = useState(false);
   const [loadingCallDetails, setLoadingCallDetails] = useState(false);
 
-  // Get client ID from user if available
-  const clientId = user?.client_id || undefined;
+  // Check if user can view all clients (admin)
+  const canViewAllClients = canViewSensitiveInfo(user);
 
+
+
+  // Get effective client ID for data fetching
+  const getEffectiveClientId = () => {
+    if (canViewAllClients) {
+      return selectedClientId; // Admin can select specific client or null for all
+    }
+    return user?.client_id || undefined; // Regular users see only their client data
+  };
+
+  // Get effective client ID for data fetching
+  const effectiveClientId = getEffectiveClientId();
+  
   // Use our custom hook to fetch dashboard metrics
-  const { metrics, isLoading, error } = useDashboardMetrics(clientId);
+  const { metrics, isLoading, error } = useDashboardMetrics(effectiveClientId);
 
   // Fetch calls and stats
   useEffect(() => {
@@ -44,9 +61,8 @@ const Dashboard = () => {
       
       setLoadingCalls(true);
       try {
-        // Determine effective client ID based on user role
-        const isAdminUser = user.client_id === null && (user.role === 'admin' || user.role === 'owner');
-        const effectiveClientId = isAdminUser ? undefined : user.client_id || undefined;
+        // Get effective client ID for data fetching
+        const effectiveClientId = canViewAllClients ? selectedClientId : (user?.client_id || undefined);
 
         const [recentCalls, callStats] = await Promise.all([
           CallsService.getRecentCalls(5, effectiveClientId),
@@ -63,7 +79,7 @@ const Dashboard = () => {
     };
 
     fetchCallsData();
-  }, [user]);
+  }, [user, selectedClientId, canViewAllClients]);
 
   // Updated chart colors to be theme-aware
   const chartData = [
@@ -134,6 +150,12 @@ const Dashboard = () => {
     navigate('/call');
   };
 
+  // Handle client selection change
+  const handleClientChange = (clientId: string | null) => {
+    console.log('Dashboard - Client selection changed to:', clientId);
+    setSelectedClientId(clientId);
+  };
+
   // Handle opening call details popup
   const handleOpenCallDetails = async (callId: string) => {
     if (!callId) return;
@@ -180,7 +202,15 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Overview of your AI call system performance.</p> {/* Theme-aware text */}
         </div>
 
-        <div className="flex gap-3 mt-4 sm:mt-0"> {/* Increased button spacing and added top margin on mobile */}
+        <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0"> {/* Increased button spacing and added top margin on mobile */}
+          {/* Client selector for admin users */}
+          {canViewAllClients && (
+            <ClientSelector
+              selectedClientId={selectedClientId}
+              onClientChange={handleClientChange}
+              className="w-full sm:w-auto"
+            />
+          )}
           <Button
             onClick={handleNewCall}
             className="bg-primary hover:bg-primary/90 text-white px-4 py-2" /* Added more padding */
@@ -200,7 +230,11 @@ const Dashboard = () => {
           callsGrowth: metrics.callsGrowth,
           timeGrowth: metrics.timeGrowth,
           transferGrowth: metrics.transferGrowth,
-          leadsGrowth: metrics.leadsGrowth
+          leadsGrowth: metrics.leadsGrowth,
+          todaysCalls: metrics.todaysCalls || 0,
+          linesAvailable: 10, // Static value as requested
+          agentsAvailable: 1, // Static value as requested
+          callsInQueue: 0 // Static value - could be dynamic in the future
         } : {
           totalCalls: 156,
           averageHandleTime: '2h 22m',
@@ -209,13 +243,17 @@ const Dashboard = () => {
           callsGrowth: 12,
           timeGrowth: 15,
           transferGrowth: 8,
-          leadsGrowth: 15
+          leadsGrowth: 15,
+          todaysCalls: 0,
+          linesAvailable: 10,
+          agentsAvailable: 1,
+          callsInQueue: 0
         }}
         isLoading={isLoading}
       />
 
       {/* Call Activity Timeline */}
-      <CallActivityTimeline />
+      <CallActivityTimeline clientId={effectiveClientId} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <PotentialEarnings 

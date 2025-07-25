@@ -21,10 +21,10 @@ export const useDashboardMetrics = (clientId?: string) => {
           (user.role === 'admin' || user.role === 'owner')
         );
         
-        // Use the appropriate client ID based on user role
-        const effectiveClientId = isAdminUser ? null : (user?.client_id || null);
+        // Use the appropriate client ID based on user role and passed clientId parameter
+        const effectiveClientId = isAdminUser ? clientId : (user?.client_id || null);
         
-        console.log('Dashboard Metrics - User Role:', user?.role, 'Client ID:', user?.client_id, 'Is Admin:', isAdminUser, 'Effective Client ID:', effectiveClientId);
+        console.log('Dashboard Metrics - User Role:', user?.role, 'Client ID:', user?.client_id, 'Is Admin:', isAdminUser, 'Passed Client ID:', clientId, 'Effective Client ID:', effectiveClientId);
         
         // Fetch real metrics from database
         const dashboardMetrics = await DashboardService.getDashboardMetrics(effectiveClientId);
@@ -50,7 +50,7 @@ export const useDashboardMetrics = (clientId?: string) => {
       setIsLoading(false);
     }
     
-  }, [user?.id, user?.role, user?.client_id, clientId, isAuthLoading]);
+  }, [user, clientId, isAuthLoading]);
 
   return { metrics, isLoading, error };
 };

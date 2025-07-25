@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Phone, Settings, LogOut, FileText, BarChart, User, Shield } from 'lucide-react';
+import { Home, Phone, Settings, LogOut, FileText, BarChart, User, Shield, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,6 +24,7 @@ const navItems = [
   { icon: FileText, label: 'Logs', path: '/logs' },
   { icon: User, label: 'Leads', path: '/leads' },
   { icon: BarChart, label: 'Analytics', path: '/analytics' },
+  { icon: Bot, label: 'Agents', path: '/agents' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
@@ -136,8 +137,8 @@ const MobileBottomNav = () => {
   const location = useLocation();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-4 z-50 shadow-lg">
-      <div className="flex justify-around items-center max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-2 py-3 z-50 shadow-lg">
+      <div className="flex justify-around items-center max-w-full mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -146,7 +147,7 @@ const MobileBottomNav = () => {
               to={item.path}
               className={({ isActive }) => 
                 cn(
-                  "flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200",
+                  "flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 min-w-0 flex-1",
                   isActive 
                     ? "text-primary bg-primary/10" 
                     : "text-foreground/70 hover:text-foreground hover:bg-secondary active:scale-95"
@@ -154,10 +155,10 @@ const MobileBottomNav = () => {
               }
             >
               <item.icon className={cn(
-                "h-6 w-6 mb-1",
+                "h-5 w-5 mb-1",
                 isActive ? "text-primary" : "text-foreground/60"
               )} />
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className="text-xs font-medium truncate">{item.label}</span>
             </NavLink>
           );
         })}

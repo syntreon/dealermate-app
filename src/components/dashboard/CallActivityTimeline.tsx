@@ -1,21 +1,25 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
-import { callLogsService } from '@/integrations/supabase/call-logs-service';
+import { callLogsService, type CallLog } from '@/integrations/supabase/call-logs-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { determineAggregationType, aggregateCallData, getAggregationDescription, type AggregationType } from '@/utils/dateAggregation';
+
+interface CallActivityTimelineProps {
+  clientId?: string | null;
+}
 
 /**
  * Call Activity Timeline Chart Component
  * Shows the most active call times in a bar chart
  * Includes date range filtering capability
  */
-export function CallActivityTimeline() {
+export function CallActivityTimeline({ clientId }: CallActivityTimelineProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [callData, setCallData] = useState<any[]>([]);
+  const [callData, setCallData] = useState<CallLog[]>([]);
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
 
@@ -28,7 +32,8 @@ export function CallActivityTimeline() {
       try {
         const filters = {
           ...(startDate && { startDate }),
-          ...(endDate && { endDate })
+          ...(endDate && { endDate }),
+          ...(clientId && { clientId })
         };
 
         const calls = await callLogsService.getCallLogs(filters);
@@ -42,7 +47,7 @@ export function CallActivityTimeline() {
     };
 
     fetchCallData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, clientId]);
 
   // Determine aggregation type based on date range
   const aggregationType = useMemo(() => {
@@ -85,7 +90,8 @@ export function CallActivityTimeline() {
       try {
         const filters = {
           ...(startDate && { startDate }),
-          ...(endDate && { endDate })
+          ...(endDate && { endDate }),
+          ...(clientId && { clientId })
         };
 
         const calls = await callLogsService.getCallLogs(filters, true); // Force refresh

@@ -21,6 +21,10 @@ export interface DashboardMetrics {
   timeGrowth?: number;
   transferGrowth?: number;
   leadsGrowth?: number;
+  todaysCalls?: number;
+  linesAvailable?: number;
+  agentsAvailable?: number;
+  callsInQueue?: number;
   agentStatus: AgentStatus;
   systemMessages: SystemMessage[];
 }

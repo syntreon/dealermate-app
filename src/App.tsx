@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import Logs from "./pages/Logs";
 import Analytics from "./pages/Analytics";
 import Leads from "./pages/Leads";
+import Agents from "./pages/Agents";
 import AppLayout from "./components/AppLayout";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -49,6 +50,7 @@ const App = () => (
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/leads" element={<Leads />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/agents" element={<Agents />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/manage-users" element={<ManageUsers />} />
                 </Route>

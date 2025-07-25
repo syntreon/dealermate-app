@@ -263,10 +263,18 @@ export const DashboardService = {
       // Calculate calls transferred
       const callsTransferred = calls.filter(call => call.transfer_flag === true).length;
 
-      // Calculate today's metrics
-      const callsToday = calls.filter(call => 
-        new Date(call.created_at) >= today
-      ).length;
+      // Calculate today's metrics (EST timezone)
+      // Get today's date in EST timezone
+      const estToday = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
+      const todayStartEST = new Date(new Date(estToday).toDateString()); // Start of today in EST
+      const todayEndEST = new Date(todayStartEST.getTime() + 24 * 60 * 60 * 1000); // End of today in EST
+      
+      const callsToday = calls.filter(call => {
+        const callDate = new Date(call.created_at);
+        // Convert call date to EST for comparison
+        const callDateEST = new Date(callDate.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        return callDateEST >= todayStartEST && callDateEST < todayEndEST;
+      }).length;
 
       const leadsToday = leads.filter(lead => 
         new Date(lead.created_at) >= today
@@ -344,6 +352,10 @@ export const DashboardService = {
         timeGrowth,
         transferGrowth,
         leadsGrowth,
+        todaysCalls: callsToday,
+        linesAvailable: 10, // Static value as requested
+        agentsAvailable: 1, // Static value as requested
+        callsInQueue: 0, // Static value - could be dynamic in the future
         agentStatus,
         systemMessages
       };
