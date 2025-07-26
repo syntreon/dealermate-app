@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Code } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 interface ToolCallsSectionProps {
   callId: string;
@@ -20,6 +21,85 @@ interface ToolCall {
   result: any | null;
   created_at: string;
 }
+
+// Helper function to format arguments (JSONB stored as string)
+const formatArguments = (args: any): string => {
+  try {
+    // Handle case where args is a string that contains escaped JSON
+    // Example: "{\"make\": \"Nissan\", \"model\": \"Pathfinder\"}"
+    if (typeof args === 'string') {
+      // First try to parse it directly
+      try {
+        const parsed = JSON.parse(args);
+        return JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        // If direct parsing fails, check if it's an escaped JSON string
+        if (args.includes('\\"')) {
+          try {
+            // Try to parse the unescaped string
+            const unescaped = args.replace(/\\"/g, '"');
+            const parsed = JSON.parse(unescaped);
+            return JSON.stringify(parsed, null, 2);
+          } catch (e2) {
+            // If that fails too, return the original
+          }
+        }
+      }
+    } else if (args && typeof args === 'object') {
+      // If it's already an object, just stringify it
+      return JSON.stringify(args, null, 2);
+    }
+    
+    // If all parsing attempts fail or it's not a string/object, return as is
+    return String(args);
+  } catch (error) {
+    console.error('Error formatting arguments:', error);
+    return String(args);
+  }
+};
+
+// Helper function to format result text with line breaks
+const formatResult = (result: string): React.ReactNode => {
+  try {
+    if (!result) return 'No result';
+    
+    // If result is a JSON string, try to parse and format it
+    if ((result.startsWith('{') && result.endsWith('}')) || 
+        (result.startsWith('[') && result.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(result);
+        return JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        // If parsing fails, continue with normal formatting
+      }
+    }
+    
+    // Handle escaped newlines (\n) in the result string
+    if (result.includes('\\n')) {
+      return result.split('\\n').map((line, i) => (
+        <React.Fragment key={i}>
+          {line}
+          {i < result.split('\\n').length - 1 && <br />}
+        </React.Fragment>
+      ));
+    }
+    
+    // Handle regular newlines (\n) in the result string
+    if (result.includes('\n')) {
+      return result.split('\n').map((line, i) => (
+        <React.Fragment key={i}>
+          {line}
+          {i < result.split('\n').length - 1 && <br />}
+        </React.Fragment>
+      ));
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error formatting result:', error);
+    return String(result);
+  }
+};
 
 export const ToolCallsSection: React.FC<ToolCallsSectionProps> = ({ callId, clientId }) => {
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
@@ -69,7 +149,7 @@ export const ToolCallsSection: React.FC<ToolCallsSectionProps> = ({ callId, clie
       <div className="space-y-4">
         {toolCalls.map((toolCall) => (
           <div 
-            key={toolCall.id}
+            key={`${toolCall.id}_${toolCall.role}`}
             className={`p-3 rounded-lg max-w-[85%] ${
               toolCall.role === 'tool_calls' 
                 ? 'bg-muted/50 mr-auto' 
@@ -79,16 +159,22 @@ export const ToolCallsSection: React.FC<ToolCallsSectionProps> = ({ callId, clie
             {toolCall.role === 'tool_calls' && (
               <>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold bg-primary/20 px-2 py-0.5 rounded">
+                  <Badge variant="outline" className="text-xs font-semibold bg-primary/20">
                     {toolCall.tool_name || 'Unknown Tool'}
-                  </span>
+                  </Badge>
                   <span className="text-xs text-muted-foreground">
                     {new Date(toolCall.created_at).toLocaleTimeString()}
                   </span>
                 </div>
-                <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-60 font-mono">
-                  {toolCall.arguments ? JSON.stringify(toolCall.arguments, null, 2) : 'No arguments'}
-                </pre>
+                <div className="bg-muted/70 rounded-md p-2 mt-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Code className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Arguments</span>
+                  </div>
+                  <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-60 font-mono">
+                    {toolCall.arguments ? formatArguments(toolCall.arguments) : 'No arguments'}
+                  </pre>
+                </div>
               </>
             )}
             
@@ -98,13 +184,15 @@ export const ToolCallsSection: React.FC<ToolCallsSectionProps> = ({ callId, clie
                   <span className="text-xs text-muted-foreground">
                     {new Date(toolCall.created_at).toLocaleTimeString()}
                   </span>
-                  <span className="text-xs font-semibold bg-primary/20 px-2 py-0.5 rounded">
+                  <Badge variant="outline" className="text-xs font-semibold bg-primary/20">
                     Result
-                  </span>
+                  </Badge>
                 </div>
-                <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-60 font-mono">
-                  {toolCall.result ? JSON.stringify(toolCall.result, null, 2) : 'No result'}
-                </pre>
+                <div className="bg-primary/5 rounded-md p-2 mt-1">
+                  <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-60 font-mono">
+                    {toolCall.result ? formatResult(toolCall.result) : 'No result'}
+                  </pre>
+                </div>
               </>
             )}
           </div>
