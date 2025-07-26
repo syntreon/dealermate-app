@@ -76,22 +76,36 @@ const formatResult = (result: string): React.ReactNode => {
     
     // Handle escaped newlines (\n) in the result string
     if (result.includes('\\n')) {
-      return result.split('\\n').map((line, i) => (
-        <React.Fragment key={i}>
-          {line}
-          {i < result.split('\\n').length - 1 && <br />}
-        </React.Fragment>
-      ));
+      // Convert to an array of lines and join with <br/> elements
+      const lines = result.split('\\n');
+      return (
+        <span className="whitespace-pre-wrap">
+          {lines.map((line, i) => (
+            // Use a span with a key instead of React.Fragment
+            <span key={i}>
+              {line}
+              {i < lines.length - 1 && <br />}
+            </span>
+          ))}
+        </span>
+      );
     }
     
     // Handle regular newlines (\n) in the result string
     if (result.includes('\n')) {
-      return result.split('\n').map((line, i) => (
-        <React.Fragment key={i}>
-          {line}
-          {i < result.split('\n').length - 1 && <br />}
-        </React.Fragment>
-      ));
+      // Convert to an array of lines and join with <br/> elements
+      const lines = result.split('\n');
+      return (
+        <span className="whitespace-pre-wrap">
+          {lines.map((line, i) => (
+            // Use a span with a key instead of React.Fragment
+            <span key={i}>
+              {line}
+              {i < lines.length - 1 && <br />}
+            </span>
+          ))}
+        </span>
+      );
     }
     
     return result;

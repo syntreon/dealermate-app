@@ -293,19 +293,6 @@ export const CallDetailsTab: React.FC<CallDetailsTabProps> = ({ call }) => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Tool Calls - Only visible to admin users */}
-        {canViewSensitiveInfo(user) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Tool Calls</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ToolCallsSection callId={call.id} clientId={call.client_id} />
-            </CardContent>
-          </Card>
-        )}
-
         {/* Call Summary */}
         <Card>
           <CardHeader>
@@ -317,6 +304,17 @@ export const CallDetailsTab: React.FC<CallDetailsTabProps> = ({ call }) => {
             </p>
           </CardContent>
         </Card>
+        {/* Tool Calls - Only visible to admin users */}
+        {canViewSensitiveInfo(user) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Tool Calls</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ToolCallsSection callId={call.id} clientId={call.client_id} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Model Information - Only visible to admin users */}
         {canViewSensitiveInfo(user) && (
