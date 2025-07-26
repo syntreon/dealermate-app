@@ -38,6 +38,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import CallDetailsPopup from '@/components/calls/CallDetailsPopup';
 import { CallLog } from '@/integrations/supabase/call-logs-service';
+import InquiryTypeBadge from '@/components/calls/InquiryTypeBadge';
+import { CallIntelligenceService } from '@/services/callIntelligenceService';
 
 interface LeadDetailsViewProps {
     lead: SupabaseLead | null;
@@ -62,6 +64,7 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
     const [isAddingNote, setIsAddingNote] = useState(false);
     const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
     const [isCallDetailsOpen, setIsCallDetailsOpen] = useState(false);
+    const [inquiryType, setInquiryType] = useState<string | null>(null);
 
     // Get status badge
     const getStatusBadge = (status: string) => {
@@ -154,6 +157,22 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
         return notes.split('\n').filter(note => note.trim() !== '');
     };
 
+        // Fetch inquiry type when lead changes
+    useEffect(() => {
+        if (lead && lead.call_id) {
+            CallIntelligenceService.getCallInquiryTypes([lead.call_id])
+                .then(inquiryMap => {
+                    setInquiryType(inquiryMap.get(lead.call_id!) || null);
+                })
+                .catch(error => {
+                    console.error('Error fetching inquiry type:', error);
+                    setInquiryType(null);
+                });
+        } else {
+            setInquiryType(null);
+        }
+    }, [lead]);
+
     // Note: The function that automatically adds custom lead data to notes has been removed
     // as per requirements. Initial notes are now added when the record is created in the database.
     // This component now only handles adding additional notes from the frontend.
@@ -195,9 +214,14 @@ const LeadDetailsView: React.FC<LeadDetailsViewProps> = ({
                                     </Avatar>
                                     <div>
                                         <h2 className="text-xl font-bold">{lead.full_name}</h2>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center flex-wrap gap-2 mt-1">
                                             <div>{getStatusBadge(lead.status)}</div>
                                             <div>{getSourceBadge(lead.source)}</div>
+                                            {inquiryType && (
+                                                <div>
+                                                    <InquiryTypeBadge inquiryType={inquiryType} />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
