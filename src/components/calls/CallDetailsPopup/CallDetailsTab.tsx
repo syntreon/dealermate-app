@@ -12,6 +12,7 @@ import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 import { convertUsdToCad } from '@/utils/currency';
 import { toast } from 'sonner';
 import { getCallerInitials } from './utils';
+import { ToolCallsSection } from './ToolCallsSection';
 
 interface CallDetailsTabProps {
   call: CallLog | null;
@@ -293,6 +294,18 @@ export const CallDetailsTab: React.FC<CallDetailsTabProps> = ({ call }) => {
           </Card>
         </div>
 
+        {/* Tool Calls - Only visible to admin users */}
+        {canViewSensitiveInfo(user) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Tool Calls</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ToolCallsSection callId={call.id} clientId={call.client_id} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Call Summary */}
         <Card>
           <CardHeader>
@@ -304,15 +317,15 @@ export const CallDetailsTab: React.FC<CallDetailsTabProps> = ({ call }) => {
             </p>
           </CardContent>
         </Card>
-        
-        {/* Model Information - Admin Only */}
+
+        {/* Model Information - Only visible to admin users */}
         {canViewSensitiveInfo(user) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Model Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* TTS Information */}
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Text-to-Speech</h4>

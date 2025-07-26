@@ -43,6 +43,7 @@ src/
 ├── components/            # Reusable UI components.
 │   ├── admin/             # Components specific to the Admin Dashboard.
 │   ├── analytics/         # Components for the Analytics pages.
+│   │   └── SimpleAIAnalytics.tsx # AI model performance dashboard using real data.
 │   ├── calls/             # Components related to call details and evaluation.
 │   ├── common/            # Generic, shared components (buttons, inputs, etc.).
 │   └── ui/                # Base UI elements from shadcn/ui.
@@ -65,6 +66,7 @@ src/
 ├── services/              # Handles business logic and API interactions.
 │   ├── adminService.ts    # Fetches data for the Admin Dashboard.
 │   ├── analyticsService.ts# Fetches data for the Analytics pages.
+│   ├── simpleAIAnalyticsService.ts # AI model performance analytics using real database data.
 │   └── supabaseService.ts # Generic Supabase client and helper functions.
 ├──
 ├── types/                 # TypeScript type definitions and interfaces.
