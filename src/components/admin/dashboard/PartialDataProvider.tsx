@@ -95,11 +95,7 @@ export const PartialDataProvider: React.FC<PartialDataProviderProps> = ({
   }, []);
 
   // Load data for a specific section
-  const loadSection = useCallback(async <T>(
-    id: string, 
-    loader: () => Promise<T>,
-    options: LoadSectionOptions = {}
-  ): Promise<T | null> => {
+  const loadSection = useCallback(async <T,>(id: string, loader: () => Promise<T>, options: LoadSectionOptions = {}): Promise<T | null> => {
     const { 
       showToastOnError = true, 
       retryOnError = true,
@@ -242,10 +238,7 @@ export const useDataSection = (id: string, name?: string) => {
     isStale: false
   };
 
-  const load = useCallback(<T>(
-    loader: () => Promise<T>,
-    options?: LoadSectionOptions
-  ) => {
+  const load = useCallback(<T,>(loader: () => Promise<T>, options?: LoadSectionOptions) => {
     return loadSection(id, loader, options);
   }, [id, loadSection]);
 
