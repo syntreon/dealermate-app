@@ -60,13 +60,16 @@ const AdminLayout = () => {
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
       <SidebarProvider defaultOpen={!isMobile}>
-        <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
-          {/* Top Bar - Only show on desktop */}
-          {!isMobile && <TopBar />}
+        <div className="min-h-screen bg-background text-foreground flex w-full">
+          {/* Sidebar */}
+          <AdminSidebar />
           
-          <div className="flex flex-1">
-            <AdminSidebar />
+          {/* Main content area */}
+          <div className="flex flex-col flex-1">
+            {/* Top Bar - Only show on desktop */}
+            {!isMobile && <TopBar />}
             
+            {/* Page content */}
             <main className="flex-1 overflow-auto p-2 pb-24 md:p-4">
               <div className="w-full">
                 <Outlet />

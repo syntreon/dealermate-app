@@ -64,22 +64,23 @@ const AppLayout = () => {
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
       <SidebarProvider defaultOpen={!isMobile}>
-        <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
-          {/* Top Bar - Only show on desktop */}
-          {!isMobile && <TopBar />}
-
-          <div className="flex flex-1">
-            <AppSidebar />
-
+        <div className="min-h-screen bg-background text-foreground flex w-full">
+          {/* Sidebar */}
+          <AppSidebar />
+          
+          {/* Main content area */}
+          <div className="flex flex-col flex-1">
+            {/* Top Bar - Only show on desktop */}
+            {!isMobile && <TopBar />}
+            
+            {/* Page content */}
             <SidebarInset className="flex-1 overflow-auto p-2 pb-24 md:p-3">
-
-
               <div className="w-full animate-in">
                 <Outlet />
               </div>
             </SidebarInset>
           </div>
-
+          
           <Toaster position="top-right" />
         </div>
       </SidebarProvider>
