@@ -52,6 +52,19 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Format date range for display
+  const formatDateRange = useMemo(() => {
+    if (!startDate && !endDate) {
+      return 'All Time';
+    } else if (startDate && !endDate) {
+      return `Since ${new Date(startDate).toLocaleDateString()}`;
+    } else if (!startDate && endDate) {
+      return `Until ${new Date(endDate).toLocaleDateString()}`;
+    } else {
+      return `${new Date(startDate!).toLocaleDateString()} - ${new Date(endDate!).toLocaleDateString()}`;
+    }
+  }, [startDate, endDate]);
+
   // Always call useMemo hook to maintain consistent hook order
   const heatmapData = useMemo(() => {
     return data ? transformDataForHeatmap(data) : [];
@@ -311,13 +324,14 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
 
       {/* Charts */}
       {/* Call Volume Heatmap */}
-      {data && <CallVolumeHeatmap data={heatmapData} />}
+      {data && <CallVolumeHeatmap data={heatmapData} dateRange={formatDateRange} />}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Call Volume Over Time */}
         <Card>
           <CardHeader>
             <CardTitle>Call Volume Over Time</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -365,6 +379,7 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
         <Card>
           <CardHeader>
             <CardTitle>Call Inquiry Types</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -409,6 +424,7 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
         <Card>
           <CardHeader>
             <CardTitle>Calls by Hour of Day</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -442,6 +458,7 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
         <Card>
           <CardHeader>
             <CardTitle>Average Call Duration</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">

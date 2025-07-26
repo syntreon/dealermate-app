@@ -10,9 +10,10 @@ interface CallVolumeHeatmapProps {
     count: number;
   }>;
   maxCount?: number;
+  dateRange?: string; // Date range to display
 }
 
-const CallVolumeHeatmap: React.FC<CallVolumeHeatmapProps> = ({ data, maxCount: propMaxCount }) => {
+const CallVolumeHeatmap: React.FC<CallVolumeHeatmapProps> = ({ data, maxCount: propMaxCount, dateRange }) => {
   // Calculate max count if not provided
   const maxCount = useMemo(() => {
     if (propMaxCount) return propMaxCount;
@@ -70,6 +71,7 @@ const CallVolumeHeatmap: React.FC<CallVolumeHeatmapProps> = ({ data, maxCount: p
     <Card>
       <CardHeader>
         <CardTitle>Call Volume by Hour/Day</CardTitle>
+        {dateRange && <p className="text-sm text-muted-foreground mt-1">{dateRange}</p>}
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
