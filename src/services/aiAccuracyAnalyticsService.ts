@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { ModelPerformanceAnalysis } from './modelPerformanceAnalysis';
 import {
   AIAccuracyAnalyticsData,
   ModelPerformanceMetrics,
@@ -22,54 +21,54 @@ import {
   CostEfficiencyMetrics,
   CostTrendData,
   PerformanceDiagnostic,
-  AIAccuracyFilters
+  AIAccuracyFilters,
+  QualityDataPoint,
+  QualityDimensions,
+  ModelQualityComparison,
+  QualityCorrelationMatrix,
+  QualityThresholdAnalysis,
+  ResponseTimeTrend,
+  TokenDistributionByModel,
+  CostByModel,
+  CostAccuracyPoint,
+  CorrelationAnalysis
 } from '@/types/aiAccuracyAnalytics';
 
 export class AIAccuracyAnalyticsService {
-  /**
-   * Get comprehensive AI accuracy analytics data
-   */
-  static async getAnalyticsData(filters?: AIAccuracyFilters): Promise<AIAccuracyAnalyticsData> {
-    try {
-      const { startDate, endDate, clientId, modelType, accuracyThreshold } = filters || {};
-      
-      // Calculate date range if not provided
-      const now = new Date();
-      const defaultStartDate = new Date();
-      defaultStartDate.setMonth(now.getMonth() - 1); // Default to last month
-      
-      const effectiveStartDate = startDate || defaultStartDate.toISOString();
-      const effectiveEndDate = endDate || now.toISOString();
 
-      // Fetch all required data in parallel
-      const [
-        modelPerformance,
-        accuracyTrends,
-        failurePatterns,
-        keywordAnalysis,
-        conversationQuality,
-        technicalMetrics
-      ] = await Promise.all([
-        ModelPerformanceAnalysis.getEnhancedModelPerformanceMetrics(effectiveStartDate, effectiveEndDate, clientId, modelType),
-        this.getAccuracyTrends(effectiveStartDate, effectiveEndDate, clientId, modelType),
-        this.getFailurePatterns(effectiveStartDate, effectiveEndDate, clientId, modelType),
-        this.getKeywordAnalysis(effectiveStartDate, effectiveEndDate, clientId, modelType),
-        this.getConversationQualityMetrics(effectiveStartDate, effectiveEndDate, clientId, modelType),
-        this.getTechnicalMetrics(effectiveStartDate, effectiveEndDate, clientId, modelType)
-      ]);
+  private static async _getFilteredCallsData(startDate: string, endDate: string, clientId?: string, modelType?: string) {
+    let query = supabase
+      .from('calls')
+      .select(`
+        id,
+        call_llm_model,
+        created_at,
+        call_duration_seconds,
+        total_call_cost_usd,
+        lead_evaluations(overall_evaluation_score),
+        prompt_adherence_reviews(prompt_adherence_score, critical_failures_summary, what_went_wrong, recommendations_for_improvement),
+        call_logs(extracted_keywords)
+      `)
+      .gte('created_at', startDate)
+      .lte('created_at', endDate)
+      .order('created_at', { ascending: true });
 
-      return {
-        modelPerformance,
-        accuracyTrends,
-        failurePatterns,
-        keywordAnalysis,
-        conversationQuality,
-        technicalMetrics
-      };
-    } catch (error) {
-      console.error('Error fetching AI accuracy analytics data:', error);
+    if (clientId) {
+      query = query.eq('client_id', clientId);
+    }
+
+    if (modelType) {
+      query = query.eq('call_llm_model', modelType);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching calls data:', error);
       throw error;
     }
+
+    return data || [];
   }
 
   /**
@@ -82,33 +81,7 @@ export class AIAccuracyAnalyticsService {
     modelType?: string
   ): Promise<ModelPerformanceMetrics> {
     try {
-      let query = supabase
-        .from('calls')
-        .select(`
-          id,
-          call_llm_model,
-          created_at,
-          call_duration_seconds,
-          total_call_cost_usd,
-          lead_evaluations(overall_evaluation_score),
-          prompt_adherence_reviews(prompt_adherence_score, critical_failures_summary)
-        `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
-
-      if (clientId) {
-        query = query.eq('client_id', clientId);
-      }
-
-      if (modelType) {
-        query = query.eq('call_llm_model', modelType);
-      }
-
-      const { data: callsData, error } = await query;
-      
-      if (error) throw error;
-
-      const calls = callsData || [];
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
       const totalCalls = calls.length;
 
       // Group calls by model
@@ -228,31 +201,7 @@ export class AIAccuracyAnalyticsService {
     modelType?: string
   ): Promise<AccuracyTrendData[]> {
     try {
-      let query = supabase
-        .from('calls')
-        .select(`
-          created_at,
-          call_llm_model,
-          lead_evaluations(overall_evaluation_score),
-          prompt_adherence_reviews(prompt_adherence_score, critical_failures_summary)
-        `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate)
-        .order('created_at', { ascending: true });
-
-      if (clientId) {
-        query = query.eq('client_id', clientId);
-      }
-
-      if (modelType) {
-        query = query.eq('call_llm_model', modelType);
-      }
-
-      const { data: callsData, error } = await query;
-      
-      if (error) throw error;
-
-      const calls = callsData || [];
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
 
       // Group calls by date
       const dateGroups: { [date: string]: any[] } = {};
@@ -334,35 +283,7 @@ export class AIAccuracyAnalyticsService {
     modelType?: string
   ): Promise<FailurePatternData> {
     try {
-      let query = supabase
-        .from('calls')
-        .select(`
-          id,
-          call_llm_model,
-          created_at,
-          prompt_adherence_reviews(
-            prompt_adherence_score,
-            what_went_wrong,
-            critical_failures_summary,
-            recommendations_for_improvement
-          )
-        `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
-
-      if (clientId) {
-        query = query.eq('client_id', clientId);
-      }
-
-      if (modelType) {
-        query = query.eq('call_llm_model', modelType);
-      }
-
-      const { data: callsData, error } = await query;
-      
-      if (error) throw error;
-
-      const calls = callsData || [];
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
       
       // Process failure data
       const failureCategories: { [category: string]: FailureCategory } = {};
@@ -469,7 +390,7 @@ export class AIAccuracyAnalyticsService {
 
       // Calculate model failure rates
       const failuresByModel = Object.values(modelFailures).map(modelFailure => {
-        const modelCalls = callsData.filter(call => (call.call_llm_model || 'Unknown') === modelFailure.modelName).length;
+        const modelCalls = calls.filter(call => (call.call_llm_model || 'Unknown') === modelFailure.modelName).length;
         return {
           ...modelFailure,
           failureRate: modelCalls > 0 ? Math.round((modelFailure.totalFailures / modelCalls) * 100) : 0
@@ -498,33 +419,7 @@ export class AIAccuracyAnalyticsService {
     modelType?: string
   ): Promise<KeywordAnalysisData> {
     try {
-      let query = supabase
-        .from('calls')
-        .select(`
-          call_llm_model,
-          created_at,
-          prompt_adherence_reviews(
-            what_went_wrong,
-            critical_failures_summary,
-            recommendations_for_improvement
-          )
-        `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
-
-      if (clientId) {
-        query = query.eq('client_id', clientId);
-      }
-
-      if (modelType) {
-        query = query.eq('call_llm_model', modelType);
-      }
-
-      const { data: callsData, error } = await query;
-      
-      if (error) throw error;
-
-      const calls = callsData || [];
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
       
       const keywordFrequency: { [keyword: string]: KeywordFrequency } = {};
       const categoryBreakdown: { [category: string]: FailureCategoryBreakdown } = {};
@@ -621,37 +516,7 @@ export class AIAccuracyAnalyticsService {
     modelType?: string
   ): Promise<ConversationQualityMetrics> {
     try {
-      let query = supabase
-        .from('calls')
-        .select(`
-          call_llm_model,
-          created_at,
-          lead_evaluations(
-            overall_evaluation_score,
-            sentiment,
-            clarity_politeness_score,
-            naturalness_score,
-            relevance_questions_score,
-            objection_handling_score,
-            lead_intent_score
-          )
-        `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
-
-      if (clientId) {
-        query = query.eq('client_id', clientId);
-      }
-
-      if (modelType) {
-        query = query.eq('call_llm_model', modelType);
-      }
-
-      const { data: callsData, error } = await query;
-      
-      if (error) throw error;
-
-      const calls = callsData || [];
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
       
       // Enhanced quality correlation analysis
       const qualityCorrelation = await this.correlateQualityWithModels(calls);
@@ -676,8 +541,49 @@ export class AIAccuracyAnalyticsService {
   }
 
   /**
-   * Correlate quality metrics with AI models used
+   * Get technical metrics data including response times, token usage, and cost efficiency
    */
+  static async getTechnicalMetrics(
+    startDate: string,
+    endDate: string,
+    clientId?: string,
+    modelType?: string
+  ): Promise<TechnicalMetricsData> {
+    try {
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
+      if (calls.length === 0) {
+        return this.getEmptyTechnicalMetricsData();
+      }
+
+      // Calculate technical metrics
+      const responseTimeStats = this.calculateResponseTimeStats(calls);
+      const tokenUsageStats = this.calculateTokenUsageStats(calls);
+      const costEfficiencyMetrics = this.calculateCostEfficiencyMetrics(calls);
+      const metrics: TechnicalMetricsData = {
+        averageResponseTime: responseTimeStats.avg,
+        responseTimeStats,
+        responseTimeTrend: this.calculateResponseTimeTrends(calls),
+        tokenUsageStats,
+        tokenDistributionByModel: this.calculateTokenDistributionByModel(calls),
+        costEfficiencyMetrics,
+        costTrend: this.calculateCostTrends(calls),
+        costByModel: this.calculateCostByModel(calls),
+        costAccuracyCorrelation: this.calculateCostAccuracyCorrelation(calls),
+        performanceDiagnostics: [], // This will be populated below
+        correlationAnalysis: [this.calculateCorrelationAnalysis(calls)],
+        performanceInsights: [], // This will be populated below
+      };
+
+      metrics.performanceDiagnostics = this.generatePerformanceDiagnostics(metrics);
+      metrics.performanceInsights = this.generatePerformanceInsights(metrics.performanceDiagnostics);
+
+      return metrics;
+    } catch (error) {
+      console.error('Error fetching technical metrics:', error);
+      throw error;
+    }
+  }
+
   private static async correlateQualityWithModels(calls: any[]): Promise<{
     qualityByModel: { [modelName: string]: number };
     qualityDimensionsByModel: { [modelName: string]: QualityDimensions };
@@ -860,7 +766,13 @@ export class AIAccuracyAnalyticsService {
    * Analyze quality trends over time with model breakdown
    */
   private static analyzeQualityTrendsOverTime(calls: any[]): QualityTrendData[] {
-    const qualityTrends: { [date: string]: QualityTrendData } = {};
+    // Define a temporary type for intermediate calculations to avoid type errors
+    type TempQualityTrend = QualityTrendData & {
+      qualityCount: number;
+      modelQualityCounts: { [modelName: string]: number };
+    };
+
+    const qualityTrends: { [date: string]: TempQualityTrend } = {};
 
     calls.forEach(call => {
       const evaluation = call.lead_evaluations?.[0];
@@ -925,148 +837,10 @@ export class AIAccuracyAnalyticsService {
       };
     });
 
-    return processedQualityTrends.sort((a, b) => a.date.localeCompare(b.date));
+    // Sort trends by date ascending
+    return processedQualityTrends.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 
-  /**
-   * Get technical metrics
-   */
-  static async getTechnicalMetrics(
-    startDate: string,
-    endDate: string,
-    clientId?: string,
-    modelType?: string
-  ): Promise<TechnicalMetricsData> {
-    try {
-      let query = supabase
-        .from('calls')
-        .select(`
-          call_llm_model,
-          call_duration_seconds,
-          total_call_cost_usd,
-          openai_api_tokens_input,
-          openai_api_tokens_output,
-          openai_api_cost_usd
-        `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
-
-      if (clientId) {
-        query = query.eq('client_id', clientId);
-      }
-
-      if (modelType) {
-        query = query.eq('call_llm_model', modelType);
-      }
-
-      const { data: callsData, error } = await query;
-      
-      if (error) throw error;
-
-      const calls = callsData || [];
-      
-      // Calculate response time metrics
-      const responseTimes = calls
-        .map(call => call.call_duration_seconds)
-        .filter(duration => duration !== null && duration !== undefined);
-      const averageResponseTime = responseTimes.length > 0
-        ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
-        : 0;
-
-      // Calculate token usage stats
-      const inputTokens = calls
-        .map(call => call.openai_api_tokens_input || 0)
-        .reduce((sum, tokens) => sum + tokens, 0);
-      const outputTokens = calls
-        .map(call => call.openai_api_tokens_output || 0)
-        .reduce((sum, tokens) => sum + tokens, 0);
-      
-      const averageInputTokens = calls.length > 0 ? inputTokens / calls.length : 0;
-      const averageOutputTokens = calls.length > 0 ? outputTokens / calls.length : 0;
-      const totalTokensUsed = inputTokens + outputTokens;
-
-      // Calculate tokens by model
-      const tokensByModel: { [modelName: string]: { input: number; output: number } } = {};
-      calls.forEach(call => {
-        const modelName = call.call_llm_model || 'Unknown';
-        if (!tokensByModel[modelName]) {
-          tokensByModel[modelName] = { input: 0, output: 0 };
-        }
-        tokensByModel[modelName].input += call.openai_api_tokens_input || 0;
-        tokensByModel[modelName].output += call.openai_api_tokens_output || 0;
-      });
-
-      // Calculate cost efficiency metrics
-      const totalCost = calls.reduce((sum, call) => sum + (call.total_call_cost_usd || 0), 0);
-      const averageCostPerCall = calls.length > 0 ? totalCost / calls.length : 0;
-
-      const costByModel: { [modelName: string]: number } = {};
-      calls.forEach(call => {
-        const modelName = call.call_llm_model || 'Unknown';
-        if (!costByModel[modelName]) {
-          costByModel[modelName] = 0;
-        }
-        costByModel[modelName] += call.total_call_cost_usd || 0;
-      });
-
-      // Create performance diagnostics
-      const performanceDiagnostics: PerformanceDiagnostic[] = [
-        {
-          metric: 'Average Response Time',
-          value: averageResponseTime,
-          threshold: 300, // 5 minutes
-          status: averageResponseTime > 300 ? 'warning' : 'good',
-          recommendation: averageResponseTime > 300 
-            ? 'Consider optimizing model response times' 
-            : 'Response times are within acceptable range'
-        },
-        {
-          metric: 'Average Cost Per Call',
-          value: averageCostPerCall,
-          threshold: 5.0, // $5 USD
-          status: averageCostPerCall > 5.0 ? 'warning' : 'good',
-          recommendation: averageCostPerCall > 5.0 
-            ? 'Review cost optimization strategies' 
-            : 'Cost efficiency is good'
-        },
-        {
-          metric: 'Token Usage Efficiency',
-          value: totalTokensUsed / calls.length,
-          threshold: 10000, // 10k tokens per call
-          status: (totalTokensUsed / calls.length) > 10000 ? 'warning' : 'good',
-          recommendation: (totalTokensUsed / calls.length) > 10000 
-            ? 'Consider optimizing prompt length and model responses' 
-            : 'Token usage is efficient'
-        }
-      ];
-
-      return {
-        averageResponseTime: Math.round(averageResponseTime),
-        tokenUsageStats: {
-          averageInputTokens: Math.round(averageInputTokens),
-          averageOutputTokens: Math.round(averageOutputTokens),
-          totalTokensUsed,
-          tokensByModel
-        },
-        costEfficiencyMetrics: {
-          averageCostPerCall: Math.round(averageCostPerCall * 100) / 100,
-          costByModel,
-          costTrends: [], // Would need historical data for trends
-          costVsAccuracyCorrelation: 0 // Would need correlation analysis
-        },
-        performanceDiagnostics
-      };
-    } catch (error) {
-      console.error('Error fetching technical metrics:', error);
-      throw error;
-    }
-  }
-
-  // Helper methods for conversation quality correlation
-
-  /**
-   * Calculate sentiment distribution for quality data points
-   */
   private static calculateSentimentDistribution(dataPoints: QualityDataPoint[]): { [sentiment: string]: number } {
     const distribution: { [sentiment: string]: number } = {};
     const total = dataPoints.length;
@@ -1081,96 +855,6 @@ export class AIAccuracyAnalyticsService {
     });
 
     return distribution;
-  }
-
-  /**
-   * Calculate standard deviation for quality scores
-   */
-  private static calculateStandardDeviation(scores: number[]): number {
-    if (scores.length === 0) return 0;
-    
-    const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-    const squaredDifferences = scores.map(score => Math.pow(score - mean, 2));
-    const variance = squaredDifferences.reduce((sum, diff) => sum + diff, 0) / scores.length;
-    
-    return Math.round(Math.sqrt(variance) * 100) / 100;
-  }
-
-  /**
-   * Calculate confidence interval for quality scores
-   */
-  private static calculateConfidenceInterval(scores: number[], confidenceLevel: number = 0.95): { lower: number; upper: number } {
-    if (scores.length === 0) return { lower: 0, upper: 0 };
-    
-    const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-    const standardDeviation = this.calculateStandardDeviation(scores);
-    const standardError = standardDeviation / Math.sqrt(scores.length);
-    
-    // Using t-distribution approximation (1.96 for 95% confidence)
-    const tValue = 1.96;
-    const marginOfError = tValue * standardError;
-    
-    return {
-      lower: Math.round((mean - marginOfError) * 100) / 100,
-      upper: Math.round((mean + marginOfError) * 100) / 100
-    };
-  }
-
-  /**
-   * Calculate quality consistency score
-   */
-  private static calculateQualityConsistency(dataPoints: QualityDataPoint[]): number {
-    if (dataPoints.length === 0) return 0;
-    
-    const scores = dataPoints.map(point => point.overallScore);
-    const standardDeviation = this.calculateStandardDeviation(scores);
-    const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-    
-    // Consistency is inverse of coefficient of variation (lower variation = higher consistency)
-    const coefficientOfVariation = mean > 0 ? standardDeviation / mean : 0;
-    const consistency = Math.max(0, 1 - coefficientOfVariation);
-    
-    return Math.round(consistency * 100) / 100;
-  }
-
-  /**
-   * Identify strength areas based on quality dimensions
-   */
-  private static identifyStrengthAreas(dimensions: QualityDimensions): string[] {
-    const dimensionScores = [
-      { name: 'Clarity & Politeness', score: dimensions.clarityPoliteness },
-      { name: 'Naturalness', score: dimensions.naturalness },
-      { name: 'Relevance & Questions', score: dimensions.relevanceQuestions },
-      { name: 'Objection Handling', score: dimensions.objectionHandling },
-      { name: 'Lead Intent', score: dimensions.leadIntent }
-    ];
-
-    // Consider top 2 dimensions as strengths if they're above 7.5
-    return dimensionScores
-      .filter(dim => dim.score >= 7.5)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 2)
-      .map(dim => dim.name);
-  }
-
-  /**
-   * Identify improvement areas based on quality dimensions
-   */
-  private static identifyImprovementAreas(dimensions: QualityDimensions): string[] {
-    const dimensionScores = [
-      { name: 'Clarity & Politeness', score: dimensions.clarityPoliteness },
-      { name: 'Naturalness', score: dimensions.naturalness },
-      { name: 'Relevance & Questions', score: dimensions.relevanceQuestions },
-      { name: 'Objection Handling', score: dimensions.objectionHandling },
-      { name: 'Lead Intent', score: dimensions.leadIntent }
-    ];
-
-    // Consider bottom 2 dimensions as improvement areas if they're below 7.0
-    return dimensionScores
-      .filter(dim => dim.score < 7.0)
-      .sort((a, b) => a.score - b.score)
-      .slice(0, 2)
-      .map(dim => dim.name);
   }
 
   /**
@@ -1424,5 +1108,237 @@ export class AIAccuracyAnalyticsService {
     }
     
     return 'other';
+  }
+
+  /**
+   * Create empty technical metrics data structure for when no data is available
+   */
+  private static getEmptyTechnicalMetricsData(): TechnicalMetricsData {
+    return {
+      averageResponseTime: 0,
+      responseTimeStats: { avg: 0, median: 0, p95: 0, p99: 0 },
+      responseTimeTrend: [],
+      tokenUsageStats: { total_tokens: 0, average_tokens_per_call: 0, max_tokens_in_single_call: 0 },
+      tokenDistributionByModel: [],
+      costEfficiencyMetrics: { avgCostPerCall: 0, costPerToken: 0, avgCostPerSuccessfulCall: 0 },
+      costTrend: [],
+      costByModel: [],
+      costAccuracyCorrelation: [],
+      performanceDiagnostics: [],
+      correlationAnalysis: [],
+      performanceInsights: []
+    };
+  }
+
+  /**
+   * Calculate percentile value from an array of numbers
+   */
+  private static calculatePercentile(values: number[], percentile: number): number {
+    if (values.length === 0) return 0;
+    values.sort((a, b) => a - b);
+    const index = (percentile / 100) * (values.length - 1);
+    if (Math.floor(index) === index) {
+      return values[index];
+    }
+    const lower = Math.floor(index);
+    const upper = lower + 1;
+    const weight = index - lower;
+    return values[lower] * (1 - weight) + values[upper] * weight;
+  }
+
+  /**
+   * Calculate response time statistics
+   */
+  private static calculateResponseTimeStats(calls: any[]): { avg: number; median: number; p95: number; p99: number } {
+    const responseTimes = calls.map(call => call.call_duration_seconds).filter(rt => typeof rt === 'number');
+    if (responseTimes.length === 0) return { avg: 0, median: 0, p95: 0, p99: 0 };
+
+    const sum = responseTimes.reduce((a, b) => a + b, 0);
+    const avg = sum / responseTimes.length;
+    const median = this.calculatePercentile(responseTimes, 50);
+    const p95 = this.calculatePercentile(responseTimes, 95);
+    const p99 = this.calculatePercentile(responseTimes, 99);
+
+    return { avg, median, p95, p99 };
+  }
+
+  /**
+   * Calculate response time trends by day
+   */
+  private static calculateResponseTimeTrends(calls: any[]): ResponseTimeTrend[] {
+    const dailyMetrics: { [key: string]: { responseTimes: number[] } } = {};
+
+    calls.forEach(call => {
+      if (call.call_duration_seconds === null || call.call_duration_seconds === undefined) return;
+      const date = new Date(call.created_at).toISOString().split('T')[0];
+      if (!dailyMetrics[date]) {
+        dailyMetrics[date] = { responseTimes: [] };
+      }
+      dailyMetrics[date].responseTimes.push(call.call_duration_seconds);
+    });
+
+    return Object.entries(dailyMetrics).map(([date, metrics]) => {
+      const average = metrics.responseTimes.length > 0 ? metrics.responseTimes.reduce((a, b) => a + b, 0) / metrics.responseTimes.length : 0;
+      const p95 = metrics.responseTimes.length > 0 ? this.calculatePercentile(metrics.responseTimes, 95) : 0;
+      return {
+        date,
+        average,
+        p95,
+      };
+    }).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  /**
+   * Calculate token usage statistics
+   */
+  private static calculateTokenUsageStats(calls: any[]): TokenUsageStats {
+    const tokens = calls.map(c => c.total_tokens).filter(t => typeof t === 'number');
+    if (tokens.length === 0) return { total_tokens: 0, average_tokens_per_call: 0, max_tokens_in_single_call: 0 };
+    const totalTokens = tokens.reduce((sum, t) => sum + t, 0);
+    return {
+      total_tokens: totalTokens,
+      average_tokens_per_call: totalTokens / tokens.length,
+      max_tokens_in_single_call: Math.max(...tokens),
+    };
+  }
+
+  /**
+   * Calculate token distribution by model
+   */
+  private static calculateTokenDistributionByModel(calls: any[]): TokenDistributionByModel[] {
+    return []; // Placeholder
+  }
+
+  /**
+   * Calculate cost efficiency metrics
+   */
+  private static calculateCostEfficiencyMetrics(calls: any[]): CostEfficiencyMetrics {
+    return { avgCostPerCall: 0, costPerToken: 0, avgCostPerSuccessfulCall: 0 }; // Placeholder
+  }
+
+  /**
+   * Calculate cost trends over time
+   */
+  private static calculateCostTrends(calls: any[]): CostTrend[] {
+    return []; // Placeholder
+  }
+
+  /**
+   * Calculate cost by model
+   */
+  private static calculateCostByModel(calls: any[]): CostByModel[] {
+    const costs: { [model: string]: { totalCost: number, count: number } } = {};
+    calls.forEach(call => {
+      const model = call.model || 'Unknown';
+      const cost = call.total_call_cost_usd;
+      if (typeof cost === 'number') {
+        if (!costs[model]) {
+          costs[model] = { totalCost: 0, count: 0 };
+        }
+        costs[model].totalCost += cost;
+        costs[model].count++;
+      }
+    });
+    return Object.entries(costs).map(([model, data]) => ({
+      model,
+      totalCost: data.totalCost,
+      averageCost: data.count > 0 ? data.totalCost / data.count : 0
+    }));
+  }
+
+  /**
+   * Calculate cost vs accuracy correlation
+   */
+  private static calculateCostAccuracyCorrelation(calls: any[]): CostAccuracyPoint[] {
+    return []; // Placeholder
+  }
+
+
+  /**
+   * Generate performance diagnostics based on metrics
+   */
+  private static generatePerformanceDiagnostics(metrics: TechnicalMetricsData): PerformanceDiagnostic[] {
+    const diagnostics: PerformanceDiagnostic[] = [];
+
+    if (metrics.responseTimeStats.p95 > 30) {
+      diagnostics.push({
+        metric: 'High Response Time (p95)',
+        value: metrics.responseTimeStats.p95,
+        status: 'warning',
+        remediation: 'Investigate slow API responses or long-running tool calls.',
+        impact: 'User experience degradation.'
+      });
+    }
+
+    if (metrics.costEfficiencyMetrics.avgCostPerCall > 1.0) {
+      diagnostics.push({
+        metric: 'High Average Cost Per Call',
+        value: metrics.costEfficiencyMetrics.avgCostPerCall,
+        status: 'warning',
+        remediation: 'Review token usage, prompt engineering, and model selection.',
+        impact: 'Increased operational costs.'
+      });
+    }
+
+    return diagnostics;
+  }
+
+  /**
+   * Calculate correlation analysis between different metrics
+   */
+  private static calculateCorrelationAnalysis(calls: any[]): CorrelationAnalysis {
+    const validCalls = calls.filter(call => 
+      call.lead_evaluations?.[0]?.overall_evaluation_score !== null &&
+      call.call_duration_seconds !== null &&
+      call.total_call_cost_usd !== null
+    );
+
+    if (validCalls.length < 2) {
+      return {
+        responseTimeVsQuality: 0,
+        tokenUsageVsQuality: 0,
+        costVsQuality: 0,
+      };
+    }
+
+    const qualityScores = validCalls.map(call => call.lead_evaluations[0].overall_evaluation_score);
+    const responseTimes = validCalls.map(call => call.call_duration_seconds);
+    const tokenUsages = validCalls.map(call => (call.openai_api_tokens_input || 0) + (call.openai_api_tokens_output || 0));
+    const costs = validCalls.map(call => call.total_call_cost_usd);
+
+    return {
+      responseTimeVsQuality: this.calculateCorrelation(qualityScores, responseTimes),
+      tokenUsageVsQuality: this.calculateCorrelation(qualityScores, tokenUsages),
+      costVsQuality: this.calculateCorrelation(qualityScores, costs),
+    };
+  }
+
+  /**
+   * Generate performance insights based on metrics
+   */
+  private static generatePerformanceInsights(diagnostics: PerformanceDiagnostic[]): string[] {
+    const insights: string[] = [];
+    
+    if (diagnostics.length === 0) {
+      insights.push("All performance metrics are within optimal ranges.");
+      return insights;
+    }
+
+    const criticalIssues = diagnostics.filter(d => d.status === 'critical').length;
+    const warningIssues = diagnostics.filter(d => d.status === 'warning').length;
+
+    if (criticalIssues > 0) {
+      insights.push(`${criticalIssues} critical performance issues require immediate attention.`);
+    }
+
+    if (warningIssues > 0) {
+      insights.push(`${warningIssues} performance warnings detected that may benefit from optimization.`);
+    }
+
+    if (criticalIssues === 0 && warningIssues === 0) {
+      insights.push("System performance is operating within acceptable parameters.");
+    }
+
+    return insights;
   }
 }

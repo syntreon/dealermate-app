@@ -142,20 +142,41 @@ export interface QualityTrendData {
 
 export interface TechnicalMetricsData {
   averageResponseTime: number;
+  responseTimeStats: {
+    avg: number;
+    median: number;
+    p95: number;
+    p99: number;
+  };
+  responseTimeTrend: ResponseTimeTrend[];
   tokenUsageStats: TokenUsageStats;
+  tokenDistributionByModel: TokenDistributionByModel[];
   costEfficiencyMetrics: CostEfficiencyMetrics;
+  costTrend: CostTrendData[];
+  costByModel: CostByModel[];
+  costAccuracyCorrelation: CostAccuracyPoint[];
   performanceDiagnostics: PerformanceDiagnostic[];
+  correlationAnalysis: CorrelationAnalysis[];
+  performanceInsights: string[];
 }
 
 export interface TokenUsageStats {
   averageInputTokens: number;
+  avgInputTokens: number;
   averageOutputTokens: number;
+  avgOutputTokens: number;
   totalTokensUsed: number;
+  totalTokens: number;
   tokensByModel: { [modelName: string]: { input: number; output: number } };
+  input: number;
+  output: number;
 }
 
 export interface CostEfficiencyMetrics {
   averageCostPerCall: number;
+  avgCostPerCall: number;
+  avgCostPer1kTokens: number;
+  costAccuracyRatio: number;
   costByModel: { [modelName: string]: number };
   costTrends: CostTrendData[];
   costVsAccuracyCorrelation: number;
@@ -170,10 +191,14 @@ export interface CostTrendData {
 
 export interface PerformanceDiagnostic {
   metric: string;
+  issue?: string;
   value: number;
   threshold: number;
-  status: 'good' | 'warning' | 'critical';
+  status: 'optimal' | 'good' | 'warning' | 'critical';
   recommendation: string;
+  remediation: string | string[];
+  description: string;
+  impact?: string;
 }
 
 export interface AIAccuracyFilters {
@@ -202,6 +227,47 @@ export interface ModelPerformanceTrend {
   movingAverage?: number;
   modelType?: ModelType;
   provider?: string;
+}
+
+// Additional Technical Metrics Types
+export interface ResponseTimeTrend {
+  date: string;
+  average: number;
+  p95: number;
+}
+
+export interface ModelResponseTime {
+  modelName: string;
+  avgResponseTime: number;
+  medianResponseTime: number;
+  p95ResponseTime: number;
+}
+
+export interface TokenDistributionByModel {
+  modelName: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
+export interface CostByModel {
+  modelName: string;
+  avgCost: number;
+  totalCost: number;
+  callCount: number;
+}
+
+export interface CostAccuracyPoint {
+  modelName: string;
+  cost: number;
+  accuracy: number;
+  callVolume: number;
+}
+
+export interface CorrelationAnalysis {
+  factor: string;
+  correlationStrength: number;
+  description: string;
 }
 
 // Enhanced conversation quality correlation types

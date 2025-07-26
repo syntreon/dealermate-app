@@ -18,6 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { AIAccuracyAnalyticsService } from '@/services/aiAccuracyAnalyticsService';
 import { AIAccuracyAnalyticsData, AIAccuracyFilters } from '@/types/aiAccuracyAnalytics';
 import ModelComparisonVisualizations from './ModelComparisonVisualizations';
+import FailurePatternAnalysis from './FailurePatternAnalysis';
 
 interface AIAccuracyAnalyticsProps {
   startDate?: string;
@@ -576,18 +577,27 @@ const AIAccuracyAnalytics: React.FC<AIAccuracyAnalyticsProps> = ({
         performanceComparison={data.modelPerformance.performanceComparison}
       />
 
-      {/* Placeholder for future failure analysis */}
+      {/* Failure Pattern Analysis */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-card-foreground">Failure Analysis</CardTitle>
+          <CardTitle className="text-lg font-semibold text-card-foreground">Failure Pattern Analysis</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <div className="text-center">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">Failure pattern analysis will be implemented in the next task</p>
+          {data.failurePatterns && data.keywordAnalysis ? (
+            <FailurePatternAnalysis 
+              failurePatterns={data.failurePatterns}
+              keywordAnalysis={data.keywordAnalysis}
+              startDate={startDate}
+              endDate={endDate}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-[300px]">
+              <div className="text-center">
+                <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">No failure pattern data available for the selected period</p>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

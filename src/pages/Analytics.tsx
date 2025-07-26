@@ -28,11 +28,13 @@ const Analytics = () => {
   const canViewAllClients = canViewSensitiveInfo(user);
   
   // Tab options
-  const tabOptions = [
+  const allTabOptions = [
     { id: 'calls', label: 'Call Analytics', shortLabel: 'Calls' },
     { id: 'quality', label: 'Quality Analytics', shortLabel: 'Quality' },
-    { id: 'ai-accuracy', label: 'AI Accuracy', shortLabel: 'AI Accuracy' },
+    { id: 'ai-accuracy', label: 'AI Accuracy', shortLabel: 'AI Accuracy', adminOnly: true },
   ];
+
+  const tabOptions = allTabOptions.filter(tab => !tab.adminOnly || canViewAllClients);
   
   // Handle client selection change
   const handleClientChange = useCallback((clientId: string | null) => {
@@ -134,7 +136,7 @@ const Analytics = () => {
           </div>
         ) : (
           /* Desktop tabs */
-          <TabsList className="grid grid-cols-3 mb-8">
+          <TabsList className={cn("grid mb-8", `grid-cols-${tabOptions.length}`)}>
             {tabOptions.map(tab => (
               <TabsTrigger key={tab.id} value={tab.id}>
                 {tab.label}
@@ -164,13 +166,15 @@ const Analytics = () => {
           />
         </TabsContent>
 
-        <TabsContent value="ai-accuracy">
-          <AIAccuracyAnalytics 
-            startDate={dateFilters.start} 
-            endDate={dateFilters.end}
-            clientId={selectedClientId}
-          />
-        </TabsContent>
+        {canViewAllClients && (
+          <TabsContent value="ai-accuracy">
+            <AIAccuracyAnalytics 
+              startDate={dateFilters.start} 
+              endDate={dateFilters.end}
+              clientId={selectedClientId}
+            />
+          </TabsContent>
+        )}
         
         {/* Mobile-only date range indicator */}
         {isMobile && activeTab !== 'ai-accuracy' && (

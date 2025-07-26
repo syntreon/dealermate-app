@@ -3,6 +3,15 @@ inclusion: always
 ---
 
 This are your main rules and instructions for this project
+Alwasy build clean and minimal code.
+make sure the code is not long per file.
+## Project Rules
+1. Whenver you create a new folder make sure to update the project structure.md file
+2. Whenver you create a new file make sure to update the project structure.md file
+3. Whenver you create a new component make sure to update the project structure.md file
+4. Whenver you create a new service make sure to update the project structure.md file
+5. Whenver you create a new type make sure to update the project structure.md file
+6. Whenver you create a new interface make sure to update the project structure.md file
 
 ## Database Rules
 1. Never reset the database
