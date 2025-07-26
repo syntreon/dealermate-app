@@ -5,7 +5,7 @@ import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import LeadAnalytics from '@/components/analytics/LeadAnalytics';
 import CallAnalytics from '@/components/analytics/CallAnalytics';
 import QualityAnalytics from '@/components/analytics/QualityAnalytics';
-import AIAccuracyAnalytics from '@/components/analytics/AIAccuracyAnalytics';
+import SimpleAIAnalytics from '@/components/analytics/SimpleAIAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import ClientSelector from '@/components/ClientSelector';
 import { useDateRange } from '@/hooks/useDateRange';
@@ -168,7 +168,7 @@ const Analytics = () => {
 
         {canViewAllClients && (
           <TabsContent value="ai-accuracy">
-            <AIAccuracyAnalytics 
+            <SimpleAIAnalytics 
               startDate={dateFilters.start} 
               endDate={dateFilters.end}
               clientId={selectedClientId}
