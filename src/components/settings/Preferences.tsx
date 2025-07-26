@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { UserData } from '@/hooks/useAuthSession';
 
 interface PreferencesProps {
@@ -28,6 +27,7 @@ export const Preferences: React.FC<PreferencesProps> = ({ user, onUserUpdate }) 
   const currentTheme = user.preferences?.displaySettings?.theme || 'system';
   const [localTheme, setLocalTheme] = useState<'light' | 'dark' | 'system'>(currentTheme);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   
   // Use next-themes hook for theme management
   const { setTheme: setNextTheme, theme: activeTheme } = useTheme();
@@ -39,43 +39,29 @@ export const Preferences: React.FC<PreferencesProps> = ({ user, onUserUpdate }) 
     }
   }, [activeTheme]);
 
-  // Handle theme change
+  // Handle theme change using theme service - instant update
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
     setLocalTheme(newTheme);
     setIsLoading(true);
 
     try {
-      // Prepare updated preferences
-      const updatedPreferences = {
-        ...user.preferences,
-        displaySettings: {
-          ...(user.preferences?.displaySettings || {}),
-          theme: newTheme
-        }
-      };
+      const { themeService } = await import('@/services/themeService');
+      // Instant theme update - no await needed
+      themeService.updateTheme(
+        user.id,
+        newTheme,
+        'settings',
+        user,
+        onUserUpdate,
+        setNextTheme
+      );
 
-      // Update preferences in database
-      const { error } = await supabase
-        .from('users')
-        .update({ preferences: updatedPreferences })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Update user context
-      const updatedUser = {
-        ...user,
-        preferences: updatedPreferences
-      } as typeof user;
-      onUserUpdate(updatedUser);
-
-      // Use next-themes to set theme - this will handle the data-theme attribute
-      setNextTheme(newTheme);
-
-      toast.success('Theme preferences updated');
+      setLastSyncTime(new Date());
+      toast.success('Theme updated');
     } catch (error) {
       console.error('Error updating theme preferences:', error);
-      toast.error('Failed to update theme preferences');
+      toast.error('Failed to update theme');
+      
       // Revert to previous theme
       setLocalTheme(currentTheme);
     } finally {
@@ -87,11 +73,26 @@ export const Preferences: React.FC<PreferencesProps> = ({ user, onUserUpdate }) 
     <Card className="rounded-lg overflow-hidden shadow-sm">
       <CardContent className="space-y-6 pt-6">
         <div>
-          <h3 className="text-lg font-medium mb-4">Display Preferences</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">Display Preferences</h3>
+            {lastSyncTime && (
+              <span className="text-xs text-muted-foreground">
+                Last synced: {lastSyncTime.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
           
           <div className="space-y-6">
             <div className="space-y-3">
-              <Label htmlFor="theme">Theme</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="theme">Theme</Label>
+                {isLoading && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
+                    Syncing...
+                  </div>
+                )}
+              </div>
               <RadioGroup 
                 id="theme" 
                 value={localTheme} 

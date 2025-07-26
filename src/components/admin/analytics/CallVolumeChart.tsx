@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { formatNumber } from '@/utils/formatting';
 import { format, parseISO } from 'date-fns';
+import { CustomThemedTooltip, getThemeAwareCursorStyle } from '@/components/ui/themed-chart-tooltip';
 
 interface CallVolumeChartProps {
   data: Array<{
@@ -21,26 +22,22 @@ export const CallVolumeChart: React.FC<CallVolumeChartProps> = ({ data }) => {
     conversionRate: item.calls > 0 ? (item.leads / item.calls * 100) : 0
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium">{label}</p>
-          <p className="text-sm text-blue-600">
-            Calls: {formatNumber(data.calls)}
-          </p>
-          <p className="text-sm text-green-600">
-            Leads: {formatNumber(data.leads)}
-          </p>
-          <p className="text-sm text-purple-600">
-            Conversion: {data.conversionRate.toFixed(1)}%
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const renderTooltipContent = (data: any, label?: string) => (
+    <div className="space-y-2">
+      <p className="font-medium text-popover-foreground">{label}</p>
+      <div className="space-y-1">
+        <p className="text-sm text-blue-600 dark:text-blue-400">
+          Calls: {formatNumber(data.calls)}
+        </p>
+        <p className="text-sm text-green-600 dark:text-green-400">
+          Leads: {formatNumber(data.leads)}
+        </p>
+        <p className="text-sm text-purple-600 dark:text-purple-400">
+          Conversion: {data.conversionRate.toFixed(1)}%
+        </p>
+      </div>
+    </div>
+  );
 
   const totalCalls = data.reduce((sum, item) => sum + item.calls, 0);
   const totalLeads = data.reduce((sum, item) => sum + item.leads, 0);
@@ -103,7 +100,10 @@ export const CallVolumeChart: React.FC<CallVolumeChartProps> = ({ data }) => {
                 fontSize={12}
                 tickFormatter={(value) => `${value}%`}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip 
+                content={<CustomThemedTooltip render={renderTooltipContent} />}
+                cursor={getThemeAwareCursorStyle()}
+              />
               <Legend />
               <Bar 
                 yAxisId="left"

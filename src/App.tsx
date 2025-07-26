@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { CallsProvider } from "@/context/CallsContext";
 import { LeadProvider } from "@/context/LeadContext";
+import { ThemeInitProvider } from "@/context/ThemeInitProvider";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -37,8 +38,9 @@ const App = () => (
     <TooltipProvider>
       <BrowserRouter>
         <AuthProvider>
-          <CallsProvider>
-            <LeadProvider>
+          <ThemeInitProvider>
+            <CallsProvider>
+              <LeadProvider>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth-test" element={<AuthTest />} />
@@ -71,8 +73,9 @@ const App = () => (
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </LeadProvider>
-          </CallsProvider>
+              </LeadProvider>
+            </CallsProvider>
+          </ThemeInitProvider>
         </AuthProvider>
       </BrowserRouter>
       <Toaster />

@@ -47,12 +47,17 @@ src/
 │   ├── calls/             # Components related to call details and evaluation.
 │   ├── common/            # Generic, shared components (buttons, inputs, etc.).
 │   └── ui/                # Base UI elements from shadcn/ui.
+│       └── themed-chart-tooltip.tsx # Theme-aware chart tooltip components.
 ├──
 ├── context/               # React Context providers for global state management.
-│   └── AuthProvider.tsx   # Manages user authentication state.
+│   ├── AuthProvider.tsx   # Manages user authentication state.
+│   ├── ThemeContext.tsx   # Performance-optimized theme context with memoization.
+│   └── ThemeInitProvider.tsx # Single theme initialization provider to prevent conflicts.
 ├──
 ├── hooks/                 # Custom React hooks for shared logic.
-│   └── useAuthSession.ts  # Hook for accessing user session and profile.
+│   ├── useAuthSession.ts  # Hook for accessing user session and profile.
+│   ├── use-theme-init.tsx # Enhanced theme initialization with error recovery.
+│   └── useOptimizedTheme.ts # Performance-optimized theme utilities and calculations.
 ├──
 ├── layouts/               # Components that define the structure of pages.
 │   └── DashboardLayout.tsx # The main layout with sidebar and header.
@@ -67,13 +72,19 @@ src/
 │   ├── adminService.ts    # Fetches data for the Admin Dashboard.
 │   ├── analyticsService.ts# Fetches data for the Analytics pages.
 │   ├── simpleAIAnalyticsService.ts # AI model performance analytics using real database data.
-│   └── supabaseService.ts # Generic Supabase client and helper functions.
+│   ├── supabaseService.ts # Generic Supabase client and helper functions.
+│   └── themeService.ts    # Centralized theme management with caching and synchronization.
 ├──
 ├── types/                 # TypeScript type definitions and interfaces.
 │   └── supabase.ts        # Auto-generated types from the Supabase schema.
 └──
     └── utils/                 # Utility functions used across the application.
-        └── formatters.ts    # Functions for formatting dates, currency, etc.
+        ├── formatters.ts    # Functions for formatting dates, currency, etc.
+        ├── themeRecovery.ts # Theme error recovery and fallback mechanisms.
+        ├── themeValidation.ts # Theme validation and sanitization utilities.
+        ├── themePerformance.ts # Performance monitoring for theme operations.
+        ├── themeTransitions.ts # Smooth theme transition management.
+        └── themeBackgroundSync.ts # Background synchronization for theme preferences.
 ```
 
 ### Key Directory Explanations

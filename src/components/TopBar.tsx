@@ -25,6 +25,7 @@ const TopBar = () => {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [clientName, setClientName] = useState<string>("");
+  const [isThemeChanging, setIsThemeChanging] = useState(false);
   
   // Get client ID from user if available
   const clientId = user?.client_id || undefined;
@@ -66,14 +67,39 @@ const TopBar = () => {
     }
   }, [clientId, user]);
   
-  // Toggle between light, dark, and system themes
-  const toggleTheme = () => {
+  // Toggle between light, dark, and system themes using theme service
+  const toggleTheme = async () => {
+    if (!user || isThemeChanging) return;
+    
+    let newTheme: 'light' | 'dark' | 'system';
     if (theme === 'light') {
-      setTheme('dark');
+      newTheme = 'dark';
     } else if (theme === 'dark') {
-      setTheme('system');
+      newTheme = 'system';
     } else {
-      setTheme('light');
+      newTheme = 'light';
+    }
+
+    setIsThemeChanging(true);
+
+    try {
+      const { themeService } = await import('@/services/themeService');
+      // Instant theme update - no await needed
+      themeService.updateTheme(
+        user.id,
+        newTheme,
+        'topbar',
+        user,
+        undefined, // No user update callback needed in TopBar
+        setTheme
+      );
+    } catch (error) {
+      console.error('Failed to update theme from TopBar:', error);
+      // Show user-friendly error feedback
+      const { toast } = await import('sonner');
+      toast.error('Failed to update theme. Please try again.');
+    } finally {
+      setIsThemeChanging(false);
     }
   };
 
@@ -174,8 +200,11 @@ const TopBar = () => {
           className="rounded-full"
           aria-label="Toggle theme"
           title={`Current theme: ${theme || 'system'}. Click to change.`}
+          disabled={isThemeChanging}
         >
-          {theme === 'dark' ? (
+          {isThemeChanging ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : theme === 'dark' ? (
             <Moon className="h-5 w-5" />
           ) : theme === 'light' ? (
             <Sun className="h-5 w-5" />

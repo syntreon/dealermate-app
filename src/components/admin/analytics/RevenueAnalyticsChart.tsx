@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { formatCurrency } from '@/utils/formatting';
 import { format, parseISO } from 'date-fns';
+import { CustomThemedTooltip, getThemeAwareCursorStyle } from '@/components/ui/themed-chart-tooltip';
 
 interface RevenueAnalyticsChartProps {
   data: Array<{
@@ -21,26 +22,22 @@ export const RevenueAnalyticsChart: React.FC<RevenueAnalyticsChartProps> = ({ da
     formattedRevenue: formatCurrency(item.revenue, 'CAD')
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium">{label}</p>
-          <p className="text-sm text-green-600">
-            Revenue: {formatCurrency(data.revenue, 'CAD')}
-          </p>
-          <p className="text-sm text-blue-600">
-            Calls: {data.calls}
-          </p>
-          <p className="text-sm text-purple-600">
-            Leads: {data.leads}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const renderTooltipContent = (data: any, label?: string) => (
+    <div className="space-y-2">
+      <p className="font-medium text-popover-foreground">{label}</p>
+      <div className="space-y-1">
+        <p className="text-sm text-green-600 dark:text-green-400">
+          Revenue: {formatCurrency(data.revenue, 'CAD')}
+        </p>
+        <p className="text-sm text-blue-600 dark:text-blue-400">
+          Calls: {data.calls}
+        </p>
+        <p className="text-sm text-purple-600 dark:text-purple-400">
+          Leads: {data.leads}
+        </p>
+      </div>
+    </div>
+  );
 
   const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
   const avgDailyRevenue = totalRevenue / data.length;
@@ -104,7 +101,10 @@ export const RevenueAnalyticsChart: React.FC<RevenueAnalyticsChartProps> = ({ da
                 tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
                 fontSize={12}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip 
+                content={<CustomThemedTooltip render={renderTooltipContent} />}
+                cursor={getThemeAwareCursorStyle()}
+              />
               <Area
                 type="monotone"
                 dataKey="revenue"

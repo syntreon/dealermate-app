@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Client } from '@/types/admin';
 import { formatNumber } from '@/utils/formatting';
+import { CustomThemedTooltip, getThemeAwareCursorStyle } from '@/components/ui/themed-chart-tooltip';
 
 interface ClientPerformanceChartProps {
   clients: Client[];
@@ -40,29 +41,25 @@ export const ClientPerformanceChart: React.FC<ClientPerformanceChartProps> = ({ 
     }
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium">{data.fullName}</p>
-          <p className="text-sm text-blue-600">
-            Calls: {formatNumber(data.calls)}
-          </p>
-          <p className="text-sm text-green-600">
-            Leads: {formatNumber(data.leads)}
-          </p>
-          <p className="text-sm text-purple-600">
-            Conversion: {data.conversionRate.toFixed(1)}%
-          </p>
-          <Badge variant={data.status === 'active' ? 'default' : 'secondary'} className="mt-1">
-            {data.status}
-          </Badge>
-        </div>
-      );
-    }
-    return null;
-  };
+  const renderTooltipContent = (data: any) => (
+    <div className="space-y-2">
+      <p className="font-medium text-popover-foreground">{data.fullName}</p>
+      <div className="space-y-1">
+        <p className="text-sm text-blue-600 dark:text-blue-400">
+          Calls: {formatNumber(data.calls)}
+        </p>
+        <p className="text-sm text-green-600 dark:text-green-400">
+          Leads: {formatNumber(data.leads)}
+        </p>
+        <p className="text-sm text-purple-600 dark:text-purple-400">
+          Conversion: {data.conversionRate.toFixed(1)}%
+        </p>
+      </div>
+      <Badge variant={data.status === 'active' ? 'default' : 'secondary'} className="mt-1">
+        {data.status}
+      </Badge>
+    </div>
+  );
 
   if (chartData.length === 0) {
     return (
@@ -107,7 +104,10 @@ export const ClientPerformanceChart: React.FC<ClientPerformanceChartProps> = ({ 
                 fontSize={12}
               />
               <YAxis />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip 
+                content={<CustomThemedTooltip render={renderTooltipContent} />}
+                cursor={getThemeAwareCursorStyle()}
+              />
               <Bar dataKey="calls" radius={[4, 4, 0, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={getBarColor(entry.status)} />

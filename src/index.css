@@ -116,13 +116,27 @@
     @apply border-border selection:bg-primary/10 selection:text-primary;
   }
   
-  /* Add smooth transition for theme changes */
+  /* Minimal theme transitions - instant for better performance */
   :root, [data-theme] {
-    transition: all 0.25s ease-out;
+    transition: none; /* Remove transitions for instant theme switching */
+  }
+  
+  /* Only add subtle transitions for interactive elements */
+  button, a, input, textarea, select {
+    transition: 
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  
+  /* No transitions for theme colors - instant switching */
+  .theme-instant * {
+    transition: none !important;
   }
   
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased theme-instant;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
 
@@ -155,5 +169,59 @@
 
   .animate-slide-in {
     animation: slideIn 0.4s ease-out;
+  }
+  
+  /* Theme transition utilities */
+  .theme-transition-fast {
+    transition: 
+      background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .theme-transition-slow {
+    transition: 
+      background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .theme-transition-none {
+    transition: none !important;
+  }
+}
+
+/* Keyframes for theme transition animations */
+@keyframes themeChange {
+  0% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
