@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
   Table,
@@ -42,6 +42,8 @@ import { Lead as ContextLead } from '@/context/LeadContext';
 import { Lead as SupabaseLead } from '@/integrations/supabase/lead-service';
 import { adaptSupabaseLeadToContextLead } from '@/utils/leadAdapter';
 import { cn } from '@/lib/utils';
+import InquiryTypeBadge from '@/components/calls/InquiryTypeBadge';
+import { CallIntelligenceService } from '@/services/callIntelligenceService';
 
 interface LeadsTableProps {
   leads: SupabaseLead[];
@@ -68,6 +70,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<SupabaseLead['status'] | 'all'>('all');
   const [selectedSource, setSelectedSource] = useState<SupabaseLead['source'] | 'all'>('all');
+  const [inquiryTypes, setInquiryTypes] = useState<Map<string, string>>(new Map());
 
   // Handle sorting
   const handleSort = (field: keyof SupabaseLead) => {
@@ -78,6 +81,29 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
       setSortDirection('asc');
     }
   };
+
+  // Fetch inquiry types when leads change
+  useEffect(() => {
+    const fetchInquiryTypes = async () => {
+      if (leads.length === 0) return;
+      
+      // Extract call IDs from leads
+      const callIds = leads
+        .map(lead => lead.call_id)
+        .filter(Boolean) as string[];
+      
+      if (callIds.length === 0) return;
+      
+      try {
+        const inquiryMap = await CallIntelligenceService.getCallInquiryTypes(callIds);
+        setInquiryTypes(inquiryMap);
+      } catch (error) {
+        console.error('Error fetching inquiry types:', error);
+      }
+    };
+    
+    fetchInquiryTypes();
+  }, [leads]);
 
   // Filter and sort leads
   const filteredAndSortedLeads = leads
@@ -102,7 +128,9 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
           lead.full_name.toLowerCase().includes(search) ||
           lead.phone_number.toLowerCase().includes(search) ||
           (lead.email?.toLowerCase().includes(search) || false) ||
-          (lead.notes?.toLowerCase().includes(search) || false)
+          (lead.notes?.toLowerCase().includes(search) || false) ||
+          // Search by inquiry type
+          (lead.call_id && inquiryTypes.get(lead.call_id)?.toLowerCase().includes(search) || false)
         );
       }
       
@@ -213,7 +241,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
             </div>
             <input
               type="text"
-              placeholder="Search by name, phone, or email..."
+              placeholder="Search by name, phone, inquiry type..."
               className="pl-10 pr-3 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -273,18 +301,18 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <SortableHeader field="full_name" label="Name" />
-              <SortableHeader field="phone_number" label="Contact" />
-              <SortableHeader field="status" label="Status" />
-              {/* Hide source column as requested */}
-              <SortableHeader field="created_at" label="Created" />
-              <TableHead className="text-right">Actions</TableHead>
+              <SortableHeader field="full_name" label="Name" className="w-1/4" />
+              <SortableHeader field="phone_number" label="Contact" className="w-1/5" />
+              <TableHead className="px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider w-1/6">Inquiry Type</TableHead>
+              <SortableHeader field="status" label="Status" className="w-1/6" />
+              <SortableHeader field="created_at" label="Created" className="w-1/6" />
+              <TableHead className="text-right w-[80px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     <p className="text-foreground/70 text-sm font-medium">Loading leads...</p>
@@ -293,7 +321,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
               </TableRow>
             ) : filteredAndSortedLeads.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <User className="h-10 w-10 text-foreground/30" />
                     <div className="space-y-1">
@@ -352,6 +380,13 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       </span>
                     </div>
                     {/* Email hidden as requested for now */}
+                  </TableCell>
+                  <TableCell>
+                    {lead.call_id && inquiryTypes.get(lead.call_id) ? (
+                      <InquiryTypeBadge inquiryType={inquiryTypes.get(lead.call_id)!} />
+                    ) : (
+                      <span className="text-xs text-foreground/50">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(lead.status)}
