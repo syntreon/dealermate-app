@@ -1,22 +1,28 @@
-# Updated to match linked Supabase project
+# supabase/config.toml
+
+# This is the project identifier for your Supabase project.
 project_id = "zliugukiqtbifethrjse"
 
-# [auth] section added to match linked Supabase project
+# This block configures settings specifically for the 'log-session' function.
+[functions.log-session]
+  # Specifies the path to the import map file for this function.
+  # The path is relative to the supabase directory itself.
+  import_map = "./import_map.json"
+
+# General authentication settings
 [auth]
-enabled = true
-site_url = "http://localhost:3000" # Updated to match linked project
-additional_redirect_urls = []      # Updated to match linked project
-jwt_expiry = 3600
-enable_refresh_token_rotation = true
-refresh_token_reuse_interval = 10
+  site_url = "http://localhost:3000"
+  enable_refresh_token_rotation = true
+  jwt_expiry = 3600
+  additional_redirect_urls = []
+  refresh_token_reuse_interval = 10
 
-# [auth.email] section added to match linked Supabase project
+# Email provider settings for authentication
 [auth.email]
-enable_signup = true
-double_confirm_changes = true
-enable_confirmations = true        # Updated to match linked project
-secure_password_change = false
-max_frequency = "1m0s"             # Updated to match linked project
-otp_length = 6
-otp_expiry = 3600
-
+  enable_signup = true
+  double_confirm_changes = true
+  enable_confirmations = true
+  secure_password_change = false
+  max_frequency = "1m0s"
+  otp_length = 6
+  otp_expiry = 3600

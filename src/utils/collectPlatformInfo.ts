@@ -26,8 +26,5 @@ export function collectPlatformInfo() {
     actions_count: null,
     avg_page_load_time_ms: null,
     network_type: null,
-    ip_address: null,
-    geo_country: null,
-    geo_city: null,
   };
 }
