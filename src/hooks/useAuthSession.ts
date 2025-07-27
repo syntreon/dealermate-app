@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { clearAuthData } from "@/utils/authHelpers";
+import { logPlatformSession } from "@/services/platformAnalyticsService";
+import { collectPlatformInfo } from "@/utils/collectPlatformInfo";
 
 export interface UserData {
   id: string;
@@ -51,6 +53,7 @@ export const useAuthSession = () => {
   
   const processingRef = useRef(false);
   const mountedRef = useRef(true);
+  const sessionLoggedRef = useRef(false);
 
   const loadUserProfile = useCallback(async (userId: string, retryCount = 0): Promise<UserData | null> => {
     const maxRetries = 2;
@@ -134,6 +137,15 @@ export const useAuthSession = () => {
 
       if (userData) {
         setAuthState({ user: userData, session, isAuthenticated: true, isLoading: false, error: null });
+        if (!sessionLoggedRef.current) {
+          try {
+            const platformInfo = collectPlatformInfo();
+            logPlatformSession({ ...platformInfo, user_id: userData.id });
+            sessionLoggedRef.current = true;
+          } catch (error) {
+            console.error("Failed to log platform session:", error);
+          }
+        }
       } else {
         const fallbackUser: UserData = {
           id: session.user.id,
