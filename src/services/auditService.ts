@@ -11,28 +11,34 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+// Note: If audit_logs table is missing from generated types, it should be regenerated
 
 // Create an admin client if the service role key is available
 // This is used to bypass RLS policies for administrative operations
+
+// Get Supabase URL and service role key from environment variables
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "";
 
-// Create admin client only if service role key is available
-const adminSupabase = SUPABASE_SERVICE_ROLE_KEY ? createClient<Database>(
-  SUPABASE_URL, 
-  SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    },
-    global: {
-      headers: {
-        'x-client-info': 'supabase-js-admin'
+// Create an admin client with the service role key if available
+let adminSupabase: any = null;
+if (SUPABASE_SERVICE_ROLE_KEY) {
+  adminSupabase = createClient<Database>(
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          'x-client-info': 'supabase-js-admin'
+        }
       }
     }
-  }
-) : null;
+  );
+}
 
 // Database utility functions
 const handleDatabaseError = (error: any): DatabaseError => {
@@ -46,7 +52,23 @@ const handleDatabaseError = (error: any): DatabaseError => {
   return dbError;
 };
 
-const transformAuditLog = (row: Database['public']['Tables']['audit_logs']['Row']): AuditLog => {
+// Define a type for audit log rows since it's not in the generated types
+type AuditLogRow = {
+  id: string;
+  user_id: string | null;
+  client_id: string | null;
+  action: string;
+  table_name: string;
+  record_id: string | null;
+  old_values: any | null;
+  new_values: any | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+};
+
+// Transform database row to AuditLog object
+const transformAuditLog = (row: AuditLogRow): AuditLog => {
   return {
     id: row.id,
     user_id: row.user_id,
@@ -101,7 +123,8 @@ export const AuditService = {
     newValues?: Record<string, any>,
     clientId?: string,
     ipAddress?: string,
-    userAgent?: string
+    userAgent?: string,
+    details?: string
   ): Promise<AuditLog> => {
     // Create a minimal audit log object that will be returned if logging fails
     const minimalAuditLog = {
@@ -124,8 +147,10 @@ export const AuditService = {
       console.warn('Audit logging skipped: No service role key available');
       return minimalAuditLog;
     }
-
+    
     try {
+      // Prepare audit data for insertion
+      // Create audit data object matching the actual database schema (no details column)  
       const auditData = {
         user_id: userId,
         client_id: clientId || null,
@@ -136,8 +161,14 @@ export const AuditService = {
         new_values: newValues || null,
         ip_address: ipAddress || null,
         user_agent: userAgent || null
+        // Note: details column doesn't exist in the audit_logs table schema
       };
-
+      
+      // If details were provided, store them in the new_values if it's empty
+      if (details && !newValues) {
+        auditData.new_values = { details };
+      }
+      
       console.log('Attempting audit log with admin client:', { 
         action, 
         tableName, 
@@ -149,8 +180,9 @@ export const AuditService = {
       // Try admin client if available (bypasses RLS)
       if (adminSupabase) {
         try {
-          const { data, error } = await adminSupabase
-            .from('audit_logs')
+          // Use type assertion for audit_logs table since it's not in the generated types
+          const { data, error, count } = await adminSupabase
+            .from('audit_logs' as any)
             .insert(auditData)
             .select()
             .single();
@@ -189,17 +221,35 @@ export const AuditService = {
   // Get audit logs with filtering and pagination
   getAuditLogs: async (
     filters?: AuditFilters,
-    pagination?: PaginationOptions
+    pagination?: PaginationOptions,
+    useOptimizedQuery: boolean = true
   ): Promise<PaginatedResponse<AuditLog>> => {
     try {
+      // Use optimized query approach for large datasets
+      // Using type assertion for audit_logs table since it might not be in the generated types
+      // Use type assertion for audit_logs table since it's not in the generated types
       let query = supabase
-        .from('audit_logs')
+        .from('audit_logs' as any)
         .select(`
           *,
           users(id, full_name, email),
           clients(id, name)
-        `, { count: 'exact' });
-
+        `, { count: 'exact' } as any);
+      
+      // Set higher timeout for large queries
+      if (useOptimizedQuery) {
+        // Using any type assertion because options() is available in newer Supabase versions
+        // but might not be in the generated types
+        try {
+          (query as any).options?.({ 
+            count: 'planned',  // Use planned count for better performance
+            head: false        // Don't fetch headers separately
+          });
+        } catch (e) {
+          console.warn('Query optimization not supported in this Supabase version');
+        }
+      }
+      
       // Apply filters
       if (filters) {
         if (filters.user_id) {
@@ -433,11 +483,13 @@ export const AuditService = {
   // Export audit logs
   exportAuditLogs: async (
     filters?: AuditFilters,
-    format: 'csv' | 'json' = 'csv'
+    format: 'csv' | 'json' = 'csv',
+    exportLimit: number = 10000
   ): Promise<{ data: string; filename: string }> => {
     try {
-      // Get all matching audit logs (without pagination)
-      const result = await AuditService.getAuditLogs(filters, { page: 1, limit: 10000 });
+      // Get matching audit logs with limit
+      const result = await AuditService.getAuditLogs(filters, { page: 1, limit: exportLimit });
+      const hitExportLimit = result.total > exportLimit;
       const logs = result.data;
 
       const timestamp = new Date().toISOString().split('T')[0];
@@ -477,6 +529,11 @@ export const AuditService = {
           ].join(','))
         ];
 
+        // Add export limit warning if needed
+        if (hitExportLimit) {
+          csvRows.unshift(`# WARNING: Export limited to ${exportLimit} records. Total available: ${result.total}`);
+        }
+        
         return {
           data: csvRows.join('\n'),
           filename

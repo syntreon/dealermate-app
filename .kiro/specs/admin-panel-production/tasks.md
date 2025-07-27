@@ -19,7 +19,7 @@
 
 
 
-  - [ ] 1.2 Implement Row Level Security (RLS) policies
+  - [x] 1.2 Implement Row Level Security (RLS) policies
     - Create comprehensive RLS policies for clients table (admin vs client access)
     - Add RLS policies for users table with proper role-based filtering
     - Implement RLS policies for calls and leads tables with client data isolation
@@ -30,7 +30,7 @@
 
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7, 8.1, 8.2, 8.3_
 
-  - [ ] 1.3 Create database functions and triggers
+  - [x] 1.3 Create database functions and triggers
     - Create trigger functions for automatic audit log generation
     - Implement database functions for complex queries and aggregations
     - Create functions for bulk operations with proper error handling
