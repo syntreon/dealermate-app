@@ -1,8 +1,96 @@
-# Authentication System Guide
+ # Authentication System Guide
 
-This document provides a comprehensive guide to the application's authentication system, including core principles for future development, a high-level architectural overview, and a case study of a critical performance fix.
+This document provides a comprehensive guide to the application's authentication system, including user management flows, core principles for future development, and a high-level architectural overview.
 
-## 1. Core Principles & Best Practices
+## 1. User Management Flows
+
+### User Creation and Invitation Process
+
+#### Admin-Initiated User Creation
+
+The application uses Supabase's admin invitation flow for creating new users:
+
+1. **Admin creates user**: An admin uses the UserForm component to enter the new user's email, name, role, and client association.
+
+2. **Invitation email**: The system sends an invitation email to the user via `supabase.auth.admin.inviteUserByEmail()` with a secure link.
+
+3. **Fallback mechanism**: If the admin API fails (due to permission restrictions), the system falls back to regular signup with a temporary password.
+
+4. **Auth callback handling**: When the user clicks the invitation link, they are directed to `/auth/callback`, which processes their authentication token or code.
+
+5. **Password setup**: The user is then redirected to the password reset page to set their permanent password.
+
+```typescript
+// Core invitation flow in adminService.ts
+await supabase.auth.admin.inviteUserByEmail(
+  email,
+  {
+    data: { full_name, role },
+    redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
+  }
+);
+```
+
+#### Authentication Callback Flow
+
+The `AuthCallback.tsx` component handles multiple authentication scenarios:
+
+1. **Token-based authentication**: Processes authentication tokens from URL hash fragments.
+
+2. **Code-based authentication**: Handles OAuth2 PKCE code exchange from query parameters.
+
+3. **Session establishment**: Sets up the user's session using `supabase.auth.setSession()` or `supabase.auth.exchangeCodeForSession()`.
+
+4. **User redirection**: Directs users to the appropriate page based on their authentication context (password reset for new users, dashboard for returning users).
+
+### User Deletion Process
+
+User deletion is implemented with a robust multi-step approach:
+
+1. **Client-side deletion**: First attempts to delete the user from both `public.users` and `auth.users` tables using `supabase.auth.admin.deleteUser()`.
+
+2. **Server-side fallback**: If client-side auth deletion fails (due to permission restrictions), falls back to a secure PostgreSQL function `delete_user_auth()`.
+
+3. **Security controls**: The PostgreSQL function runs with elevated privileges but validates that only users with 'admin' or 'owner' roles can delete users.
+
+4. **Audit logging**: All deletion attempts are logged asynchronously for accountability.
+
+5. **Error handling**: Failed deletions are logged to a `system_alerts` table for admin attention.
+
+```sql
+-- Core server-side deletion function
+CREATE OR REPLACE FUNCTION public.delete_user_auth(user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  calling_user_role TEXT;
+  is_admin BOOLEAN;
+BEGIN
+  -- Check if the calling user has admin privileges
+  SELECT role INTO calling_user_role FROM public.users WHERE id = auth.uid();
+  is_admin := calling_user_role IN ('admin', 'owner');
+  
+  -- Only allow admins to delete users
+  IF NOT is_admin THEN
+    RAISE EXCEPTION 'Permission denied: Only admins can delete users';
+  END IF;
+
+  -- Delete the user from auth.users
+  DELETE FROM auth.users WHERE id = user_id;
+  
+  -- Return success
+  RETURN FOUND;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE WARNING 'Error deleting auth user %: %', user_id, SQLERRM;
+    RETURN FALSE;
+END;
+$$;
+```
+
+## 2. Core Principles & Best Practices
 
 When building or modifying authentication features, adhere to the following principles derived from our debugging and testing.
 
@@ -20,20 +108,39 @@ As we discovered, a race condition can occur between a `SIGNED_IN` event and the
 
 When you return to the application tab after it has been out of focus, the Supabase client automatically refreshes the session token for security and data freshness. This triggers a `TOKEN_REFRESHED` event. Our `useAuthSession` hook correctly handles this by re-validating the user's profile. This is a feature, not a bug, and ensures the user always has the most up-to-date session and profile data without a full page reload.
 
-### CRITICAL: Automate Profile Creation with a Database Trigger
+### Profile Management
 
-Our current architecture correctly separates `auth.users` (for authentication) from `public.users` (for profile data). However, the manual process of creating a profile in `public.users` is a critical point of failure.
+Our architecture separates `auth.users` (for authentication) from `public.users` (for profile data). The user creation flow now correctly handles both tables:
 
-**Action Required**: A **PostgreSQL trigger** must be implemented in the database. This trigger should automatically create a new row in `public.users` whenever a new user is created in `auth.users`. This will eliminate a major class of bugs, improve reliability, and streamline the new user onboarding process.
+1. **Auth User Creation**: First creates the user in `auth.users` via invitation or signup
+2. **Profile Creation**: Then creates a corresponding profile in `public.users` with the same UUID
+3. **Cleanup on Failure**: If profile creation fails, the auth user is automatically deleted to maintain consistency
 
-## 2. System Architecture Overview
+**Future Enhancement**: Consider implementing a PostgreSQL trigger to automatically create a new row in `public.users` whenever a new user is created in `auth.users`. This would provide an additional layer of reliability.
+
+## 3. System Architecture Overview
 
 The authentication system is built around these key components:
+
+### Core Authentication Components
 
 -   **`AuthProvider` (`/src/context/AuthContext.tsx`)**: A React context provider that uses the `useAuthSession` hook and makes the authentication state (user, session, loading status) and functions (`login`, `logout`) available to the entire application.
 -   **`useAuthSession` (`/src/hooks/useAuthSession.ts`)**: The core hook that orchestrates the entire authentication flow. It listens for Supabase auth events and manages all state transitions.
 
-## 3. Case Study: Resolving a Critical Performance Bottleneck
+### User Management Components
+
+-   **`AdminService.createUser` (`/src/services/adminService.ts`)**: Handles user creation with invitation emails using Supabase Admin API.
+-   **`AdminService.deleteUser` (`/src/services/adminService.ts`)**: Implements robust user deletion with fallback mechanisms.
+-   **`AuthCallback` (`/src/pages/auth/AuthCallback.tsx`)**: Processes authentication tokens and codes from email links.
+-   **`ResetPassword` (`/src/pages/auth/ResetPassword.tsx`)**: Allows users to set or reset their password.
+
+### Database Components
+
+-   **`delete_user_auth` (PostgreSQL function)**: Secure server-side function for deleting auth users when client-side deletion fails.
+-   **`public.users` table**: Stores user profile information.
+-   **`system_alerts` table**: Records failed operations that require admin attention.
+
+## 4. Case Study: Resolving a Critical Performance Bottleneck
 
 This section summarizes a real-world debugging session that restored stability to the application.
 

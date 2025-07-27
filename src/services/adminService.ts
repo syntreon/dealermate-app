@@ -587,31 +587,61 @@ export const AdminService = {
 
   createUser: async (data: CreateUserData, createdBy?: string): Promise<User> => {
     try {
-      // Create a temporary password for initial signup
-      // User will be required to reset this via email confirmation
-      const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+      // Use admin invitation flow instead of signup
+      // This sends an invitation email to the user with a link to set their password
+      let userData: any;
       
-      const { data: authUser, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: tempPassword,
-        options: {
-          data: {
-            full_name: data.full_name,
-            role: data.role
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
+      try {
+        // First try using the admin invitation API
+        const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+          data.email,
+          {
+            data: {
+              full_name: data.full_name,
+              role: data.role
+            },
+            redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
+          }
+        );
+        
+        if (inviteError) {
+          throw inviteError;
         }
-      });
-
-      if (authError) {
-        throw authError;
+        
+        userData = inviteData;
+      } catch (adminApiError) {
+        // If admin API fails (due to permissions), fall back to regular signup
+        console.warn('Admin invitation failed, falling back to regular signup:', adminApiError);
+        
+        // Create a temporary password for initial signup
+        const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+        
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({
+          email: data.email,
+          password: tempPassword,
+          options: {
+            data: {
+              full_name: data.full_name,
+              role: data.role
+            },
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
+          }
+        });
+        
+        if (signupError) {
+          throw signupError;
+        }
+        
+        userData = signupData;
       }
-
-      if (!authUser.user) {
+      
+      // Validate user data from either method
+      if (!userData || !userData.user) {
         throw new Error('Failed to create auth user');
       }
-
-      const userId = authUser.user.id;
+      
+      // Get the user ID from the auth user
+      const userId = userData.user.id;
 
       // Now insert into public.users with the auth user's ID
       const { data: directUser, error: directError } = await supabase
