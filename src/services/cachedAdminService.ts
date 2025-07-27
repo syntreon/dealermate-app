@@ -169,8 +169,8 @@ export const CachedAdminService = {
     return user;
   },
 
-  deleteUser: async (id: string, deletedBy?: string): Promise<void> => {
-    await AdminService.deleteUser(id, deletedBy);
+  deleteUser: async (id: string, deletedBy?: string): Promise<boolean> => {
+    return await AdminService.deleteUser(id, deletedBy);
     
     // Invalidate relevant caches
     CacheInvalidation.invalidateAdmin();

@@ -236,20 +236,106 @@ export interface Database {
                 Row: {
                     id: string;
                     name: string;
+                    status: string; // 'active' | 'inactive' | 'trial' | 'churned' | 'pending'
+                    type: string;
+                    subscription_plan: string; // 'Free Trial' | 'Basic' | 'Pro' | 'Custom'
+                    contact_person: string | null;
+                    contact_email: string | null;
+                    phone_number: string | null;
+                    billing_address: string | null;
+                    monthly_billing_amount_cad: number;
+                    average_monthly_ai_cost_usd: number;
+                    average_monthly_misc_cost_usd: number;
+                    partner_split_percentage: number;
+                    finders_fee_cad: number;
+                    slug: string;
+                    config_json: any;
+                    joined_at: string;
+                    last_active_at: string | null;
                     created_at?: string;
                     updated_at?: string;
                 };
                 Insert: {
                     id?: string;
                     name: string;
+                    status?: string; // 'active' | 'inactive' | 'trial' | 'churned' | 'pending'
+                    type: string;
+                    subscription_plan: string; // 'Free Trial' | 'Basic' | 'Pro' | 'Custom'
+                    contact_person?: string | null;
+                    contact_email?: string | null;
+                    phone_number?: string | null;
+                    billing_address?: string | null;
+                    monthly_billing_amount_cad: number;
+                    average_monthly_ai_cost_usd?: number;
+                    average_monthly_misc_cost_usd?: number;
+                    partner_split_percentage?: number;
+                    finders_fee_cad: number;
+                    slug: string;
+                    config_json?: any;
+                    joined_at?: string;
+                    last_active_at?: string | null;
                     created_at?: string;
                     updated_at?: string;
                 };
                 Update: {
                     id?: string;
                     name?: string;
+                    status?: string; // 'active' | 'inactive' | 'trial' | 'churned' | 'pending'
+                    type?: string;
+                    subscription_plan?: string; // 'Free Trial' | 'Basic' | 'Pro' | 'Custom'
+                    contact_person?: string | null;
+                    contact_email?: string | null;
+                    phone_number?: string | null;
+                    billing_address?: string | null;
+                    monthly_billing_amount_cad?: number;
+                    average_monthly_ai_cost_usd?: number;
+                    average_monthly_misc_cost_usd?: number;
+                    partner_split_percentage?: number;
+                    finders_fee_cad?: number;
+                    slug?: string;
+                    config_json?: any;
+                    joined_at?: string;
+                    last_active_at?: string | null;
                     created_at?: string;
                     updated_at?: string;
+                };
+            };
+            users: {
+                Row: {
+                    id: string;
+                    email: string;
+                    full_name: string;
+                    role: string; // 'owner' | 'admin' | 'user' | 'client_admin' | 'client_user'
+                    client_id: string | null;
+                    phone: string | null;
+                    last_login_at: string | null;
+                    created_at: string;
+                    updated_at?: string;
+                    preferences: any;
+                };
+                Insert: {
+                    id: string;
+                    email: string;
+                    full_name: string;
+                    role: string;
+                    client_id?: string | null;
+                    phone?: string | null;
+                    last_login_at?: string | null;
+                    created_at?: string;
+                    updated_at?: string;
+                    preferences?: any;
+                };
+                Update: {
+                    id?: string;
+                    email?: string;
+                    full_name?: string;
+                    role?: string;
+                    client_id?: string | null;
+                    phone?: string | null;
+                    last_login_at?: string | null;
+                    created_at?: string;
+                    updated_at?: string;
+                    preferences?: any;
                 };
             };
         };

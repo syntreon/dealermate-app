@@ -32,6 +32,8 @@ import AdminAudit from "./pages/admin/AdminAudit";
 import AdminIndex from "./pages/admin/AdminIndex";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
 import AuthTest from "./test/AuthTest";
+import AuthCallback from "./pages/auth/AuthCallback";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,8 @@ const App = () => (
               <LeadProvider>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/auth-test" element={<AuthTest />} />
                 
                 <Route element={<AppLayout />}>

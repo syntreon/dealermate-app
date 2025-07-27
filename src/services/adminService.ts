@@ -44,24 +44,27 @@ const getCurrentUserId = async (): Promise<string | null> => {
 };
 
 const transformClient = (row: Database['public']['Tables']['clients']['Row']): Client => {
+  // Handle the case where joined_at might be missing
+  const joinedAt = row.joined_at || row.created_at || new Date().toISOString();
+  
   return {
     id: row.id,
     name: row.name,
-    status: row.status as 'active' | 'inactive' | 'trial' | 'churned',
+    status: row.status as 'active' | 'inactive' | 'trial' | 'churned' | 'pending',
     type: row.type,
     subscription_plan: row.subscription_plan as 'Free Trial' | 'Basic' | 'Pro' | 'Custom',
     contact_person: row.contact_person,
     contact_email: row.contact_email,
     phone_number: row.phone_number,
     billing_address: row.billing_address,
-    monthly_billing_amount_cad: row.monthly_billing_amount_cad,
-    average_monthly_ai_cost_usd: row.average_monthly_ai_cost_usd,
-    average_monthly_misc_cost_usd: row.average_monthly_misc_cost_usd,
-    partner_split_percentage: row.partner_split_percentage,
-    finders_fee_cad: row.finders_fee_cad,
+    monthly_billing_amount_cad: row.monthly_billing_amount_cad || 0,
+    average_monthly_ai_cost_usd: row.average_monthly_ai_cost_usd || 0,
+    average_monthly_misc_cost_usd: row.average_monthly_misc_cost_usd || 0,
+    partner_split_percentage: row.partner_split_percentage || 0,
+    finders_fee_cad: row.finders_fee_cad || 0,
     slug: row.slug,
-    config_json: row.config_json,
-    joined_at: new Date(row.joined_at),
+    config_json: row.config_json || {},
+    joined_at: new Date(joinedAt),
     last_active_at: row.last_active_at ? new Date(row.last_active_at) : null,
   };
 };
@@ -584,9 +587,10 @@ export const AdminService = {
 
   createUser: async (data: CreateUserData, createdBy?: string): Promise<User> => {
     try {
-      // First, create an auth user to satisfy the foreign key constraint
+      // Create a temporary password for initial signup
+      // User will be required to reset this via email confirmation
       const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
-
+      
       const { data: authUser, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: tempPassword,
@@ -594,7 +598,8 @@ export const AdminService = {
           data: {
             full_name: data.full_name,
             role: data.role
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
         }
       });
 
@@ -637,6 +642,12 @@ export const AdminService = {
         .single();
 
       if (directError) {
+        // If public.users creation fails, clean up the auth user
+        try {
+          await supabase.auth.admin.deleteUser(userId);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user after public.users creation failure:', cleanupError);
+        }
         throw handleDatabaseError(directError);
       }
 
@@ -671,6 +682,8 @@ export const AdminService = {
       throw handleDatabaseError(error);
     }
   },
+
+
 
   updateUser: async (id: string, data: UpdateUserData, updatedBy?: string): Promise<User> => {
     try {
@@ -729,7 +742,7 @@ export const AdminService = {
     }
   },
 
-  deleteUser: async (id: string, deletedBy?: string): Promise<void> => {
+  deleteUser: async (id: string, deletedBy?: string): Promise<boolean> => {
     try {
       // Get the user data for audit logging before deletion
       const user = deletedBy ? await AdminService.getUserById(id) : null;
@@ -742,14 +755,72 @@ export const AdminService = {
         client_id: user.client_id
       } : null;
 
-      // Delete the user first
-      const { error } = await supabase
+      // Delete from public.users first
+      const { error: publicError } = await supabase
         .from('users')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        throw handleDatabaseError(error);
+      if (publicError) {
+        throw handleDatabaseError(publicError);
+      }
+
+      // Try to delete from auth.users using available methods
+      let authUserDeleted = false;
+      
+      try {
+        // First try using admin API (this will likely fail in client-side code)
+        const { error: authError } = await supabase.auth.admin.deleteUser(id);
+        
+        if (!authError) {
+          console.log('Successfully deleted auth user via admin API');
+          authUserDeleted = true;
+        } else {
+          console.warn('Admin API not available for auth user deletion:', authError);
+          
+          // If admin API fails, try using the server function to delete the auth user
+          const { data: rpcResult, error: rpcError } = await supabase.rpc('delete_user_auth', { user_id: id });
+          
+          if (!rpcError && rpcResult === true) {
+            console.log('Successfully deleted auth user via RPC function');
+            authUserDeleted = true;
+          } else if (rpcError) {
+            console.error('Failed to delete auth user via RPC:', rpcError);
+            // Log to system alerts table for admin attention
+            try {
+              await supabase.from('system_alerts').insert({
+                alert_type: 'auth_deletion_failure',
+                message: `Failed to delete auth user ${id}. Public user deleted but auth record may remain.`,
+                severity: 'warning',
+                details: JSON.stringify({ user_id: id, error: rpcError.message }),
+                requires_attention: true
+              });
+            } catch (alertError) {
+              console.error('Failed to create system alert:', alertError);
+            }
+          }
+        }
+      } catch (authDeleteError) {
+        // Catch any errors but don't fail the operation
+        console.error('Error during auth user deletion attempt:', authDeleteError);
+        
+        // Log to system alerts table for admin attention
+        try {
+          await supabase.from('system_alerts').insert({
+            alert_type: 'auth_deletion_failure',
+            message: `Failed to delete auth user ${id}. Public user deleted but auth record may remain.`,
+            severity: 'warning',
+            details: JSON.stringify({ user_id: id, error: authDeleteError.message }),
+            requires_attention: true
+          });
+        } catch (alertError) {
+          console.error('Failed to create system alert:', alertError);
+        }
+      }
+      
+      // If auth user wasn't deleted, we should at least log this for admin attention
+      if (!authUserDeleted) {
+        console.warn(`User ${id} was removed from public.users but may still exist in auth.users`);
       }
 
       // Log audit event after successful deletion
@@ -772,6 +843,8 @@ export const AdminService = {
           }
         }, 0);
       }
+      
+      return true; // Return true to indicate successful deletion
     } catch (error) {
       throw handleDatabaseError(error);
     }
@@ -1145,7 +1218,7 @@ export const AdminService = {
     return AdminService.updateUser(id, data, userId || undefined);
   },
 
-  deleteUserWithAudit: async (id: string): Promise<void> => {
+  deleteUserWithAudit: async (id: string): Promise<boolean> => {
     const userId = await getCurrentUserId();
     return AdminService.deleteUser(id, userId || undefined);
   },
@@ -1160,3 +1233,5 @@ export const AdminService = {
     return AdminService.bulkUpdateUsers(operation, userId || undefined);
   }
 };
+
+export default AdminService;

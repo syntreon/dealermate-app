@@ -31,7 +31,7 @@ export interface Client {
 export interface CreateClientData {
   name: string;
   type: string;
-  subscription_plan: 'free trial' | 'basic' | 'Pro' | 'Custom';
+  subscription_plan: 'Free Trial' | 'Basic' | 'Pro' | 'Custom';
   contact_person?: string;
   contact_email?: string;
   phone_number?: string;
