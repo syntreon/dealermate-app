@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSystemStatus } from '@/hooks/use-system-status';
 import { useAuth } from '@/context/AuthContext';
+import { canViewKPIMetrics } from '@/utils/clientDataIsolation';
 
 interface MetricsSummaryCardsProps {
   metrics: {
@@ -47,6 +48,9 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
   
   // Use the system status hook to get real-time status updates
   const { status, statusMessage, isLoading: statusLoading } = useSystemStatus(clientId);
+  
+  // Check if user can view KPI metrics
+  const canViewKPIs = canViewKPIMetrics(user);
 
   // Mock active agents data
   const activeAgents: AgentInfo[] = [
@@ -116,23 +120,25 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
   }
 
   // First row cards - Key operational metrics
-  const firstRowCards = [
+  const allFirstRowCards = [
     {
       title: "Calls In Queue",
       value: metrics.callsInQueue || 0,
       icon: <Timer className="h-5 w-5 text-primary" />,
       growth: undefined,
       format: (value: number) => value.toLocaleString(),
-      subtitle: "Calls waiting to be answered"
+      subtitle: "Calls waiting to be answered",
+      requiresKPIAccess: true
     },
     {
-      title: "Today's Calls",
-      value: metrics.todaysCalls || 0,
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-      growth: undefined,
+      title: "Calls Transferred",
+      value: metrics.callsTransferred,
+      icon: <ArrowRightLeft className="h-5 w-5 text-primary" />,
+      growth: metrics.transferGrowth,
       format: (value: number) => value.toLocaleString(),
-      subtitle: "Calls received today (EST)"
+      requiresKPIAccess: true
     },
+    
     {
       title: "Agents Available",
       // Show 0 agents if system status is inactive or maintenance
@@ -155,7 +161,8 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
         ? (status === 'maintenance' 
             ? <AlertTriangle className="h-4 w-4 text-amber-500 ml-1" /> 
             : <AlertCircle className="h-4 w-4 text-destructive ml-1" />) 
-        : undefined
+        : undefined,
+      requiresKPIAccess: true
     },
     {
       title: "Lines Available",
@@ -166,12 +173,18 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
       subtitle: "Concurrent phone lines",
       hasAction: true,
       actionText: "Need more lines?",
-      onAction: () => setIsLinesDialogOpen(true)
+      onAction: () => setIsLinesDialogOpen(true),
+      requiresKPIAccess: true
     }
   ];
 
+  // Filter first row cards based on user permissions
+  const firstRowCards = allFirstRowCards.filter(card => 
+    !card.requiresKPIAccess || canViewKPIs
+  );
+
   // Second row cards - Performance metrics
-  const secondRowCards = [
+  const allSecondRowCards = [
     {
       title: "Total Calls",
       value: metrics.totalCalls,
@@ -180,19 +193,21 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
       format: (value: number) => value.toLocaleString()
     },
     {
+      title: "Today's Calls",
+      value: metrics.todaysCalls || 0,
+      icon: <Calendar className="h-5 w-5 text-primary" />,
+      growth: undefined,
+      format: (value: number) => value.toLocaleString(),
+      subtitle: "Calls received today (EST)"
+    },
+    {
       title: "Average Handle Time",
       value: metrics.averageHandleTime,
       icon: <Clock className="h-5 w-5 text-primary" />,
       growth: metrics.timeGrowth,
       format: (value: string) => value
     },
-    {
-      title: "Calls Transferred",
-      value: metrics.callsTransferred,
-      icon: <ArrowRightLeft className="h-5 w-5 text-primary" />,
-      growth: metrics.transferGrowth,
-      format: (value: number) => value.toLocaleString()
-    },
+    
     {
       title: "Total Leads",
       value: metrics.totalLeads,
@@ -201,6 +216,11 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
       format: (value: number) => value.toLocaleString()
     }
   ];
+
+  // Filter second row cards based on user permissions
+  const secondRowCards = allSecondRowCards.filter(card => 
+    !card.requiresKPIAccess || canViewKPIs
+  );
 
 
 
@@ -215,6 +235,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
     actionText?: string;
     onAction?: () => void;
     statusIndicator?: React.ReactNode;
+    requiresKPIAccess?: boolean;
   }, index: number) => (
     <Card key={index} className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
       <CardContent className="pt-6">

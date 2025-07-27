@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Phone, FileText, Mic, MessageSquare, Star } from 'lucide-react';
 import { CallLog } from '@/integrations/supabase/call-logs-service';
 import { useAuth } from '@/context/AuthContext';
-import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import { canViewSensitiveInfo, canViewCallEvaluation } from '@/utils/clientDataIsolation';
 import { CallDetailsTab } from './CallDetailsTab';
 import { CallRecordingTab } from './CallRecordingTab';
 import { CallTranscriptTab } from './CallTranscriptTab';
@@ -31,6 +31,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('details');
     const canViewSensitive = canViewSensitiveInfo(user);
+    const canViewEvaluation = canViewCallEvaluation(user);
 
     if (!isOpen) return null;
 
@@ -50,7 +51,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                     {/* Mobile tab labels */}
-                    <TabsList className={`w-full sm:hidden ${canViewSensitive ? 'grid-cols-4' : 'grid-cols-3'} grid`}>
+                    <TabsList className={`w-full sm:hidden ${canViewEvaluation ? 'grid-cols-4' : 'grid-cols-3'} grid`}>
                         <TabsTrigger value="details" className="px-2">
                             <FileText className="h-4 w-4 mr-1" />
                             Info
@@ -63,7 +64,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                             <FileText className="h-4 w-4 mr-1" />
                             Text
                         </TabsTrigger>
-                        {canViewSensitive && (
+                        {canViewEvaluation && (
                             <TabsTrigger value="evaluation" className="px-2">
                                 <Star className="h-4 w-4 mr-1" />
                                 Eval
@@ -72,7 +73,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                     </TabsList>
 
                     {/* Desktop tab labels */}
-                    <TabsList className={`w-full hidden sm:grid ${canViewSensitive ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                    <TabsList className={`w-full hidden sm:grid ${canViewEvaluation ? 'grid-cols-4' : 'grid-cols-3'}`}>
                         <TabsTrigger value="details">
                             <FileText className="h-4 w-4 mr-2" />
                             Details
@@ -85,7 +86,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                             <MessageSquare className="h-4 w-4 mr-2" />
                             Transcript
                         </TabsTrigger>
-                        {canViewSensitive && (
+                        {canViewEvaluation && (
                             <TabsTrigger value="evaluation">
                                 <Star className="h-4 w-4 mr-2" />
                                 Evaluation
@@ -105,7 +106,7 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                         <CallTranscriptTab call={call} />
                     </TabsContent>
 
-                    {canViewSensitive && (
+                    {canViewEvaluation && (
                         <TabsContent value="evaluation" className="flex-1 overflow-hidden mt-4">
                             <CallEvaluationTab call={call} />
                         </TabsContent>

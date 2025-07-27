@@ -11,6 +11,9 @@ import { InfoIcon, AlertTriangle, Bot, ListChecks, MessageSquare, Building2, Tar
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/AuthContext';
+import { hasClientAdminAccess } from '@/utils/clientDataIsolation';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Type guard to check if the fetched data conforms to AgentConfig
 const isAgentConfig = (config: any): config is AgentConfig => {
@@ -58,11 +61,17 @@ const agentSettingsSchema = z.object({
 type AgentSettingsFormValues = z.infer<typeof agentSettingsSchema>;
 
 export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
   const [agentStatus, setAgentStatus] = useState<'online' | 'offline' | 'busy'>('offline');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Check user permissions
+  const canEditAgents = hasClientAdminAccess(user);
+  const showEditControls = canEditAgents && !isMobile;
 
   const form = useForm<AgentSettingsFormValues>({
     resolver: zodResolver(agentSettingsSchema),
@@ -217,21 +226,23 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
             <h2 className="text-lg font-medium text-card-foreground">Agent Settings</h2>
             <p className="text-sm text-muted-foreground mt-1">Agent configuration and status</p>
           </div>
-          <div>
-            {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)}>Edit Settings</Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button variant="outline" onClick={() => {
-                  setIsEditing(false);
-                  form.reset(agentConfig || {});
-                }}>Cancel</Button>
-              </div>
-            )}
-          </div>
+          {showEditControls && (
+            <div>
+              {!isEditing ? (
+                <Button onClick={() => setIsEditing(true)}>Edit Settings</Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setIsEditing(false);
+                    form.reset(agentConfig || {});
+                  }}>Cancel</Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className="p-6 space-y-6">
@@ -259,6 +270,37 @@ export const AgentSettings: React.FC<AgentSettingsProps> = ({ clientId }) => {
             </span>
           </div>
         </div>
+
+        {/* Permission message for users without edit access */}
+        {!canEditAgents && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm">
+            <div className="flex items-start">
+              <InfoIcon className="h-5 w-5 text-primary mr-2 mt-0.5" />
+              <div>
+                <p className="font-medium text-primary mb-1">Edit Access Required</p>
+                <p className="text-muted-foreground">
+                  To modify agent settings, you need client admin privileges or higher. 
+                  Contact your administrator to request access.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile edit restriction message */}
+        {canEditAgents && isMobile && (
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm">
+            <div className="flex items-start">
+              <InfoIcon className="h-5 w-5 text-amber-600 mr-2 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">Desktop Required</p>
+                <p className="text-amber-700 dark:text-amber-300">
+                  Agent settings can only be edited on desktop devices. Please use a desktop or tablet to modify these settings.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Lead Capture Configuration */}
         {agentConfig.lead_capture_config && (

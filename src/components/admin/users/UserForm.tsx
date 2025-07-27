@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
+import { getClientIdFilter } from '@/utils/clientDataIsolation';
 import {
   Form,
   FormControl,
@@ -41,6 +43,7 @@ interface UserFormProps {
   onSubmit: (data: CreateUserData | UpdateUserData) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
+  hasSystemAccess?: boolean;
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -48,9 +51,12 @@ const UserForm: React.FC<UserFormProps> = ({
   clients,
   onSubmit,
   onCancel,
+  hasSystemAccess = true,
   isSubmitting,
 }) => {
+  const { user: currentUser } = useAuth();
   const isEditing = !!user;
+  const currentUserClientId = getClientIdFilter(currentUser);
 
   const refinedSchema = userFormSchema.refine(
     (data) => {
@@ -84,12 +90,16 @@ const UserForm: React.FC<UserFormProps> = ({
       full_name: user?.full_name || '',
       email: user?.email || '',
       role: user?.role || 'client_user',
-      client_id: user?.client_id || null,
+      // For client_admin users, auto-set to their client_id
+      client_id: user?.client_id || (hasSystemAccess ? null : currentUserClientId),
     },
   });
 
   const watchRole = form.watch('role');
-  const isGlobalRole = watchRole === 'owner' || watchRole === 'admin';
+  const isGlobalRole = watchRole === 'owner' || watchRole === 'admin' || watchRole === 'user';
+  
+  // For client_admin users, client selection should be disabled and set to their client
+  const shouldDisableClientSelection = !hasSystemAccess || isGlobalRole;
 
   // Reset client_id when switching to a global role
   useEffect(() => {
@@ -164,11 +174,15 @@ const UserForm: React.FC<UserFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="owner">Owner</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
+                        {hasSystemAccess && (
+                          <>
+                            <SelectItem value="owner">Owner</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
+                          </>
+                        )}
                         <SelectItem value="client_admin">Client Admin</SelectItem>
                         <SelectItem value="client_user">Client User</SelectItem>
-                        <SelectItem value="user">User</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
@@ -190,7 +204,7 @@ const UserForm: React.FC<UserFormProps> = ({
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value || undefined}
-                      disabled={isGlobalRole}
+                      disabled={shouldDisableClientSelection}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -198,17 +212,30 @@ const UserForm: React.FC<UserFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
-                          </SelectItem>
-                        ))}
+                        {hasSystemAccess ? (
+                          clients.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          // For client_admin users, only show their client
+                          clients
+                            .filter(client => client.id === currentUserClientId)
+                            .map((client) => (
+                              <SelectItem key={client.id} value={client.id}>
+                                {client.name}
+                              </SelectItem>
+                            ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormDescription>
                       {isGlobalRole 
                         ? 'Global roles have access to all clients' 
-                        : 'Select which client this user belongs to'}
+                        : hasSystemAccess 
+                          ? 'Select which client this user belongs to'
+                          : 'Users will be assigned to your client'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

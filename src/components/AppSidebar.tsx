@@ -1,8 +1,9 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Phone, Settings, LogOut, FileText, BarChart, User, Shield, Bot } from 'lucide-react';
+import { Home, Phone, Settings, LogOut, FileText, BarChart, User, Shield, Bot, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { canAccessAdminPanel, hasClientAdminAccess, canAccessAnalytics } from '@/utils/clientDataIsolation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sidebar,
@@ -19,11 +20,11 @@ import { Separator } from "@/components/ui/separator";
 import Logo from "@/components/Logo";
 
 // This array is used for both sidebar and mobile bottom nav
-const navItems = [
+const allNavItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: FileText, label: 'Logs', path: '/logs' },
   { icon: User, label: 'Leads', path: '/leads' },
-  { icon: BarChart, label: 'Analytics', path: '/analytics' },
+  { icon: BarChart, label: 'Analytics', path: '/analytics', requiresAnalyticsAccess: true },
   { icon: Bot, label: 'Agents', path: '/agents' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
@@ -39,8 +40,15 @@ const DesktopSidebar = () => {
   const { isMobile } = useSidebar();
   const location = useLocation();
 
-  // Check if user has admin privileges
-  const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.is_admin;
+  // Check user privileges
+  const isAdmin = canAccessAdminPanel(user);
+  const hasClientAdmin = hasClientAdminAccess(user);
+  const canViewAnalytics = canAccessAnalytics(user);
+  
+  // Filter navigation items based on user permissions
+  const navItems = allNavItems.filter(item => 
+    !item.requiresAnalyticsAccess || canViewAnalytics
+  );
 
   return (
     <Sidebar className="border-r border-border bg-card shadow-sm">
@@ -81,14 +89,16 @@ const DesktopSidebar = () => {
             );
           })}
 
-          {/* Admin Panel Access - Only show for admin users */}
-          {isAdmin && (
+          {/* Administration Access */}
+          {(isAdmin || hasClientAdmin) && (
             <>
               <Separator className="my-4" />
+              
+              {/* Single Admin Panel - Shows different content based on role */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Admin Panel"
+                  tooltip={isAdmin ? "Admin Panel" : "Administration"}
                   className="text-base"
                 >
                   <NavLink
@@ -104,7 +114,7 @@ const DesktopSidebar = () => {
                       "h-5 w-5 transition-colors",
                       location.pathname.startsWith('/admin') ? "text-orange-600" : "text-foreground/60 group-hover:text-foreground"
                     )} />
-                    <span>Admin Panel</span>
+                    <span>{isAdmin ? "Admin Panel" : "Administration"}</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -134,7 +144,14 @@ const DesktopSidebar = () => {
 
 // Mobile bottom navigation component
 const MobileBottomNav = () => {
+  const { user } = useAuth();
   const location = useLocation();
+  const canViewAnalytics = canAccessAnalytics(user);
+  
+  // Filter navigation items based on user permissions
+  const navItems = allNavItems.filter(item => 
+    !item.requiresAnalyticsAccess || canViewAnalytics
+  );
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-2 py-3 z-50 shadow-lg">

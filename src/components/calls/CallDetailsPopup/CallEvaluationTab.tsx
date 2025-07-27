@@ -16,21 +16,28 @@ import { LeadEvaluationService } from '@/services/leadEvaluationService';
 import { LeadEvaluationSummary } from '@/types/leadEvaluation';
 import { PromptAdherenceService, PromptAdherenceReview } from '@/services/promptAdherenceService';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { canViewCallEvaluation, canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
 interface CallEvaluationTabProps {
   call: CallLog | null;
 }
 
 export const CallEvaluationTab: React.FC<CallEvaluationTabProps> = ({ call }) => {
+  const { user } = useAuth();
   const [evaluation, setEvaluation] = useState<LeadEvaluationSummary | null>(null);
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [promptAdherence, setPromptAdherence] = useState<PromptAdherenceReview | null>(null);
   const [promptAdherenceLoading, setPromptAdherenceLoading] = useState(false);
 
+  // Check if user can view evaluation data
+  const canViewEvaluation = canViewCallEvaluation(user);
+  const canViewPromptAdherence = canViewSensitiveInfo(user); // Only system-wide users can see prompt adherence
+
   // Load evaluation data when call changes
   useEffect(() => {
     const loadEvaluation = async () => {
-      if (!call?.id) {
+      if (!call?.id || !canViewEvaluation) {
         setEvaluation(null);
         return;
       }
@@ -53,12 +60,12 @@ export const CallEvaluationTab: React.FC<CallEvaluationTabProps> = ({ call }) =>
     };
 
     loadEvaluation();
-  }, [call]);
+  }, [call, canViewEvaluation]);
 
-  // Load prompt adherence review data when call changes
+  // Load prompt adherence review data when call changes (only for system-wide users)
   useEffect(() => {
     const loadPromptAdherence = async () => {
-      if (!call?.id) {
+      if (!call?.id || !canViewPromptAdherence) {
         setPromptAdherence(null);
         return;
       }
@@ -76,7 +83,22 @@ export const CallEvaluationTab: React.FC<CallEvaluationTabProps> = ({ call }) =>
     };
 
     loadPromptAdherence();
-  }, [call]);
+  }, [call, canViewPromptAdherence]);
+
+  // If user doesn't have permission to view evaluations, show access denied
+  if (!canViewEvaluation) {
+    return (
+      <ScrollArea className="h-full pr-4">
+        <Card className="flex items-center justify-center h-96">
+          <div className="text-center text-muted-foreground">
+            <ShieldCheck className="mx-auto h-12 w-12 mb-4" />
+            <h3 className="text-lg font-semibold">Access Restricted</h3>
+            <p className="text-sm">You don't have permission to view call evaluation data.</p>
+          </div>
+        </Card>
+      </ScrollArea>
+    );
+  }
 
   return (
     <ScrollArea className="h-full pr-4">
@@ -200,65 +222,68 @@ export const CallEvaluationTab: React.FC<CallEvaluationTabProps> = ({ call }) =>
             </CardContent>
           </Card>
 
-          {promptAdherenceLoading ? (
-            <Skeleton className="h-64 w-full" />
-          ) : promptAdherence ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Prompt Adherence</CardTitle>
-                <CardDescription>
-                  How well the AI followed its prescribed script and guidelines.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col items-center justify-center space-y-2 p-4 bg-muted/50 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Adherence Score</span>
-                  <span
-                    className={cn('text-5xl font-bold',
-                      promptAdherence.prompt_adherence_score === null ? 'text-muted-foreground' :
-                      promptAdherence.prompt_adherence_score >= 85 ? 'text-success'
-                      : promptAdherence.prompt_adherence_score >= 60 ? 'text-warning'
-                      : 'text-destructive'
-                    )}
-                  >
-                    {promptAdherence.prompt_adherence_score?.toFixed(0) ?? 'N/A'}
-                  </span>
-                  <span className="text-xs text-muted-foreground">out of 5</span>
+          {/* Prompt Adherence - Only visible to system-wide users */}
+          {canViewPromptAdherence && (
+            promptAdherenceLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : promptAdherence ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Prompt Adherence</CardTitle>
+                  <CardDescription>
+                    How well the AI followed its prescribed script and guidelines.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col items-center justify-center space-y-2 p-4 bg-muted/50 rounded-lg">
+                    <span className="text-sm text-muted-foreground">Adherence Score</span>
+                    <span
+                      className={cn('text-5xl font-bold',
+                        promptAdherence.prompt_adherence_score === null ? 'text-muted-foreground' :
+                        promptAdherence.prompt_adherence_score >= 85 ? 'text-success'
+                        : promptAdherence.prompt_adherence_score >= 60 ? 'text-warning'
+                        : 'text-destructive'
+                      )}
+                    >
+                      {promptAdherence.prompt_adherence_score?.toFixed(0) ?? 'N/A'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">out of 5</span>
+                  </div>
+                  
+                  {promptAdherence.what_went_well && Array.isArray(promptAdherence.what_went_well) && promptAdherence.what_went_well.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">What Went Well</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        {promptAdherence.what_went_well.map((item, index) => <li key={index}>{item}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {promptAdherence.what_went_wrong && Array.isArray(promptAdherence.what_went_wrong) && promptAdherence.what_went_wrong.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Areas for Improvement</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        {promptAdherence.what_went_wrong.map((item, index) => <li key={index}>{item}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {promptAdherence.critical_failures_summary && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Critical Failures</h4>
+                      <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">{promptAdherence.critical_failures_summary}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="flex items-center justify-center h-48">
+                <div className="text-center text-muted-foreground">
+                  <Info className="mx-auto h-8 w-8 mb-2" />
+                  <p>No prompt adherence review available for this call.</p>
                 </div>
-                
-                {promptAdherence.what_went_well && Array.isArray(promptAdherence.what_went_well) && promptAdherence.what_went_well.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-2">What Went Well</h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      {promptAdherence.what_went_well.map((item, index) => <li key={index}>{item}</li>)}
-                    </ul>
-                  </div>
-                )}
-
-                {promptAdherence.what_went_wrong && Array.isArray(promptAdherence.what_went_wrong) && promptAdherence.what_went_wrong.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-2">Areas for Improvement</h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      {promptAdherence.what_went_wrong.map((item, index) => <li key={index}>{item}</li>)}
-                    </ul>
-                  </div>
-                )}
-
-                {promptAdherence.critical_failures_summary && (
-                  <div>
-                    <h4 className="font-semibold mb-2">Critical Failures</h4>
-                    <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">{promptAdherence.critical_failures_summary}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="flex items-center justify-center h-48">
-              <div className="text-center text-muted-foreground">
-                <Info className="mx-auto h-8 w-8 mb-2" />
-                <p>No prompt adherence review available for this call.</p>
-              </div>
-            </Card>
+              </Card>
+            )
           )}
         </div>
       ) : (

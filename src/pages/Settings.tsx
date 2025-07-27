@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
-import { UserPlus, Settings as SettingsIcon, User as UserIcon, Bell, Building2, Bot, Sliders } from 'lucide-react';
+import { canViewSensitiveInfo, hasClientAdminAccess } from '@/utils/clientDataIsolation';
+import { UserPlus, Settings as SettingsIcon, User as UserIcon, Bell, Building2, Bot, Sliders, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
@@ -81,7 +81,7 @@ const Settings = () => {
           <p className="text-gray-500 mt-1">Manage your account and preferences</p>
         </div>
         
-        {canViewSensitiveInfo(user as unknown as User) && (
+        {canViewSensitiveInfo(user) && (
           <Button 
             onClick={() => setAddUserDialogOpen(true)} 
             className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
@@ -135,20 +135,17 @@ const Settings = () => {
                 <Bot className="h-4 w-4" />
                 <span>Agent</span>
               </button>
-              {/* Admin panel button */}
-              {canViewSensitiveInfo(user as unknown as User) && (
-                <button
-                  onClick={() => navigate('/admin/dashboard')}
-                  className="flex items-center gap-2 p-3 rounded-md text-left transition-colors hover:bg-muted text-muted-foreground mt-2 border-t border-border pt-4"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  <span>Admin Panel</span>
-                </button>
+              {/* Administration button */}
+              {(canViewSensitiveInfo(user) || hasClientAdminAccess(user)) && (
+                <div className="mt-2 border-t border-border pt-4">
+                  <button
+                    onClick={() => navigate('/admin/dashboard')}
+                    className="flex items-center gap-2 p-3 rounded-md text-left transition-colors hover:bg-muted text-muted-foreground w-full"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>{canViewSensitiveInfo(user) ? "Admin Panel" : "Administration"}</span>
+                  </button>
+                </div>
               )}
             </nav>
           </div>
@@ -183,7 +180,7 @@ const Settings = () => {
           
           {activeTab === 'business' && (
             <div className="space-y-6">
-              <BusinessSettings clientId={user.client_id || null} isAdmin={canViewSensitiveInfo(user as unknown as User)} />
+              <BusinessSettings clientId={user.client_id || null} isAdmin={canViewSensitiveInfo(user)} />
             </div>
           )}
           
@@ -194,7 +191,7 @@ const Settings = () => {
           )}
           
           {/* Admin options - only shown for admin users */}
-          {canViewSensitiveInfo(user as unknown as User) && (
+          {canViewSensitiveInfo(user) && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="space-y-6">
                 <div className="space-y-4">

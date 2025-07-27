@@ -16,6 +16,7 @@ interface UserFiltersProps {
   clients: Client[];
   onFilterChange: (filters: UserFiltersType) => void;
   onResetFilters: () => void;
+  hasSystemAccess?: boolean;
 }
 
 const UserFilters: React.FC<UserFiltersProps> = ({
@@ -23,6 +24,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
   clients,
   onFilterChange,
   onResetFilters,
+  hasSystemAccess = true,
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
 
@@ -68,7 +70,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
   const hasActiveFilters =
     filters.search ||
     filters.role ||
-    filters.client_id;
+    (hasSystemAccess && filters.client_id);
 
   return (
     <div className="space-y-4">
@@ -92,29 +94,37 @@ const UserFilters: React.FC<UserFiltersProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="owner">Owner</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
+            {hasSystemAccess && (
+              <>
+                <SelectItem value="owner">Owner</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+              </>
+            )}
             <SelectItem value="client_admin">Client Admin</SelectItem>
             <SelectItem value="client_user">Client User</SelectItem>
           </SelectContent>
         </Select>
 
-        <Select
-          value={filters.client_id || 'all'}
-          onValueChange={handleClientChange}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by client" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Clients</SelectItem>
-            {clients.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
-                {client.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Only show client selector for users with system access */}
+        {hasSystemAccess && (
+          <Select
+            value={filters.client_id || 'all'}
+            onValueChange={handleClientChange}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by client" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Clients</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Select
           value={`${filters.sortBy || 'full_name'}-${filters.sortDirection || 'asc'}`}

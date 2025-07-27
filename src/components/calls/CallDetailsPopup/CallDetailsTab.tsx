@@ -8,7 +8,7 @@ import { Phone, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { CallLog } from '@/integrations/supabase/call-logs-service';
 import { useAuth } from '@/context/AuthContext';
-import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import { canViewSensitiveInfo, canViewCallDetails } from '@/utils/clientDataIsolation';
 import { convertUsdToCad } from '@/utils/currency';
 import { toast } from 'sonner';
 import { getCallerInitials } from './utils';
@@ -304,8 +304,8 @@ export const CallDetailsTab: React.FC<CallDetailsTabProps> = ({ call }) => {
             </p>
           </CardContent>
         </Card>
-        {/* Tool Calls - Only visible to admin users */}
-        {canViewSensitiveInfo(user) && (
+        {/* Tool Calls - Visible to admin users and client_admin */}
+        {canViewCallDetails(user) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Tool Calls</CardTitle>

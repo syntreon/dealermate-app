@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { canAccessAdminPanel, hasClientAdminAccess, hasSystemWideAccess } from '@/utils/clientDataIsolation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import TopBar from '@/components/TopBar';
 import { Toaster } from '@/components/ui/sonner';
@@ -16,8 +17,13 @@ const AdminLayout = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
 
-  // Check if user has admin privileges
-  const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.is_admin;
+  // Check if user has admin or client admin privileges
+  const canAccessAdmin = canAccessAdminPanel(user);
+  const hasClientAdmin = hasClientAdminAccess(user);
+  const hasSystemAccess = hasSystemWideAccess(user);
+  
+  // Allow access if user has either admin panel access OR client admin access
+  const canAccessInterface = canAccessAdmin || hasClientAdmin;
 
   if (isLoading) {
     return (
@@ -34,7 +40,7 @@ const AdminLayout = () => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (!isAdmin) {
+  if (!canAccessInterface) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="max-w-md w-full">
@@ -42,7 +48,7 @@ const AdminLayout = () => {
             <Shield className="h-4 w-4" />
             <AlertTitle>Access Denied</AlertTitle>
             <AlertDescription className="mt-2">
-              You don't have permission to access the admin panel. Admin privileges are required.
+              You don't have permission to access the administration interface. Admin or client admin privileges are required.
             </AlertDescription>
           </Alert>
           <Button 
@@ -55,6 +61,16 @@ const AdminLayout = () => {
         </div>
       </div>
     );
+  }
+
+  // Redirect client_admin users to User Management if they try to access admin dashboard
+  if (hasClientAdmin && !hasSystemAccess && location.pathname === '/admin/dashboard') {
+    return <Navigate to="/admin/users" replace />;
+  }
+
+  // Redirect client_admin users to User Management if they access /admin root
+  if (hasClientAdmin && !hasSystemAccess && location.pathname === '/admin') {
+    return <Navigate to="/admin/users" replace />;
   }
 
   return (

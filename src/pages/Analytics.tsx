@@ -11,7 +11,8 @@ import ClientSelector from '@/components/ClientSelector';
 import { useDateRange } from '@/hooks/useDateRange';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/context/AuthContext';
-import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import { canViewSensitiveInfo, canAccessAnalytics } from '@/utils/clientDataIsolation';
+import { Navigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +24,14 @@ const Analytics = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Check if user can access analytics
+  const canViewAnalytics = canAccessAnalytics(user);
+  
+  // Redirect if user doesn't have access
+  if (!canViewAnalytics) {
+    return <Navigate to="/dashboard" replace />;
+  }
   
   // Check if user can view all clients (admin)
   const canViewAllClients = canViewSensitiveInfo(user);

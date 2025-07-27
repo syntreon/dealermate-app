@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { hasSystemWideAccess, canAccessAdminPanel } from '@/utils/clientDataIsolation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sidebar,
@@ -31,28 +32,83 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Logo from '@/components/Logo';
 
-const adminNavItems = [
-  { icon: LayoutDashboard, label: 'Admin Dashboard', path: '/admin/dashboard' },
-  { icon: Building2, label: 'Client Management', path: '/admin/clients' },
-  { icon: Users, label: 'User Management', path: '/admin/users' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-  { icon: Shield, label: 'Audit Logs', path: '/admin/audit' },
-  { icon: Activity, label: 'System Status', path: '/admin/system-status' },
-  { icon: Settings, label: 'Admin Settings', path: '/admin/settings' },
+const allAdminNavItems = [
+  { 
+    icon: LayoutDashboard, 
+    label: 'Admin Dashboard', 
+    path: '/admin/dashboard',
+    requiredAccess: 'system_admin' // Only for system admins
+  },
+  { 
+    icon: Building2, 
+    label: 'Client Management', 
+    path: '/admin/clients',
+    requiredAccess: 'system_admin' // Only for system admins
+  },
+  { 
+    icon: Users, 
+    label: 'User Management', 
+    path: '/admin/users',
+    requiredAccess: 'client_admin' // Available to client_admin and above
+  },
+  { 
+    icon: BarChart3, 
+    label: 'Analytics', 
+    path: '/admin/analytics',
+    requiredAccess: 'system_admin' // Only for system admins
+  },
+  { 
+    icon: Shield, 
+    label: 'Audit Logs', 
+    path: '/admin/audit',
+    requiredAccess: 'system_admin' // Only for system admins
+  },
+  { 
+    icon: Activity, 
+    label: 'System Status', 
+    path: '/admin/system-status',
+    requiredAccess: 'system_admin' // Only for system admins
+  },
+  { 
+    icon: Settings, 
+    label: 'Admin Settings', 
+    path: '/admin/settings',
+    requiredAccess: 'system_admin' // Only for system admins
+  },
 ];
 
-// Primary items to show in mobile bottom nav (limit to 4 most important)
-const primaryAdminNavItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Building2, label: 'Clients', path: '/admin/clients' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-];
+// Function to filter navigation items based on user role
+const getFilteredNavItems = (user: any) => {
+  const hasSystemAdmin = canAccessAdminPanel(user);
+  const hasSystemWide = hasSystemWideAccess(user);
+  
+  return allAdminNavItems.filter(item => {
+    if (item.requiredAccess === 'system_admin') {
+      return hasSystemAdmin; // Only owner/admin can see these
+    }
+    if (item.requiredAccess === 'client_admin') {
+      return hasSystemWide || user?.role === 'client_admin'; // client_admin and above
+    }
+    return true; // Default: show to everyone with admin access
+  });
+};
+
+// Get primary items for mobile (first 4 filtered items)
+const getPrimaryNavItems = (user: any) => {
+  return getFilteredNavItems(user).slice(0, 4).map(item => ({
+    icon: item.icon,
+    label: item.label.replace('Admin ', ''), // Shorter labels for mobile
+    path: item.path
+  }));
+};
 
 // Desktop Admin Sidebar Component
 const DesktopAdminSidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  
+  // Get filtered navigation items based on user role
+  const adminNavItems = getFilteredNavItems(user);
 
   return (
     <Sidebar className="border-r border-border bg-card shadow-sm">
@@ -142,8 +198,13 @@ const DesktopAdminSidebar = () => {
 
 // Mobile Admin Bottom Navigation
 const MobileAdminBottomNav = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  
+  // Get filtered navigation items based on user role
+  const primaryAdminNavItems = getPrimaryNavItems(user);
+  const adminNavItems = getFilteredNavItems(user);
 
   return (
     <>

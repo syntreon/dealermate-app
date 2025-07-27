@@ -20,14 +20,32 @@ The application uses Supabase for authentication, with a custom implementation t
 
 ### User Roles
 
-The system supports five distinct user roles:
+The system supports five distinct user roles with hierarchical permissions:
 
-- **owner**: Super admin with full system access
-- **admin**: Administrative user with access to admin panel
-- **user**: Regular staff user with limited access
-- **client_admin**: Client administrator with enhanced client-specific access
-- **client_user**: Basic client user with minimal access
+- **owner** (Level 5): Super admin with full system access
+- **admin** (Level 4): Administrative user with access to admin panel  
+- **user** (Level 3): Internal staff with system-wide access to multiple clients
+- **client_admin** (Level 2): Client administrator with enhanced client-specific access
+- **client_user** (Level 1): Basic client user with minimal access
 
+### Role Hierarchy and Access Patterns
+
+- **System-wide access**: owner, admin, user (can view all clients)
+- **Client-specific access**: client_admin, client_user (restricted to their client)
+- **Admin panel access**: owner, admin only
+- **Client admin features**: client_admin and all system-wide roles
+- **User management**: Higher roles can manage lower roles within their scope
+
+ * Role hierarchy levels for permission checking @clientDataIsolation.tsx [D:\AI\NewApp\src\utils\clientDataIsolation.ts]
+```typescript
+  const ROLE_HIERARCHY: Record<UserRole, number> = {
+  'owner': 5,
+  'admin': 4,
+  'user': 3,
+  'client_admin': 2,
+  'client_user': 1
+};
+```
 ### Authentication Flow
 
 1. User logs in via Supabase auth (`signInWithPassword`)
@@ -65,7 +83,7 @@ export const canViewSensitiveInfo = (user: UserData | null) =>
 
 ## View Architecture
 
-The application implements a clear separation between regular user views and admin views:
+The application implements a clear separation between different user view types:
 
 ### User Views
 
@@ -77,8 +95,15 @@ The application implements a clear separation between regular user views and adm
 
 - Located in `/src/pages/admin/` (e.g., AdminDashboard.tsx, ClientManagement.tsx)
 - Use `AdminLayout` as the parent layout component
-- Only accessible to users with admin privileges
+- Only accessible to users with admin privileges (owner, admin)
 - Include specialized components from `/src/components/admin/`
+
+### Client Admin Views
+
+- Located in `/src/pages/client-admin/` (e.g., ClientAdminDashboard.tsx, ClientUserManagement.tsx)
+- Use `ClientAdminLayout` as the parent layout component
+- Accessible to client_admin users and internal staff (user, admin, owner)
+- Provide client-specific administration features
 
 ## Routing Implementation
 
@@ -117,6 +142,18 @@ The application uses React Router for navigation with a structured approach to r
 </Route>
 ```
 
+### Client Admin Routes
+
+```jsx
+<Route path="/client-admin" element={<ClientAdminLayout />}>
+  <Route path="dashboard" element={<ClientAdminDashboard />} />
+  <Route path="users" element={<ClientUserManagement />} />
+  <Route path="users/client" element={<ClientUserManagement />} />
+  <Route path="users/permissions" element={<ClientUserManagement />} />
+  <Route index element={<ClientAdminDashboard />} />
+</Route>
+```
+
 ## Layout Components
 
 ### AppLayout (User View)
@@ -133,6 +170,15 @@ The application uses React Router for navigation with a structured approach to r
 - Includes authentication check and admin role verification
 - Shows access denied message for non-admin users
 - Renders the `AdminSidebar` component for admin navigation
+- Conditionally renders `TopBar` on non-mobile views
+- Implements theme support via `ThemeProvider`
+
+### ClientAdminLayout (Client Admin View)
+
+- Located at `/src/layouts/ClientAdminLayout.tsx`
+- Includes authentication check and client admin role verification
+- Shows access denied message for users without client admin privileges
+- Renders the `ClientAdminSidebar` component for client admin navigation
 - Conditionally renders `TopBar` on non-mobile views
 - Implements theme support via `ThemeProvider`
 
@@ -187,10 +233,37 @@ preferences?: {
 
 The `useThemeInit` hook initializes the theme based on user preferences when the application loads.
 
+## Access Control Utilities
+
+The system provides comprehensive access control utilities in `/src/utils/clientDataIsolation.ts`:
+
+- `hasSystemWideAccess(user)`: Check if user can see all clients
+- `hasClientAdminAccess(user)`: Check if user has client admin privileges
+- `canAccessAdminPanel(user)`: Check if user can access admin panel
+- `canManageUsers(user, targetUser)`: Check if user can manage other users
+- `shouldFilterByClient(user)`: Determine if data should be filtered by client
+- `getClientIdFilter(user)`: Get appropriate client ID for filtering
+- `canViewSensitiveInfo(user)`: Check if user can view system-wide sensitive data
+
+## Access Control Reference
+
+For a complete overview of permissions across the entire application, see the [Complete Access Control Matrix](./access-control-matrix.md) which provides detailed permission tables for:
+
+- All application pages and routes
+- Individual components and features  
+- Mobile-specific restrictions
+- Business and agent management capabilities
+- Analytics and reporting access
+- System administration features
+
 ## Best Practices for Extending the System
 
 1. **New User Views**: Add new user-facing pages to `/src/pages/` and include them in the user routes
 2. **New Admin Views**: Add new admin pages to `/src/pages/admin/` and include them in the admin routes
-3. **Access Control**: Always implement role checks for sensitive operations and data access
+3. **Access Control**: Always use the access control utilities for role checks and data filtering
 4. **Client Data Isolation**: Use the client_id filtering pattern for all client-specific data
-5. **Theme Awareness**: Use semantic color tokens for all UI components to ensure proper theme support
+5. **Hierarchical Permissions**: Respect the role hierarchy when implementing user management features
+6. **Mobile Restrictions**: Consider mobile limitations when adding edit functionality
+7. **Audit Logging**: Use AuditService for tracking important changes
+8. **Theme Awareness**: Use semantic color tokens for all UI components to ensure proper theme support
+9. **Permission Matrix**: Update the access control matrix when adding new features

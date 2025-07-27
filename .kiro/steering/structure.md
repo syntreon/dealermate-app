@@ -16,6 +16,15 @@ The root directory contains configuration files, documentation, and the main sou
 ├── .vscode/           # VS Code editor settings.
 ├── dist/              # Build output directory.
 ├── docs/              # General project documentation.
+│   ├── admin/         # Admin panel and access control documentation.
+│   │   ├── access-control-matrix.md # Complete permission matrix for all features
+│   │   ├── admin-panel-implementation.md
+│   │   ├── make-operations-integration.md
+│   │   ├── recent-updates-summary.md # Summary of recent RBAC enhancements
+│   │   ├── role-based-access-control-implementation.md
+│   │   └── user-admin-views-guide.md
+│   ├── analytics/     # Analytics and reporting documentation.
+│   └── status-messages/ # System status and messaging documentation.
 ├── node_modules/      # Project dependencies.
 ├── public/            # Static assets (images, fonts, etc.) served directly.
 ├── scripts/           # Standalone scripts for various tasks.
@@ -42,12 +51,20 @@ src/
 ├──
 ├── components/            # Reusable UI components.
 │   ├── admin/             # Components specific to the Admin Dashboard.
+│   │   ├── AdminSidebar.tsx # Admin navigation with role-based filtering.
+│   │   ├── ProtectedAdminRoute.tsx # Route protection based on user permissions.
+│   │   └── ... # Other admin components
 │   ├── analytics/         # Components for the Analytics pages.
 │   │   └── SimpleAIAnalytics.tsx # AI model performance dashboard using real data.
 │   ├── calls/             # Components related to call details and evaluation.
 │   ├── common/            # Generic, shared components (buttons, inputs, etc.).
-│   └── ui/                # Base UI elements from shadcn/ui.
-│       └── themed-chart-tooltip.tsx # Theme-aware chart tooltip components.
+│   ├── settings/          # Settings-related components.
+│   │   ├── BusinessSettings.tsx # Business info editing with audit logging.
+│   │   ├── AgentSettings.tsx # Agent configuration with mobile restrictions.
+│   │   └── ... # Other settings components
+│   ├── ui/                # Base UI elements from shadcn/ui.
+│   │   └── themed-chart-tooltip.tsx # Theme-aware chart tooltip components.
+│   └── AppSidebar.tsx     # Main application sidebar with role-based navigation.
 ├──
 ├── context/               # React Context providers for global state management.
 │   ├── AuthProvider.tsx   # Manages user authentication state.
@@ -60,11 +77,19 @@ src/
 │   └── useOptimizedTheme.ts # Performance-optimized theme utilities and calculations.
 ├──
 ├── layouts/               # Components that define the structure of pages.
-│   └── DashboardLayout.tsx # The main layout with sidebar and header.
+│   └── AdminLayout.tsx    # Admin panel layout with role-based access control.
 ├──
 ├── pages/                 # Top-level components for each application route/page.
-│   ├── Admin.tsx          # The main Admin Dashboard page.
+│   ├── admin/             # Admin panel pages with role-based access control.
+│   │   ├── AdminDashboard.tsx # Main admin dashboard (system admins only).
+│   │   ├── AdminIndex.tsx # Admin panel routing logic based on user role.
+│   │   ├── UserManagement.tsx # User management with role-based filtering.
+│   │   ├── ClientManagement.tsx # Client management (system admins only).
+│   │   ├── AdminAnalytics.tsx # Admin analytics (system admins only).
+│   │   └── ... # Other admin pages
+│   ├── Agents.tsx         # Agent management with role-based edit controls.
 │   ├── Analytics.tsx      # The main Analytics page.
+│   ├── Dashboard.tsx      # The main user dashboard page.
 │   ├── Login.tsx          # The user login page.
 │   └── Settings.tsx       # User settings and preferences page.
 ├──
@@ -80,6 +105,7 @@ src/
 └──
     └── utils/                 # Utility functions used across the application.
         ├── formatters.ts    # Functions for formatting dates, currency, etc.
+        ├── clientDataIsolation.ts # Role-based access control and data isolation utilities with client_admin support.
         ├── themeRecovery.ts # Theme error recovery and fallback mechanisms.
         ├── themeValidation.ts # Theme validation and sanitization utilities.
         ├── themePerformance.ts # Performance monitoring for theme operations.

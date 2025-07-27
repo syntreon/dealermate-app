@@ -9,9 +9,12 @@ import UserForm from '@/components/admin/users/UserForm';
 import UserFilters from '@/components/admin/users/UserFilters';
 import { AdminService } from '@/services/adminService';
 import { User, Client, UserFilters as UserFiltersType, CreateUserData, UpdateUserData } from '@/types/admin';
+import { useAuth } from '@/context/AuthContext';
+import { hasSystemWideAccess, getClientIdFilter } from '@/utils/clientDataIsolation';
 
 const UserManagement = () => {
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,9 +23,16 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  
+  // Check if current user has system-wide access
+  const hasSystemAccess = hasSystemWideAccess(currentUser);
+  const clientIdFilter = getClientIdFilter(currentUser);
+  
   const [filters, setFilters] = useState<UserFiltersType>({
     sortBy: 'full_name',
     sortDirection: 'asc',
+    // Auto-set client filter for client_admin users
+    client_id: clientIdFilter || undefined,
   });
 
   // Load users and clients on mount and when filters change
@@ -153,6 +163,7 @@ const UserManagement = () => {
         clients={clients}
         onFilterChange={handleFilterChange}
         onResetFilters={resetFilters}
+        hasSystemAccess={hasSystemAccess}
       />
 
       <UsersTable
@@ -172,6 +183,7 @@ const UserManagement = () => {
             onSubmit={handleFormSubmit}
             onCancel={() => setIsFormOpen(false)}
             isSubmitting={isSubmitting}
+            hasSystemAccess={hasSystemAccess}
           />
         </DialogContent>
       </Dialog>

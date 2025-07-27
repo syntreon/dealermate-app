@@ -29,6 +29,8 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import SystemHealthMonitoring from "./pages/admin/SystemHealthMonitoring";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminAudit from "./pages/admin/AdminAudit";
+import AdminIndex from "./pages/admin/AdminIndex";
+import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
 import AuthTest from "./test/AuthTest";
 
 const queryClient = new QueryClient();
@@ -59,17 +61,51 @@ const App = () => (
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>
-                  <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="clients" element={<ClientManagement />} />
-                  <Route path="clients/:id" element={<ClientDetails />} />
+                  <Route path="dashboard" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <AdminDashboard />
+                    </ProtectedAdminRoute>
+                  } />
+                  <Route path="clients" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <ClientManagement />
+                    </ProtectedAdminRoute>
+                  } />
+                  <Route path="clients/:id" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <ClientDetails />
+                    </ProtectedAdminRoute>
+                  } />
                   <Route path="users" element={<UserManagement />} />
-                  <Route path="analytics" element={<AdminAnalytics />} />
-                  <Route path="audit" element={<AdminAudit />} />
-                  <Route path="system-status" element={<AdminSystemStatus />} />
-                  <Route path="system-health" element={<SystemHealthMonitoring />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                  <Route index element={<AdminDashboard />} />
+                  <Route path="analytics" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <AdminAnalytics />
+                    </ProtectedAdminRoute>
+                  } />
+                  <Route path="audit" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <AdminAudit />
+                    </ProtectedAdminRoute>
+                  } />
+                  <Route path="system-status" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <AdminSystemStatus />
+                    </ProtectedAdminRoute>
+                  } />
+                  <Route path="system-health" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <SystemHealthMonitoring />
+                    </ProtectedAdminRoute>
+                  } />
+                  <Route path="settings" element={
+                    <ProtectedAdminRoute requireSystemAccess={true}>
+                      <AdminSettings />
+                    </ProtectedAdminRoute>
+                  } />
+                  <Route index element={<AdminIndex />} />
                 </Route>
+
+                
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>

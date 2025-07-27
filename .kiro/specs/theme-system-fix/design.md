@@ -2,76 +2,79 @@
 
 ## Overview
 
-The current theme system in Dealermate has several critical issues that need to be addressed systematically. The application uses next-themes for theme management with custom CSS variables, but there are inconsistencies in implementation, synchronization issues between theme selectors, and chart components that don't properly respect theme changes.
+The theme system in Dealermate has been redesigned for optimal performance and instant responsiveness. The new architecture prioritizes immediate UI updates with background data persistence, ensuring users experience zero lag when switching themes. The system uses a simplified approach with local storage for instant access and background synchronization for data persistence.
 
 ## Current State Analysis
 
-### Existing Implementation
-- **Theme Provider**: Uses `next-themes` with `data-theme` attribute
-- **CSS Variables**: Comprehensive theme variables defined in `src/index.css`
-- **Theme Selectors**: Two locations - TopBar toggle and Settings preferences
-- **Default Theme**: Currently set to "dark" in AdminLayout
-- **Chart Components**: Using Recharts with hardcoded colors in tooltips
+### Optimized Implementation
+- **Theme Provider**: Uses `next-themes` with instant theme switching
+- **CSS Variables**: Comprehensive theme variables with minimal transitions
+- **Theme Selectors**: Synchronized TopBar toggle and Settings preferences
+- **Default Theme**: System theme detection with instant fallback
+- **Chart Components**: Theme-aware tooltips with instant updates
+- **Background Sync**: Database persistence without UI blocking
 
-### Identified Issues
-1. **Default Theme Mismatch**: AdminLayout defaults to "dark" instead of "system"
-2. **Chart Tooltip Styling**: Hardcoded white backgrounds in chart tooltips
-3. **Theme Synchronization**: Potential race conditions between TopBar and Settings
-4. **System Theme Detection**: Not properly detecting initial system preference
-5. **Component Consistency**: Some components may not be using theme-aware classes
+### Performance Optimizations
+1. **Instant Theme Updates**: No await calls in theme switching logic
+2. **Local Storage Priority**: Immediate theme access from local storage
+3. **Background Database Sync**: Non-blocking persistence to database
+4. **Minimal CSS Transitions**: Only essential interactive element transitions
+5. **Single Initialization**: Theme initialized once per user session
 
 ## Architecture
 
-### Theme Management Flow
+### Instant Theme Management Flow
 ```
-System Theme Detection → User Preference Check → Theme Application → Component Updates
+User Action → Instant UI Update → Local Storage → Background Database Sync
 ```
 
 ### Core Components
-1. **ThemeProvider Wrapper**: Centralized theme configuration
-2. **Theme Detection Hook**: Enhanced system theme detection
-3. **Theme Synchronization Service**: Ensures consistency across selectors
-4. **Chart Theme Adapter**: Makes Recharts components theme-aware
+1. **ThemeInitProvider**: Single initialization point preventing conflicts
+2. **Instant Theme Service**: Synchronous theme updates with background persistence
+3. **Background Sync Manager**: Non-blocking database synchronization
+4. **Theme-Aware Components**: Instant theme switching without transitions
 
 ## Components and Interfaces
 
-### 1. Enhanced Theme Provider Configuration
+### 1. ThemeInitProvider (Single Initialization)
 
-**Location**: `src/layouts/AdminLayout.tsx` and `src/components/AppLayout.tsx`
+**Location**: `src/context/ThemeInitProvider.tsx`
 
-**Changes**:
-- Change default theme from "dark" to "system"
-- Add proper theme initialization
-- Ensure consistent provider configuration
+**Purpose**:
+- Prevent multiple theme initializations during navigation
+- Provide single source of truth for theme state
+- Handle user logout and login theme resets
+- Instant theme application without complex recovery
 
-### 2. Theme Detection and Initialization Hook
+### 2. Instant Theme Service
 
-**Location**: `src/hooks/use-theme-init.tsx`
+**Location**: `src/services/themeService.ts`
 
-**Enhancements**:
-- Improve system theme detection reliability
-- Add proper error handling
-- Ensure theme persistence works correctly
-- Handle edge cases for system theme changes
+**Capabilities**:
+- Synchronous theme updates for instant UI response
+- Background database synchronization via themeBackgroundSync
+- Event emission for component synchronization
+- Local storage integration for immediate persistence
 
-### 3. Chart Theme Integration
+### 3. Background Sync Manager
 
-**New Component**: `src/components/ui/themed-chart-tooltip.tsx`
+**Location**: `src/utils/themeBackgroundSync.ts`
 
-**Purpose**: 
-- Provide theme-aware tooltip components for Recharts
-- Ensure consistent styling across all chart components
-- Handle hover states and backgrounds properly
+**Features**:
+- Queue-based database synchronization
+- Local storage fallback for offline scenarios
+- Retry logic with exponential backoff
+- Batch processing for efficiency
 
-### 4. Theme Synchronization Service
+### 4. Theme-Aware Chart Components
 
-**New Service**: `src/services/themeService.ts`
+**Location**: `src/components/ui/themed-chart-tooltip.tsx`
 
-**Responsibilities**:
-- Coordinate theme changes between TopBar and Settings
-- Provide centralized theme state management
-- Handle theme persistence to database
-- Emit theme change events for component updates
+**Benefits**:
+- Instant theme switching for chart elements
+- Consistent styling across all visualizations
+- No transition delays for chart interactions
+- Theme-aware hover states and tooltips
 
 ## Data Models
 

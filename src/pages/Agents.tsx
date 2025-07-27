@@ -5,11 +5,12 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Clock, MessageSquare, Phone, Calendar, Globe, RefreshCw, Search, UserCheck, ArrowRightLeft, Zap, BarChart, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import { canViewSensitiveInfo, hasClientAdminAccess } from '@/utils/clientDataIsolation';
 import ClientSelector from '@/components/ClientSelector';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useSystemStatus } from '@/hooks/use-system-status';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 interface Agent {
@@ -26,6 +27,7 @@ interface Agent {
 
 const Agents: React.FC = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [selectedAgentName, setSelectedAgentName] = useState<string>('');
@@ -38,8 +40,10 @@ const Agents: React.FC = () => {
   // Use the system status hook to get real-time status updates
   const { status, statusMessage, isLoading } = useSystemStatus(clientId);
 
-  // Check if user can view all clients (admin)
+  // Check user permissions
   const canViewAllClients = canViewSensitiveInfo(user);
+  const canEditAgents = hasClientAdminAccess(user);
+  const showEditControls = canEditAgents && !isMobile;
 
   // Mock agents data with detailed information
   const agents: Agent[] = [
@@ -150,6 +154,12 @@ const Agents: React.FC = () => {
 
   // Handle agent toggle
   const handleAgentToggle = (agentId: string, currentStatus: 'active' | 'inactive') => {
+    // Check if user has permission to edit agents
+    if (!canEditAgents) {
+      toast.error('You need client admin privileges to modify agent settings.');
+      return;
+    }
+
     const agent = agents.find(a => a.id === agentId);
     
     // For the default agent, allow toggling
@@ -165,6 +175,12 @@ const Agents: React.FC = () => {
 
   // Handle turn on agent from details popup
   const handleTurnOnAgent = () => {
+    // Check if user has permission to edit agents
+    if (!canEditAgents) {
+      toast.error('You need client admin privileges to modify agent settings.');
+      return;
+    }
+
     setIsAgentDetailsOpen(false);
     setSelectedAgentName(selectedAgentDetails?.name || '');
     setIsUpgradeDialogOpen(true);
@@ -323,12 +339,14 @@ const Agents: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Switch
-                        checked={agent.status === 'active'}
-                        onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
-                      />
-                    </div>
+                    {showEditControls && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Switch
+                          checked={agent.status === 'active'}
+                          onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -363,12 +381,14 @@ const Agents: React.FC = () => {
                         <CardTitle className="text-lg">{agent.name}</CardTitle>
                       </div>
                     </div>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Switch
-                        checked={false}
-                        onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
-                      />
-                    </div>
+                    {showEditControls && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Switch
+                          checked={false}
+                          onCheckedChange={() => handleAgentToggle(agent.id, agent.status)}
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -429,7 +449,7 @@ const Agents: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
-                {selectedAgentDetails.status === 'inactive' && (
+                {selectedAgentDetails.status === 'inactive' && canEditAgents && (
                   <Button 
                     onClick={handleTurnOnAgent}
                     className="flex-1"

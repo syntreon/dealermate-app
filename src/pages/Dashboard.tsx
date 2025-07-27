@@ -28,7 +28,7 @@ const Dashboard = () => {
   const [loadingCalls, setLoadingCalls] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  
+
   // State for call details popup
   const [selectedCallId, setSelectedCallId] = useState<string | null>(null);
   const [selectedCallDetails, setSelectedCallDetails] = useState<unknown>(null);
@@ -50,7 +50,7 @@ const Dashboard = () => {
 
   // Get effective client ID for data fetching
   const effectiveClientId = getEffectiveClientId();
-  
+
   // Use our custom hook to fetch dashboard metrics
   const { metrics, isLoading, error } = useDashboardMetrics(effectiveClientId);
 
@@ -58,7 +58,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCallsData = async () => {
       if (!user) return;
-      
+
       setLoadingCalls(true);
       try {
         // Get effective client ID for data fetching
@@ -159,11 +159,11 @@ const Dashboard = () => {
   // Handle opening call details popup
   const handleOpenCallDetails = async (callId: string) => {
     if (!callId) return;
-    
+
     setSelectedCallId(callId);
     setLoadingCallDetails(true);
     setIsCallDetailsOpen(true);
-    
+
     try {
       // Fetch the full call details
       const callDetails = await callLogsService.getCallLogById(callId);
@@ -175,7 +175,7 @@ const Dashboard = () => {
       setLoadingCallDetails(false);
     }
   };
-  
+
   // Handle closing call details popup
   const handleCloseCallDetails = () => {
     setIsCallDetailsOpen(false);
@@ -256,10 +256,10 @@ const Dashboard = () => {
       <CallActivityTimeline clientId={effectiveClientId} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <PotentialEarnings 
-          totalCalls={metrics?.totalCalls || 0} 
-          totalLeads={metrics?.totalLeads || 0} 
-          isLoading={isLoading} 
+        <PotentialEarnings
+          totalCalls={metrics?.totalCalls || 0}
+          totalLeads={metrics?.totalLeads || 0}
+          isLoading={isLoading}
         />
 
         <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
