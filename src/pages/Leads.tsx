@@ -109,35 +109,22 @@ const Leads: React.FC = () => {
   // No need to adapt leads anymore since LeadsTable now accepts Supabase lead format directly
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Responsive header layout */}
-      <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-3xl font-bold text-foreground">Leads</h1>
-          </div>
-          <p className="text-muted-foreground">Manage and track leads generated from calls</p>
+    <div className="space-y-4 pb-8">
+      {/* Mobile-first compact header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Leads</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage and track leads generated from calls</p>
         </div>
         
-        <div className="flex gap-2 self-start">
-          {/* Client selector for admin users */}
-          {user && canViewSensitiveInfo(user) && (
-            <ClientSelector
-              selectedClientId={selectedClientId}
-              onClientChange={(clientId) => {
-                setSelectedClientId(clientId);
-                refetch({ clientId });
-              }}
-            />
-          )}
+        <div className="flex gap-2">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => setIsExportOpen(true)}
-            className="hidden sm:inline-flex"
           >
-            <Download className="h-4 w-4 mr-2" /> 
-            Export
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:ml-2 sm:inline">Export</span>
           </Button>
           <Button 
             variant="outline" 
@@ -145,20 +132,31 @@ const Leads: React.FC = () => {
             onClick={forceRefresh}
             disabled={loading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> 
-            Refresh
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:ml-2 sm:inline">Refresh</span>
           </Button>
         </div>
       </div>
 
-      <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-semibold">Leads</CardTitle>
-        </CardHeader>
+      {/* Client selector for admin users - separate row on mobile */}
+      {user && canViewSensitiveInfo(user) && (
+        <div className="flex justify-end">
+          <ClientSelector
+            selectedClientId={selectedClientId}
+            onClientChange={(clientId) => {
+              setSelectedClientId(clientId);
+              refetch({ clientId });
+            }}
+            className="w-full sm:w-auto max-w-xs"
+          />
+        </div>
+      )}
+
+      <Card className="bg-card border-border shadow-sm">
         <CardContent className="p-0">
           {error ? (
-            <div className="bg-destructive/10 text-destructive p-6 m-4 rounded-md">
-              <p>Error loading leads: {typeof error === 'string' ? error : error.message || 'Unknown error'}</p>
+            <div className="bg-destructive/10 text-destructive p-4 m-4 rounded-md">
+              <p className="text-sm">Error loading leads: {typeof error === 'string' ? error : error.message || 'Unknown error'}</p>
             </div>
           ) : (
             <LeadsTable 

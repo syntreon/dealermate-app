@@ -337,7 +337,7 @@ const AdminDashboard = () => {
 
   return (
     <PartialDataProvider staleThreshold={5}>
-      <div className="space-y-6 pb-8">
+      <div className="space-y-4 pb-8">
       {/* Header Component */}
       <DashboardHeader 
         lastUpdated={lastUpdated}

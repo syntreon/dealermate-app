@@ -25,44 +25,41 @@ const Logs: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Responsive header layout */}
-      <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-3xl font-bold text-foreground">Call Logs</h1>
-          </div>
-          <p className="text-muted-foreground">View and manage your call and appointment data</p>
+    <div className="space-y-4 pb-8">
+      {/* Mobile-first compact header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Call Logs</h1>
+          <p className="text-sm text-muted-foreground mt-1">View and manage your call and appointment data</p>
         </div>
         
-        <div className="flex gap-2 self-start">
-          {/* Client selector for admin users */}
-          {canViewSensitiveInfo(user) && (
-            <ClientSelector
-              selectedClientId={selectedClientId}
-              onClientChange={handleClientChange}
-            />
-          )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={forceRefresh}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> 
-            Refresh
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={forceRefresh}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:ml-2 sm:inline">Refresh</span>
+        </Button>
       </div>
 
-      <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-semibold">Call Logs</CardTitle>
-        </CardHeader>
+      {/* Client selector for admin users - separate row on mobile */}
+      {canViewSensitiveInfo(user) && (
+        <div className="flex justify-end">
+          <ClientSelector
+            selectedClientId={selectedClientId}
+            onClientChange={handleClientChange}
+            className="w-full sm:w-auto max-w-xs"
+          />
+        </div>
+      )}
+
+      <Card className="bg-card border-border shadow-sm">
         <CardContent className="p-0">
           {error ? (
-            <div className="bg-destructive/10 text-destructive p-6 m-4 rounded-md">
-              <p>Error loading call logs: {typeof error === 'string' ? error : error.message || 'Unknown error'}</p>
+            <div className="bg-destructive/10 text-destructive p-4 m-4 rounded-md">
+              <p className="text-sm">Error loading call logs: {typeof error === 'string' ? error : error.message || 'Unknown error'}</p>
             </div>
           ) : (
             <CallLogsTable 

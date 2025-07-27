@@ -326,15 +326,15 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
       {/* Call Volume Heatmap */}
       {data && <CallVolumeHeatmap data={heatmapData} dateRange={formatDateRange} />}
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-full">
         {/* Call Volume Over Time */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Call Volume Over Time</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
+          <CardContent className="w-full max-w-full overflow-hidden">
+            <div className="h-[300px] w-full overflow-hidden">
               {data.callVolume && data.callVolume.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data.callVolume}>

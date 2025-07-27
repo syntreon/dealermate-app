@@ -162,7 +162,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
   const scoreColors = ['#10b981', '#22c55e', '#84cc16', '#eab308', '#f59e0b', '#ef4444'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-hidden">
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -302,14 +302,15 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-full">
         {/* Quality Score Trends */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-card-foreground">Quality Score Trends</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="w-full max-w-full overflow-hidden">
+            <div className="w-full h-[300px] overflow-hidden">
+              <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.qualityTrends}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis 
@@ -335,17 +336,19 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
                   id="quality-score-line"
                 />
               </LineChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         {/* Score Distribution */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-card-foreground">Score Distribution</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="w-full max-w-full overflow-hidden">
+            <div className="w-full h-[300px] overflow-hidden">
+              <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.scoreDistribution}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis 
@@ -362,17 +365,19 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         {/* Sentiment Trends */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-card-foreground">Sentiment Trends</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="w-full max-w-full overflow-hidden">
+            <div className="w-full h-[300px] overflow-hidden">
+              <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.sentimentTrends}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis 
@@ -410,17 +415,18 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
                   id="sentiment-negative-line"
                 />
               </LineChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         {/* Reasons for Human Review */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-card-foreground">Reasons for Human Review</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4 h-[300px] overflow-y-auto pr-2">
+          <CardContent className="w-full max-w-full overflow-hidden">
+            <div className="space-y-4 h-[300px] overflow-y-auto pr-2 w-full max-w-full">
               {data.reviewReasons && data.reviewReasons.length > 0 ? (
                 data.reviewReasons.map((item, index) => (
                   <div key={`reason-${index}-${item.count}`} className="flex items-start justify-between text-sm">

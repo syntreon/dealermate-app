@@ -232,10 +232,10 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   return (
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden mx-auto">
       {/* Table filters */}
-      <div className="p-4 md:p-6 border-b border-border bg-secondary/30">
-        <div className="flex flex-col md:flex-row md:flex-wrap gap-4 items-center">
+      <div className="p-3 border-b border-border bg-secondary/30">
+        <div className="flex flex-col gap-2">
           {/* Search Input */}
-          <div className="relative flex-grow w-full md:w-auto md:max-w-xs">
+          <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-foreground/50" />
             </div>
@@ -248,51 +248,48 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="relative w-full md:w-auto md:min-w-[180px]">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-foreground/50" />
+          {/* Filter row */}
+          <div className="flex gap-2">
+            {/* Status Filter */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Filter className="h-4 w-4 text-foreground/50" />
+              </div>
+              <select
+                className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as SupabaseLead['status'] | 'all')}
+              >
+                <option value="all">All Statuses</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="qualified">Qualified</option>
+                <option value="proposal">Proposal</option>
+                <option value="closed_won">Closed (Won)</option>
+                <option value="closed_lost">Closed (Lost)</option>
+              </select>
             </div>
-            <select
-              className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value as SupabaseLead['status'] | 'all')}
-            >
-              <option value="all">All Statuses</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="qualified">Qualified</option>
-              <option value="proposal">Proposal</option>
-              <option value="closed_won">Closed (Won)</option>
-              <option value="closed_lost">Closed (Lost)</option>
-            </select>
-          </div>
 
-          {/* Source Filter */}
-          <div className="relative w-full md:w-auto md:min-w-[180px]">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-foreground/50" />
+            {/* Source Filter */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Filter className="h-4 w-4 text-foreground/50" />
+              </div>
+              <select
+                className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+                value={selectedSource}
+                onChange={(e) => setSelectedSource(e.target.value as SupabaseLead['source'] | 'all')}
+              >
+                <option value="all">All Sources</option>
+                <option value="website">Website</option>
+                <option value="direct_call">Direct Call</option>
+                <option value="referral">Referral</option>
+                <option value="social_media">Social Media</option>
+                <option value="ai_agent">AI Agent</option>
+                <option value="other">Other</option>
+              </select>
             </div>
-            <select
-              className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
-              value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value as SupabaseLead['source'] | 'all')}
-            >
-              <option value="all">All Sources</option>
-              <option value="website">Website</option>
-              <option value="direct_call">Direct Call</option>
-              <option value="referral">Referral</option>
-              <option value="social_media">Social Media</option>
-              <option value="ai_agent">AI Agent</option>
-              <option value="other">Other</option>
-            </select>
           </div>
-
-          {/* Export Button */}
-          <Button variant="outline" size="sm" onClick={onExportLeads} className="w-full md:w-auto hidden md:inline-flex">
-            <Download className="h-4 w-4 mr-2" />
-            Export Leads
-          </Button>
         </div>
       </div>
       
@@ -301,32 +298,32 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <SortableHeader field="full_name" label="Name" className="w-1/4" />
-              <SortableHeader field="phone_number" label="Contact" className="w-1/5" />
-              <TableHead className="px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider w-1/6">Inquiry Type</TableHead>
-              <SortableHeader field="status" label="Status" className="w-1/6" />
-              <SortableHeader field="created_at" label="Created" className="w-1/6" />
-              <TableHead className="text-right w-[80px]">Actions</TableHead>
+              <SortableHeader field="full_name" label="Name" className="px-3 sm:px-4 py-3 text-xs" />
+              <SortableHeader field="phone_number" label="Contact" className="px-3 sm:px-4 py-3 text-xs hidden sm:table-cell" />
+              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell">Inquiry Type</TableHead>
+              <SortableHeader field="status" label="Status" className="px-3 sm:px-4 py-3 text-xs" />
+              <SortableHeader field="created_at" label="Created" className="px-3 sm:px-4 py-3 text-xs hidden lg:table-cell" />
+              <TableHead className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <p className="text-foreground/70 text-sm font-medium">Loading leads...</p>
+                <TableCell colSpan={7} className="h-20 sm:h-24 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
+                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary"></div>
+                    <p className="text-foreground/70 text-xs sm:text-sm font-medium">Loading leads...</p>
                   </div>
                 </TableCell>
               </TableRow>
             ) : filteredAndSortedLeads.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <User className="h-10 w-10 text-foreground/30" />
+                <TableCell colSpan={7} className="h-20 sm:h-24 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
+                    <User className="h-8 w-8 sm:h-10 sm:w-10 text-foreground/30" />
                     <div className="space-y-1">
-                      <p className="text-foreground/70 font-medium">No leads found</p>
-                      <p className="text-foreground/50 text-sm">Try adjusting your filters or search term</p>
+                      <p className="text-foreground/70 font-medium text-sm sm:text-base">No leads found</p>
+                      <p className="text-foreground/50 text-xs sm:text-sm">Try adjusting your filters or search term</p>
                     </div>
                   </div>
                 </TableCell>
@@ -345,53 +342,75 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   }}
                   title="Click to view lead details"
                 >
-                  <TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-4 w-4 text-primary" />
+                      <div className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                       </div>
-                      <div className="ml-3 md:ml-4">
-                        <div className="text-sm font-medium text-foreground">
+                      <div className="ml-2 sm:ml-3 md:ml-4 min-w-0 flex-1">
+                        <div className="text-xs sm:text-sm font-medium text-foreground truncate">
                           {lead.full_name}
+                        </div>
+                        {/* Mobile: Show phone number below name */}
+                        <div className="sm:hidden text-xs text-foreground/60 mt-0.5 flex items-center">
+                          <Phone className="h-3 w-3 mr-1" />
+                          <span className="truncate">{lead.phone_number}</span>
+                        </div>
+                        {/* Mobile: Show inquiry type below */}
+                        <div className="md:hidden mt-1">
+                          {lead.call_id && inquiryTypes.get(lead.call_id) ? (
+                            <InquiryTypeBadge inquiryType={inquiryTypes.get(lead.call_id)!} />
+                          ) : (
+                            <span className="text-xs text-foreground/50">—</span>
+                          )}
                         </div>
                         {/* For admin view: show client name */}
                         {user && canViewSensitiveInfo(user) ? (
                           <div className="text-xs text-foreground/60 mt-0.5 flex items-center">
                             <User className="h-3 w-3 mr-1" />
-                            <span>Client: {lead.client_name || 'Unknown'}</span>
+                            <span className="truncate">Client: {lead.client_name || 'Unknown'}</span>
                           </div>
                         ) : (
                           /* For client view: show call time instead of call ID */
                           lead.call_time && (
                             <div className="text-xs text-primary/80 mt-0.5 flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
-                              <span>{lead.call_time}</span>
+                              <span className="truncate">{lead.call_time}</span>
                             </div>
                           )
                         )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 text-foreground/50 mr-2" />
-                      <span className="text-sm text-foreground">
+                      <span className="text-sm text-foreground truncate">
                         {lead.phone_number}
                       </span>
                     </div>
                     {/* Email hidden as requested for now */}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
                     {lead.call_id && inquiryTypes.get(lead.call_id) ? (
                       <InquiryTypeBadge inquiryType={inquiryTypes.get(lead.call_id)!} />
                     ) : (
                       <span className="text-xs text-foreground/50">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4">
                     {getStatusBadge(lead.status)}
+                    {/* Mobile: Show created date below status */}
+                    <div className="lg:hidden mt-1 text-xs text-foreground/60 flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      <span>
+                        {lead.created_at && !isNaN(new Date(lead.created_at).getTime()) 
+                          ? format(new Date(lead.created_at), 'MMM d, yyyy')
+                          : 'Invalid date'}
+                      </span>
+                    </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden lg:table-cell">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-foreground/50 mr-2" />
                       <span className="text-sm text-foreground">
@@ -401,11 +420,11 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right dropdown-menu-container">
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 text-right dropdown-menu-container">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                          <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                           <span className="sr-only">Open menu</span>
                         </Button>
                       </DropdownMenuTrigger>
@@ -470,14 +489,14 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
       </div>
       
       {/* Pagination section */}
-      <div className="px-4 md:px-5 py-4 md:py-5 bg-secondary/30 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="text-sm text-foreground/70">
+      <div className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 md:py-5 bg-secondary/30 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
+        <div className="text-xs sm:text-sm text-foreground/70">
           Showing {filteredAndSortedLeads.length} of {leads.length} leads
         </div>
         
         {/* Placeholder for future pagination controls */}
         {filteredAndSortedLeads.length > 10 && (
-          <div className="flex items-center space-x-2 text-sm">
+          <div className="flex items-center space-x-2 text-xs sm:text-sm">
             <span className="text-foreground/70">Page 1</span>
           </div>
         )}

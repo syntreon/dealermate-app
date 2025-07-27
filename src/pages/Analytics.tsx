@@ -59,50 +59,34 @@ const Analytics = () => {
   };
 
   return (
-    <div className="space-y-8 pb-8">
-      <div className="flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center">
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-            <h1 className="text-3xl font-bold text-card-foreground mb-2 sm:mb-0">Analytics</h1>
-          </div>
-          <p className="text-muted-foreground">Detailed analytics and insights for your call system.</p>
-        </div>
-        
-        {/* Filters section */}
-        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-          {/* Client selector for admin users */}
-          {canViewAllClients && (
-            <ClientSelector
-              selectedClientId={selectedClientId}
-              onClientChange={handleClientChange}
-              className="w-full sm:w-auto"
-            />
-          )}
-          
-          {/* Date filter is hidden on smallest screens and shown as a dropdown on larger screens */}
-          <DateRangeFilter
-            className={cn("mt-2 sm:mt-0", isMobile ? "hidden sm:block" : "")}
-            onRangeChange={useCallback((start, end) => {
-              setDateFilters({ start: start || undefined, end: end || undefined });
-            }, [])}
-          />
+    <div className="space-y-4 pb-8">
+      {/* Mobile-first compact header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          <p className="text-sm text-muted-foreground mt-1">Detailed analytics and insights for your call system</p>
         </div>
       </div>
       
-      {/* Mobile-only date filter button that opens a bottom sheet */}
-      {isMobile && (
-        <div className="mb-4">
-          <button 
-            className="w-full py-2 px-4 bg-muted/50 rounded-lg border border-border flex items-center justify-center gap-2 text-sm font-medium text-foreground"
-            onClick={() => {
-              // This would open a date picker sheet in a real implementation
-              alert("Date filter would open here");
-            }}
-          >
-            <span>Filter by Date</span>
-          </button>
-        </div>
-      )}
+      {/* Filters section - separate row on mobile */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+        {/* Client selector for admin users */}
+        {canViewAllClients && (
+          <ClientSelector
+            selectedClientId={selectedClientId}
+            onClientChange={handleClientChange}
+            className="w-full sm:w-auto max-w-xs"
+          />
+        )}
+        
+        {/* Date filter */}
+        <DateRangeFilter
+          className="w-full sm:w-auto max-w-xs"
+          onRangeChange={useCallback((start, end) => {
+            setDateFilters({ start: start || undefined, end: end || undefined });
+          }, [])}
+        />
+      </div>
 
       <Tabs defaultValue="calls" className="w-full" onValueChange={setActiveTab}>
         {/* Mobile-optimized tabs with horizontal scrolling */}

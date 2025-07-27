@@ -82,7 +82,7 @@ export default function SimpleAIAnalytics({ startDate, endDate, clientId }: Simp
   if (!data) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-hidden">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -236,14 +236,15 @@ function ModelAnalysisSection({ models, title }: ModelAnalysisSectionProps) {
       </Card>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-full">
         {/* Error Rate vs Quality Chart */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Error Rate vs Quality Score</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="w-full max-w-full overflow-hidden">
+            <div className="w-full h-[300px] overflow-hidden">
+              <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
@@ -252,17 +253,19 @@ function ModelAnalysisSection({ models, title }: ModelAnalysisSectionProps) {
                 <Bar dataKey="errorRate" fill="#FF8042" name="Error Rate %" />
                 <Bar dataKey="qualityScore" fill="#0088FE" name="Quality Score" />
               </BarChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         {/* Cost Distribution */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Cost Distribution by Model</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="w-full max-w-full overflow-hidden">
+            <div className="w-full h-[300px] overflow-hidden">
+              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={costData}
@@ -280,7 +283,8 @@ function ModelAnalysisSection({ models, title }: ModelAnalysisSectionProps) {
                 </Pie>
                 <Tooltip />
               </PieChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
