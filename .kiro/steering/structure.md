@@ -58,12 +58,17 @@ src/
 │   │   └── SimpleAIAnalytics.tsx # AI model performance dashboard using real data.
 │   ├── calls/             # Components related to call details and evaluation.
 │   ├── common/            # Generic, shared components (buttons, inputs, etc.).
+│   ├── leads/             # Components for lead management.
+│   │   ├── LeadsTable.tsx # Mobile-responsive leads table with filtering and sorting.
+│   │   ├── LeadDetailsView.tsx # Lead details modal/drawer component.
+│   │   └── LeadExportDialog.tsx # Lead export functionality dialog.
 │   ├── settings/          # Settings-related components.
 │   │   ├── BusinessSettings.tsx # Business info editing with audit logging.
 │   │   ├── AgentSettings.tsx # Agent configuration with mobile restrictions.
 │   │   └── ... # Other settings components
 │   ├── ui/                # Base UI elements from shadcn/ui.
 │   │   └── themed-chart-tooltip.tsx # Theme-aware chart tooltip components.
+│   ├── CallLogsTable.tsx  # Mobile-responsive call logs table with advanced filtering.
 │   └── AppSidebar.tsx     # Main application sidebar with role-based navigation.
 ├──
 ├── context/               # React Context providers for global state management.
@@ -77,19 +82,21 @@ src/
 │   └── useOptimizedTheme.ts # Performance-optimized theme utilities and calculations.
 ├──
 ├── layouts/               # Components that define the structure of pages.
-│   └── AdminLayout.tsx    # Admin panel layout with role-based access control.
+│   └── AdminLayout.tsx    # Admin panel layout with role-based access control - Mobile responsive with overflow handling.
 ├──
 ├── pages/                 # Top-level components for each application route/page.
 │   ├── admin/             # Admin panel pages with role-based access control.
-│   │   ├── AdminDashboard.tsx # Main admin dashboard (system admins only).
+│   │   ├── AdminDashboard.tsx # Main admin dashboard (system admins only) - Mobile responsive with scrollable tabs.
 │   │   ├── AdminIndex.tsx # Admin panel routing logic based on user role.
 │   │   ├── UserManagement.tsx # User management with role-based filtering.
 │   │   ├── ClientManagement.tsx # Client management (system admins only).
 │   │   ├── AdminAnalytics.tsx # Admin analytics (system admins only).
 │   │   └── ... # Other admin pages
 │   ├── Agents.tsx         # Agent management with role-based edit controls.
-│   ├── Analytics.tsx      # The main Analytics page.
+│   ├── Analytics.tsx      # The main Analytics page - Mobile responsive with horizontal scrolling tabs.
 │   ├── Dashboard.tsx      # The main user dashboard page.
+│   ├── Leads.tsx          # Lead management page - Mobile responsive with stacked button layout.
+│   ├── Logs.tsx           # Call logs page - Mobile responsive with optimized table layout.
 │   ├── Login.tsx          # The user login page.
 │   └── Settings.tsx       # User settings and preferences page.
 ├──
