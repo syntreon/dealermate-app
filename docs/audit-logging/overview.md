@@ -10,6 +10,16 @@ The audit logging system provides a comprehensive record of all changes made to 
 4. **Forensics**: Enables investigation of suspicious activities
 5. **Data Recovery**: Provides historical data that can be used for recovery
 
+## Access Control
+
+Audit logs contain sensitive information and are protected by Row Level Security (RLS) policies:
+
+1. **Admin-Only Access**: Only users with admin privileges can view audit logs
+2. **Service Role Required**: Accessing audit logs requires the Supabase service role key
+3. **RLS Bypass**: The `adminSupabase` client must be used to bypass RLS restrictions
+
+> **Important**: For detailed information on audit log access control and implementation, see [access-control.md](./access-control.md)
+
 ## System Architecture
 
 The audit logging system uses a hybrid approach combining database-level and application-level components:

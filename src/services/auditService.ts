@@ -225,10 +225,17 @@ export const AuditService = {
     useOptimizedQuery: boolean = true
   ): Promise<PaginatedResponse<AuditLog>> => {
     try {
+      console.log('AuditService.getAuditLogs called with:', { filters, pagination, useOptimizedQuery });
+      
       // Use optimized query approach for large datasets
       // Using type assertion for audit_logs table since it might not be in the generated types
-      // Use type assertion for audit_logs table since it's not in the generated types
-      let query = supabase
+      // Use admin client to bypass RLS for audit logs
+      if (!adminSupabase) {
+        console.error('Admin Supabase client not available. Check if VITE_SUPABASE_SERVICE_ROLE_KEY is set.');
+        throw new Error('Admin access required to view audit logs');
+      }
+      
+      let query = adminSupabase
         .from('audit_logs' as any)
         .select(`
           *,
@@ -236,56 +243,70 @@ export const AuditService = {
           clients(id, name)
         `, { count: 'exact' } as any);
       
+      console.log('Initial query created for table: audit_logs');
+      
       // Set higher timeout for large queries
       if (useOptimizedQuery) {
         // Using any type assertion because options() is available in newer Supabase versions
         // but might not be in the generated types
         try {
+          console.log('Applying query optimization options');
           (query as any).options?.({ 
             count: 'planned',  // Use planned count for better performance
             head: false        // Don't fetch headers separately
           });
         } catch (e) {
-          console.warn('Query optimization not supported in this Supabase version');
+          console.warn('Query optimization not supported in this Supabase version', e);
         }
       }
       
       // Apply filters
       if (filters) {
+        console.log('Applying filters to query:', filters);
+        
         if (filters.user_id) {
+          console.log('Filtering by user_id:', filters.user_id);
           query = query.eq('user_id', filters.user_id);
         }
 
         if (filters.client_id) {
+          console.log('Filtering by client_id:', filters.client_id);
           query = query.eq('client_id', filters.client_id);
         }
 
         if (filters.action && filters.action !== 'all') {
+          console.log('Filtering by action:', filters.action);
           query = query.eq('action', filters.action);
         }
 
         if (filters.table_name) {
+          console.log('Filtering by table_name:', filters.table_name);
           query = query.eq('table_name', filters.table_name);
         }
 
         if (filters.dateRange) {
+          console.log('Filtering by dateRange:', filters.dateRange);
           query = query
             .gte('created_at', filters.dateRange.start.toISOString())
             .lte('created_at', filters.dateRange.end.toISOString());
         }
 
         if (filters.search) {
+          console.log('Filtering by search term:', filters.search);
           query = query.or(`action.ilike.%${filters.search}%,table_name.ilike.%${filters.search}%`);
         }
 
         // Apply sorting
         if (filters.sortBy) {
           const ascending = filters.sortDirection !== 'desc';
+          console.log('Applying sort:', { field: filters.sortBy, ascending });
           query = query.order(filters.sortBy, { ascending });
         } else {
+          console.log('Applying default sort: created_at desc');
           query = query.order('created_at', { ascending: false });
         }
       } else {
+        console.log('No filters provided, applying default sort');
         query = query.order('created_at', { ascending: false });
       }
 
@@ -293,17 +314,33 @@ export const AuditService = {
       if (pagination) {
         const from = (pagination.page - 1) * pagination.limit;
         const to = from + pagination.limit - 1;
+        console.log('Applying pagination:', { from, to, page: pagination.page, limit: pagination.limit });
         query = query.range(from, to);
       }
 
+      console.log('Executing query...');
       const { data, error, count } = await query;
+      console.log('Query executed, results:', { dataLength: data?.length, error, count });
 
       if (error) {
+        console.error('Database error occurred:', error);
         throw handleDatabaseError(error);
       }
 
       // Transform data and add user/client info
+      console.log('Transforming data rows to AuditLog objects');
       const auditLogs = (data || []).map(row => {
+        // Log the raw row data for debugging
+        console.log('Processing row:', { 
+          id: row.id, 
+          action: row.action, 
+          table_name: row.table_name,
+          user_id: row.user_id,
+          client_id: row.client_id,
+          hasUserInfo: !!(row as any).users,
+          hasClientInfo: !!(row as any).clients
+        });
+        
         const log = transformAuditLog(row);
         
         // Add user info
@@ -332,6 +369,14 @@ export const AuditService = {
       const total = count || 0;
       const limit = pagination?.limit || total;
       const page = pagination?.page || 1;
+
+      console.log('Returning paginated response:', { 
+        dataLength: auditLogs.length, 
+        total, 
+        page, 
+        limit, 
+        totalPages: Math.ceil(total / limit) 
+      });
 
       return {
         data: auditLogs,

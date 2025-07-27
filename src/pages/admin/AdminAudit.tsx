@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,7 @@ const AdminAudit = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const { toast } = useToast();
@@ -65,23 +66,26 @@ const AdminAudit = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState<AuditAction | 'all'>('all');
   const [selectedTable, setSelectedTable] = useState<string>('all');
+  const [isExporting, setIsExporting] = useState(false);
 
-  const loadAuditLogs = async (page = 1) => {
+  const loadAuditLogs = useCallback(async (page: number, size: number = pageSize, customFilters = filters) => {
     try {
       setIsLoading(true);
+      console.log('Fetching audit logs with filters:', customFilters);
+      console.log('Pagination:', { page, limit: size });
       
-      const response = await AuditService.getAuditLogs({
-        ...filters,
-        search: searchTerm || undefined,
-        action: selectedAction !== 'all' ? selectedAction : undefined,
-        table_name: selectedTable !== 'all' ? selectedTable : undefined
-      }, {
-        page,
-        limit: 20
-      });
+      const result = await AuditService.getAuditLogs(
+        customFilters,
+        { page, limit: size },
+        true // Use optimized query
+      );
 
-      setAuditLogs(response.data);
-      setTotalCount(response.total);
+      console.log('Audit logs result:', result);
+      console.log('Data received:', result.data);
+      console.log('Total count:', result.total);
+      
+      setAuditLogs(result.data);
+      setTotalCount(result.total);
       setCurrentPage(page);
     } catch (error) {
       console.error('Failed to load audit logs:', error);
@@ -93,54 +97,62 @@ const AdminAudit = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters, pageSize, toast]);
 
   const handleSearch = () => {
+    // Update filters with current search values
+    const updatedFilters: AuditFilters = {
+      ...filters,
+      search: searchTerm || undefined,
+      action: selectedAction !== 'all' ? selectedAction : undefined,
+      table_name: selectedTable !== 'all' ? selectedTable : undefined
+    };
+    
+    console.log('Applying filters:', updatedFilters);
+    setFilters(updatedFilters);
     setCurrentPage(1);
-    loadAuditLogs(1);
+    loadAuditLogs(1, pageSize, updatedFilters);
   };
 
   const handleExport = async () => {
     try {
-      const exportData = await AuditService.exportAuditLogs({
-        ...filters,
-        search: searchTerm || undefined,
-        action: selectedAction !== 'all' ? selectedAction : undefined,
-        table_name: selectedTable !== 'all' ? selectedTable : undefined
-      }, 'csv');
-
-      // Create and download CSV file
-      const csvContent = [
-        ['Timestamp', 'User', 'Action', 'Table', 'Client', 'Summary'],
-        ...auditLogs.map(log => [
-          log.created_at.toISOString(),
-          log.user?.full_name || 'System',
-          log.action,
-          log.table_name,
-          log.client?.name || '',
-          log.summary || ''
-        ])
-      ].map(row => row.join(',')).join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+      setIsExporting(true);
+      
+      // Show warning for large exports
+      if (totalCount > 10000) {
+        toast({
+          title: "Large Export",
+          description: `Exporting ${totalCount} records may take some time. Only the first 10,000 records will be included.`,
+          variant: "default",
+        });
+      }
+      
+      const result = await AuditService.exportAuditLogs(filters);
+      
+      // Create and download file
+      const blob = new Blob([result.data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = result.filename;
+      document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-
+      document.body.removeChild(a);
+      
       toast({
         title: "Export Complete",
-        description: "Audit logs have been exported to CSV.",
+        description: `Audit logs exported to ${result.filename}`,
       });
     } catch (error) {
-      console.error('Failed to export audit logs:', error);
+      console.error('Export error:', error);
       toast({
         title: "Export Failed",
-        description: "Failed to export audit logs. Please try again.",
+        description: "There was an error exporting the audit logs.",
         variant: "destructive",
       });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -183,7 +195,15 @@ const AdminAudit = () => {
   };
 
   useEffect(() => {
-    loadAuditLogs();
+    // Initial load of audit logs
+    console.log('Initial load of audit logs');
+    // Force a load with empty filters to ensure we get all logs on first load
+    const initialFilters: AuditFilters = {
+      sortBy: 'created_at',
+      sortDirection: 'desc'
+    };
+    loadAuditLogs(1, pageSize, initialFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -287,7 +307,7 @@ const AdminAudit = () => {
         <CardHeader>
           <CardTitle>Audit Trail</CardTitle>
           <CardDescription>
-            {totalCount} total entries • Showing page {currentPage}
+            {totalCount} total entries • Page {currentPage} of {Math.max(1, Math.ceil(totalCount / pageSize))}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -336,7 +356,7 @@ const AdminAudit = () => {
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">
-                            {log.user?.full_name || 'System'}
+                            {log.user_id ? (log.user?.full_name || log.user_id) : 'System'}
                           </span>
                         </div>
                       </TableCell>
@@ -382,9 +402,30 @@ const AdminAudit = () => {
                 </TableBody>
               </Table>
 
-              {/* Pagination */}
-              {totalCount > 20 && (
-                <div className="mt-6 flex justify-center">
+              {/* Pagination Controls */}
+              {totalCount > pageSize && (
+                <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                  {/* Page Size Selector */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Rows per page:</span>
+                    <Select value={pageSize.toString()} onValueChange={(value) => {
+                      const newSize = parseInt(value);
+                      setPageSize(newSize);
+                      loadAuditLogs(1, newSize);
+                    }}>
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Pagination */}
                   <Pagination>
                     <PaginationContent>
                       {/* Previous page button */}
@@ -396,7 +437,7 @@ const AdminAudit = () => {
                       </PaginationItem>
                       
                       {/* First page and ellipsis if needed */}
-                      {currentPage > 3 && Math.ceil(totalCount / 20) > 5 && (
+                      {currentPage > 3 && Math.ceil(totalCount / pageSize) > 5 && (
                         <>
                           <PaginationItem>
                             <PaginationLink onClick={() => loadAuditLogs(1)}>1</PaginationLink>
@@ -409,7 +450,7 @@ const AdminAudit = () => {
                       
                       {/* Page numbers */}
                       {(() => {
-                        const totalPages = Math.ceil(totalCount / 20);
+                        const totalPages = Math.ceil(totalCount / pageSize);
                         let pageNumbers = [];
                         
                         if (totalPages <= 5) {
@@ -439,14 +480,14 @@ const AdminAudit = () => {
                       })()}
                       
                       {/* Last page and ellipsis if needed */}
-                      {currentPage < Math.ceil(totalCount / 20) - 2 && Math.ceil(totalCount / 20) > 5 && (
+                      {currentPage < Math.ceil(totalCount / pageSize) - 2 && Math.ceil(totalCount / pageSize) > 5 && (
                         <>
                           <PaginationItem>
                             <PaginationEllipsis />
                           </PaginationItem>
                           <PaginationItem>
-                            <PaginationLink onClick={() => loadAuditLogs(Math.ceil(totalCount / 20))}>
-                              {Math.ceil(totalCount / 20)}
+                            <PaginationLink onClick={() => loadAuditLogs(Math.ceil(totalCount / pageSize))}>
+                              {Math.ceil(totalCount / pageSize)}
                             </PaginationLink>
                           </PaginationItem>
                         </>
@@ -455,12 +496,17 @@ const AdminAudit = () => {
                       {/* Next page button */}
                       <PaginationItem>
                         <PaginationNext 
-                          onClick={() => currentPage < Math.ceil(totalCount / 20) && loadAuditLogs(currentPage + 1)}
-                          className={currentPage >= Math.ceil(totalCount / 20) ? 'pointer-events-none opacity-50' : ''}
+                          onClick={() => currentPage < Math.ceil(totalCount / pageSize) && loadAuditLogs(currentPage + 1)}
+                          className={currentPage >= Math.ceil(totalCount / pageSize) ? 'pointer-events-none opacity-50' : ''}
                         />
                       </PaginationItem>
                     </PaginationContent>
                   </Pagination>
+                  
+                  {/* Page info */}
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount}
+                  </div>
                 </div>
               )}
             </>
