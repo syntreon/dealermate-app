@@ -25,36 +25,39 @@ Platform analytics help us understand which devices, operating systems, and feat
 **How to:**
 1. Run the SQL migration using your usual DB migration tool or Supabase SQL editor.
 2. Confirm the table exists and indexes are created.
-
+  Migration file- D:\AI\NewApp\docs\platform-analytics\user_platform_sessions.sql
 ---
 
-## 3. Backend API Endpoint
+## 3. Platform Analytics Service (Supabase)
 
-### a. Create an Endpoint to Log Sessions
+### a. Create a Service to Log Sessions
 
-- Add a POST endpoint, e.g. `/api/platform-session`, to receive analytics data from the frontend.
-- Validate and sanitize all incoming data.
-- Insert a new row into `user_platform_sessions`.
+- Use Supabase client to insert analytics data directly from the frontend.
+- Place service logic in `src/services/platformAnalyticsService.ts`.
+- Use the TypeScript interface from `src/types/UserPlatformSession.ts` for type safety.
 
 **How to:**
-1. In `src/routes/` or your backend routes folder, create a new route file (e.g. `platformSession.ts`).
-2. Use the TypeScript interface from `src/types/UserPlatformSession.ts` for type safety.
-3. Example Express handler:
+1. Create `src/services/platformAnalyticsService.ts`:
 
 ```typescript
-import { Request, Response } from 'express';
-import { db } from '../db'; // your DB client
+import { createClient } from '@supabase/supabase-js';
+import { UserPlatformSession } from '@/types/UserPlatformSession';
 
-export async function logPlatformSession(req: Request, res: Response) {
-  try {
-    const session = req.body; // validate against UserPlatformSession type
-    await db('user_platform_sessions').insert(session);
-    res.status(201).json({ success: true });
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
+
+export async function logPlatformSession(session: Omit<UserPlatformSession, 'id' | 'created_at'>) {
+  const { data, error } = await supabase
+    .from('user_platform_sessions')
+    .insert([session]);
+  if (error) throw error;
+  return data;
 }
 ```
+
+- Update `structure.md` when adding this file.
 
 ---
 
