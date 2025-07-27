@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Calendar, ChevronDown, ChevronUp, Clock, Filter, Phone, PhoneCall, PhoneOutgoing, Search, User, VoicemailIcon, Eye } from 'lucide-react';
 import { CallLog, CallType } from '@/integrations/supabase/call-logs-service';
 import { cn } from '@/lib/utils';
 import CallDetailsPopup from './calls/CallDetailsPopup';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import InquiryTypeBadge from './calls/InquiryTypeBadge';
 import { OverallScoreBadge, SentimentBadge, PromptAdherenceBadge } from './calls/EvaluationBadges';
 import { CallIntelligenceService } from '@/services/callIntelligenceService';
@@ -13,51 +22,52 @@ import { PromptAdherenceService } from '@/services/promptAdherenceService';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
-// Call type badge component
+// Call type badge component with theme-aware styling
 const CallTypeBadge = ({ callType }: { callType: string }) => {
   // Ensure callType is a string and has a value
   const safeCallType = callType && typeof callType === 'string' ? callType.toLowerCase() : 'unknown';
 
-  const typeStyles: Record<string, string> = {
-    'inbound': 'bg-blue-100 text-blue-800 border-blue-200',
-    'outbound': 'bg-green-100 text-green-800 border-green-200',
-    'missed': 'bg-amber-100 text-amber-800 border-amber-200',
-    'voicemail': 'bg-purple-100 text-purple-800 border-purple-200',
-    'unknown': 'bg-gray-100 text-gray-800 border-gray-200'
+  const typeConfig: Record<string, { color: string; label: string }> = {
+    'inbound': { color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800', label: 'Inbound' },
+    'outbound': { color: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800', label: 'Outbound' },
+    'missed': { color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800', label: 'Missed' },
+    'voicemail': { color: 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800', label: 'Voicemail' },
+    'unknown': { color: 'bg-muted text-muted-foreground border-border', label: 'Unknown' }
   };
 
   // Get the appropriate icon based on call type
   const getIcon = () => {
     switch (safeCallType) {
       case 'inbound':
-        return <PhoneCall className="h-3.5 w-3.5 mr-1.5" />;
+        return <PhoneCall className="h-3 w-3 mr-1.5" />;
       case 'outbound':
-        return <PhoneOutgoing className="h-3.5 w-3.5 mr-1.5" />;
+        return <PhoneOutgoing className="h-3 w-3 mr-1.5" />;
       case 'missed':
-        return <Phone className="h-3.5 w-3.5 mr-1.5" />;
+        return <Phone className="h-3 w-3 mr-1.5" />;
       case 'voicemail':
-        return <VoicemailIcon className="h-3.5 w-3.5 mr-1.5" />;
+        return <VoicemailIcon className="h-3 w-3 mr-1.5" />;
       default:
-        return <Phone className="h-3.5 w-3.5 mr-1.5" />;
+        return <Phone className="h-3 w-3 mr-1.5" />;
     }
   };
 
-  // Format the display text with proper capitalization
-  const displayText = safeCallType.charAt(0).toUpperCase() + safeCallType.slice(1);
+  const config = typeConfig[safeCallType] || { color: 'bg-muted text-muted-foreground border-border', label: 'Unknown' };
 
   return (
-    <span className={cn(
-      'px-3 py-1 rounded-full text-xs font-medium border flex items-center',
-      typeStyles[safeCallType] || 'bg-gray-100 text-gray-800 border-gray-200'
-    )}>
+    <Badge variant="outline" className={cn('px-2 py-1 rounded-full text-xs font-medium border inline-flex items-center w-fit', config.color)}>
       {getIcon()}
-      {displayText}
-    </span>
+      {config.label}
+    </Badge>
   );
 };
 
+// Extended CallLog interface to include client_name for admin view
+export interface ExtendedCallLog extends CallLog {
+  client_name?: string;
+}
+
 interface CallLogsTableProps {
-  callLogs: CallLog[];
+  callLogs: ExtendedCallLog[];
   loading: boolean;
   onRefresh: () => void;
 }
@@ -76,7 +86,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCallType, setSelectedCallType] = useState<string | null>(null);
-  const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
+  const [selectedCall, setSelectedCall] = useState<ExtendedCallLog | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [inquiryTypes, setInquiryTypes] = useState<Map<string, string>>(new Map());
   const [evaluations, setEvaluations] = useState<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>>(new Map());
@@ -184,9 +194,9 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
 
   // Column definition for sortable headers
   const SortableHeader = ({ field, label, className }: { field: keyof CallLog, label: string, className?: string }) => (
-    <th
+    <TableHead 
       className={cn(
-        "px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider cursor-pointer hover:bg-secondary/50 transition-colors",
+        "px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider cursor-pointer hover:bg-secondary/50 transition-colors",
         className
       )}
       onClick={() => handleSort(field)}
@@ -195,77 +205,81 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
         {label}
         {renderSortIcon(field)}
       </div>
-    </th>
+    </TableHead>
   );
 
+  const colSpan = isAdmin ? 6 : 5; // Adjust colspan based on admin status
+
   return (
-    <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden mx-auto">
+    <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden w-full mx-auto">
       {/* Table filters */}
       <div className="p-3 border-b border-border bg-secondary/30">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-row gap-3 items-center">
           {/* Search Input */}
-          <div className="relative w-full">
+          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '300px' }}>
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-foreground/50" />
             </div>
             <input
               type="text"
               placeholder="Search by name, phone, inquiry type..."
-              className="pl-10 pr-3 py-2.5 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm"
+              className="pl-10 pr-3 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* Filter row */}
-          <div className="flex gap-3">
-            {/* Call Type Filter */}
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter className="h-4 w-4 text-foreground/50" />
-              </div>
-              <select
-                className="pl-10 pr-8 py-2.5 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
-                value={selectedCallType || 'all'}
-                onChange={(e) => setSelectedCallType(e.target.value === 'all' ? null : e.target.value)}
-              >
-                <option value="all">All Call Types</option>
-                <option value={CallType.INBOUND}>Inbound</option>
-                <option value={CallType.OUTBOUND}>Outbound</option>
-                <option value={CallType.MISSED}>Missed</option>
-                <option value={CallType.VOICEMAIL}>Voicemail</option>
-              </select>
+          {/* Call Type Filter */}
+          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '200px' }}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-4 w-4 text-foreground/50" />
             </div>
+            <select
+              className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+              value={selectedCallType || 'all'}
+              onChange={(e) => setSelectedCallType(e.target.value === 'all' ? null : e.target.value)}
+            >
+              <option value="all">All Call Types</option>
+              <option value={CallType.INBOUND}>Inbound</option>
+              <option value={CallType.OUTBOUND}>Outbound</option>
+              <option value={CallType.MISSED}>Missed</option>
+              <option value={CallType.VOICEMAIL}>Voicemail</option>
+            </select>
           </div>
+          
+          {/* Spacer */}
+          <div className="flex-grow"></div>
         </div>
       </div>
-
+      
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-border">
-          <thead className="bg-secondary/30">
-            <tr>
-              <SortableHeader field="caller_full_name" label="Caller" className="px-3 sm:px-4 py-3 text-xs" />
-              <SortableHeader field="call_start_time" label="Time" className="px-3 sm:px-4 py-3 text-xs" />
-              <SortableHeader field="call_type" label="Type" className="px-3 sm:px-4 py-3 text-xs hidden sm:table-cell" />
-              <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-card divide-y divide-border">
+      <div className="overflow-x-auto w-full">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortableHeader field="caller_full_name" label="Caller" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap" />
+              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">Inquiry Type</TableHead>
+              <SortableHeader field="call_start_time" label="Time" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap" />
+              <SortableHeader field="call_type" label="Type" className="px-3 sm:px-4 py-3 text-xs hidden sm:table-cell whitespace-nowrap" />
+              {isAdmin && (
+                <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden lg:table-cell whitespace-nowrap">Client/Business</TableHead>
+              )}
+              <TableHead className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider whitespace-nowrap">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {loading ? (
-              <tr>
-                <td colSpan={4} className="px-3 sm:px-4 py-8 sm:py-12 text-center">
+              <TableRow>
+                <TableCell colSpan={colSpan} className="h-20 sm:h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary"></div>
                     <p className="text-foreground/70 text-xs sm:text-sm font-medium">Loading call logs...</p>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : filteredAndSortedLogs.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 sm:px-4 py-8 sm:py-12 text-center">
+              <TableRow>
+                <TableCell colSpan={colSpan} className="h-20 sm:h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
                     <Phone className="h-8 w-8 sm:h-10 sm:w-10 text-foreground/30" />
                     <div className="space-y-1">
@@ -273,12 +287,12 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                       <p className="text-foreground/50 text-xs sm:text-sm">Try adjusting your filters or search term</p>
                     </div>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               filteredAndSortedLogs.map((log) => (
-                <tr
-                  key={log.id}
+                <TableRow 
+                  key={log.id} 
                   className="hover:bg-secondary/20 transition-colors cursor-pointer"
                   onClick={(e) => {
                     // Prevent row click if clicking on action buttons
@@ -290,29 +304,55 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                   }}
                   title="Click to view call details"
                 >
-                  <td className="px-3 sm:px-4 py-3 sm:py-4">
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary/10 flex items-center justify-center">
                         <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                       </div>
-                      <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                      <div className="ml-2 sm:ml-3 md:ml-4 min-w-0 flex-1">
                         <div className="text-xs sm:text-sm font-medium text-foreground truncate">
                           {log.caller_full_name || 'Unknown'}
                         </div>
                         {/* Mobile: Show phone number below name */}
-                        <div className="text-xs text-foreground/60 mt-0.5 flex items-center">
+                        <div className="sm:hidden text-xs text-foreground/60 mt-0.5 flex items-center">
                           <Phone className="h-3 w-3 mr-1" />
                           <span className="truncate">{log.caller_phone_number || 'N/A'}</span>
                         </div>
+                        {/* Mobile: Show inquiry type below */}
+                        <div className="md:hidden mt-1">
+                          {log.id && inquiryTypes.get(log.id) ? (
+                            <InquiryTypeBadge inquiryType={inquiryTypes.get(log.id)!} />
+                          ) : (
+                            <span className="text-xs text-foreground/50">—</span>
+                          )}
+                        </div>
+                        {/* Mobile: Show call type below on small screens */}
+                        <div className="sm:hidden mt-1">
+                          <CallTypeBadge callType={log.call_type || 'unknown'} />
+                        </div>
+                        {/* For admin view: show client name */}
+                        {isAdmin && (
+                          <div className="lg:hidden text-xs text-foreground/60 mt-0.5 flex items-center">
+                            <User className="h-3 w-3 mr-1" />
+                            <span className="truncate">Client: {log.client_name || 'Unknown'}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3 sm:py-4">
+                  </TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
+                    {log.id && inquiryTypes.get(log.id) ? (
+                      <InquiryTypeBadge inquiryType={inquiryTypes.get(log.id)!} />
+                    ) : (
+                      <span className="text-xs text-foreground/50">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4">
                     <div className="flex items-center">
-                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-foreground/50 mr-1 sm:mr-2" />
-                      <span className="text-xs sm:text-sm text-foreground">
+                      <Calendar className="h-4 w-4 text-foreground/50 mr-2" />
+                      <span className="text-sm text-foreground">
                         {log.call_start_time ?
-                          format(new Date(log.call_start_time), 'MMM d') :
+                          format(new Date(log.call_start_time), 'MMM d, yyyy') :
                           'N/A'}
                       </span>
                     </div>
@@ -321,11 +361,21 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                       <Clock className="h-3 w-3 mr-1" />
                       <span>{log.call_duration_mins ? `${log.call_duration_mins}m` : 'N/A'}</span>
                     </div>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
+                  </TableCell>
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
                     <CallTypeBadge callType={log.call_type || 'unknown'} />
-                  </td>
-                  <td className="px-3 sm:px-4 py-3 sm:py-4 text-right">
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden lg:table-cell">
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 text-foreground/50 mr-2" />
+                        <span className="text-sm text-foreground truncate">
+                          {log.client_name || 'Unknown'}
+                        </span>
+                      </div>
+                    </TableCell>
+                  )}
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 text-right">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -338,12 +388,12 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                       <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span className="sr-only">View Details</span>
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination section */}

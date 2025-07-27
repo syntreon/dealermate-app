@@ -233,9 +233,9 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden mx-auto">
       {/* Table filters */}
       <div className="p-3 border-b border-border bg-secondary/30">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-row gap-3 items-center flex-wrap">
           {/* Search Input */}
-          <div className="relative w-full">
+          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '300px' }}>
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-foreground/50" />
             </div>
@@ -248,48 +248,48 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
             />
           </div>
 
-          {/* Filter row */}
-          <div className="flex gap-2">
-            {/* Status Filter */}
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter className="h-4 w-4 text-foreground/50" />
-              </div>
-              <select
-                className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as SupabaseLead['status'] | 'all')}
-              >
-                <option value="all">All Statuses</option>
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="qualified">Qualified</option>
-                <option value="proposal">Proposal</option>
-                <option value="closed_won">Closed (Won)</option>
-                <option value="closed_lost">Closed (Lost)</option>
-              </select>
+          {/* Status Filter */}
+          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '180px' }}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-4 w-4 text-foreground/50" />
             </div>
-
-            {/* Source Filter */}
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter className="h-4 w-4 text-foreground/50" />
-              </div>
-              <select
-                className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
-                value={selectedSource}
-                onChange={(e) => setSelectedSource(e.target.value as SupabaseLead['source'] | 'all')}
-              >
-                <option value="all">All Sources</option>
-                <option value="website">Website</option>
-                <option value="direct_call">Direct Call</option>
-                <option value="referral">Referral</option>
-                <option value="social_media">Social Media</option>
-                <option value="ai_agent">AI Agent</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+            <select
+              className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value as SupabaseLead['status'] | 'all')}
+            >
+              <option value="all">All Statuses</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="qualified">Qualified</option>
+              <option value="proposal">Proposal</option>
+              <option value="closed_won">Closed (Won)</option>
+              <option value="closed_lost">Closed (Lost)</option>
+            </select>
           </div>
+
+          {/* Source Filter */}
+          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '180px' }}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-4 w-4 text-foreground/50" />
+            </div>
+            <select
+              className="pl-10 pr-8 py-2 w-full rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm appearance-none"
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value as SupabaseLead['source'] | 'all')}
+            >
+              <option value="all">All Sources</option>
+              <option value="website">Website</option>
+              <option value="direct_call">Direct Call</option>
+              <option value="referral">Referral</option>
+              <option value="social_media">Social Media</option>
+              <option value="ai_agent">AI Agent</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          {/* Spacer */}
+          <div className="flex-grow"></div>
         </div>
       </div>
       

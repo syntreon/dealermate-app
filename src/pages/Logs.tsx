@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, RefreshCw, Filter } from 'lucide-react';
 import { useCallLogs } from '@/hooks/useCallLogs';
-import CallLogsTable from '@/components/CallLogsTable';
+import CallLogsTable, { ExtendedCallLog } from '@/components/CallLogsTable';
 import ClientSelector from '@/components/ClientSelector';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import { CachedAdminService } from '@/services/cachedAdminService';
 
 /**
  * Logs page component for displaying call logs from Supabase
@@ -15,7 +16,9 @@ import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 const Logs: React.FC = () => {
   const { user } = useAuth();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const { callLogs, loading, error, forceRefresh, refetch } = useCallLogs();
+  const [clientsMap, setClientsMap] = useState<Record<string, string>>({});
 
   // Handle client selection change
   const handleClientChange = (clientId: string | null) => {
@@ -23,6 +26,65 @@ const Logs: React.FC = () => {
     // Refetch call logs with the selected client ID
     refetch({ clientId });
   };
+  
+  // Get selected client name when client ID changes
+  useEffect(() => {
+    // If no client is selected, clear the client name
+    if (!selectedClientId) {
+      setSelectedClientName(null);
+      return;
+    }
+    
+    // Find the selected client name from the ClientSelector
+    const clientSelectorElement = document.querySelector('[role="combobox"] span.truncate');
+    if (clientSelectorElement) {
+      const clientName = clientSelectorElement.textContent?.trim();
+      setSelectedClientName(clientName !== 'Premier Chevrolet' && clientName !== 'All Clients' ? clientName : null);
+    }
+  }, [selectedClientId]);
+  
+  // Fetch all clients data for admin users to map client_id to client_name
+  useEffect(() => {
+    const fetchClientsData = async () => {
+      // Only fetch clients data for admin users
+      if (!user || !canViewSensitiveInfo(user)) return;
+      
+      try {
+        const clients = await CachedAdminService.getClients();
+        const clientsMapping: Record<string, string> = {};
+        
+        // Create a mapping of client_id to client name
+        clients.forEach(client => {
+          if (client.id && client.name) {
+            clientsMapping[client.id] = client.name;
+          }
+        });
+        
+        setClientsMap(clientsMapping);
+      } catch (error) {
+        console.error('Error fetching clients data:', error);
+      }
+    };
+    
+    fetchClientsData();
+  }, [user]);
+  
+  // Enhance call logs with client name
+  const enhancedCallLogs: ExtendedCallLog[] = callLogs.map(log => {
+    // If filtering by a specific client, use the selected client name
+    if (selectedClientId && selectedClientName) {
+      return {
+        ...log,
+        client_name: selectedClientName
+      };
+    }
+    
+    // Otherwise, look up the client name from the clients map
+    return {
+      ...log,
+      client_name: log.client_id && clientsMap[log.client_id] ? clientsMap[log.client_id] : 'Unknown'
+    };
+  });
 
   return (
     <div className="space-y-4 pb-8">
@@ -63,7 +125,7 @@ const Logs: React.FC = () => {
             </div>
           ) : (
             <CallLogsTable 
-              callLogs={callLogs} 
+              callLogs={enhancedCallLogs} 
               loading={loading} 
               onRefresh={forceRefresh} 
             />
