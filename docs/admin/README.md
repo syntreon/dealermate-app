@@ -32,8 +32,41 @@ Technical details about the admin panel components and functionality.
 ### 🔗 [Make Operations Integration](./make-operations-integration.md)
 Documentation for Make.com integration and operations management.
 
-## Quick Start for New Developers
+## 🛠️ Developer Resources
 
+### 📖 [Developer Guide](./DEVELOPER_GUIDE.md)
+**Comprehensive developer guide** - Complete overview covering:
+- System architecture and component relationships
+- Performance optimizations (lazy loading, caching, query optimization)
+- Debugging techniques and troubleshooting strategies
+- Development workflow and best practices
+- Testing strategies and monitoring
+- Common issues and solutions
+
+### 🐛 [Debug Cheat Sheet](./DEBUG_CHEATSHEET.md)
+**Quick reference for debugging** - Essential commands and fixes:
+- Performance debugging commands
+- Cache debugging and optimization
+- Data flow debugging techniques
+- Quick fixes for common issues
+- Emergency procedures and resets
+
+### 🔄 [Troubleshooting Flowchart](./TROUBLESHOOTING_FLOWCHART.md)
+**Visual troubleshooting guide** - Step-by-step problem solving:
+- Emergency troubleshooting flows
+- Performance issue diagnosis
+- Data loading problem resolution
+- Cache issue identification and fixes
+- Diagnostic commands and health checks
+
+## 🚀 Quick Start for New Developers
+
+### For Admin Dashboard Development
+1. **Start here**: [Developer Guide](./DEVELOPER_GUIDE.md) - Complete system overview
+2. **Need to debug?**: [Debug Cheat Sheet](./DEBUG_CHEATSHEET.md) - Quick commands and fixes
+3. **Having issues?**: [Troubleshooting Flowchart](./TROUBLESHOOTING_FLOWCHART.md) - Step-by-step solutions
+
+### For Access Control & RBAC
 1. **Start with**: [Role-Based Access Control Implementation](./role-based-access-control-implementation.md)
 2. **Understand the role hierarchy**: owner > admin > user > client_admin > client_user
 3. **Key file to know**: `src/utils/clientDataIsolation.ts` - Contains all access control logic
@@ -41,6 +74,21 @@ Documentation for Make.com integration and operations management.
    - `AdminLayout.tsx` - Controls admin interface access
    - `AdminSidebar.tsx` - Role-based navigation
    - `AppSidebar.tsx` - Main app navigation with admin access
+
+### Quick Debug Commands
+```tsx
+// Health check
+const health = healthCheck();
+
+// Performance diagnostic
+const score = performanceDiagnostic();
+
+// Cache diagnostic
+const cache = cacheDiagnostic();
+
+// Emergency reset
+emergencyReset();
+```
 
 ## Access Control Summary
 

@@ -6,95 +6,55 @@ import { DashboardService } from '@/services/dashboardService';
 import { AdminService } from '@/services/adminService';
 import { MetricsCalculationService, FinancialMetrics, CostBreakdown, ClientProfitability, GrowthTrends } from '@/services/metricsCalculationService';
 import { useToast } from '@/hooks/use-toast';
+import { adminDashboardCache, CACHE_KEYS, CACHE_TAGS, CacheInvalidation } from '@/services/cacheService';
+import { AdminDashboardData, AdminDashboardState, UseAdminDashboardDataOptions } from './useAdminDashboardData';
 
-// Extended admin dashboard data interface
-export interface AdminDashboardData {
-  // Basic dashboard metrics (from existing useDashboardMetrics)
-  dashboardMetrics: DashboardMetrics | null;
-  
-  // Admin-specific platform metrics
-  platformMetrics: {
-    totalClients: number;
-    activeClients: number;
-    totalUsers: number;
-    totalRevenue: number;
-    platformCallVolume: number;
-    platformLeadVolume: number;
-    systemHealth: 'healthy' | 'degraded' | 'down';
-  } | null;
-  
-  // Financial metrics and calculations
-  financialMetrics: FinancialMetrics | null;
-  costBreakdown: CostBreakdown | null;
-  clientProfitability: ClientProfitability[];
-  growthTrends: GrowthTrends | null;
-  
-  // Client and user data
-  clients: Client[];
-  users: User[];
-  
-  // Client and user distribution metrics
-  clientDistribution: {
-    byStatus: Array<{ status: string; count: number }>;
-    bySubscriptionPlan: Array<{ plan: string; count: number }>;
-    byType: Array<{ type: string; count: number }>;
-  } | null;
-  
-  userAnalytics: {
-    byRole: Array<{ role: string; count: number }>;
-    activeToday: number;
-    activeThisWeek: number;
-    newThisMonth: number;
-    recentActivity: Array<{ id: string; email: string; lastLogin: Date | null; role: string }>;
-  } | null;
-}
+// Cache TTL configurations for different data types
+const CACHE_TTL = {
+  DASHBOARD_METRICS: 2 * 60 * 1000,    // 2 minutes - frequently changing
+  PLATFORM_METRICS: 5 * 60 * 1000,     // 5 minutes - moderately changing
+  FINANCIAL_METRICS: 10 * 60 * 1000,   // 10 minutes - less frequently changing
+  COST_BREAKDOWN: 10 * 60 * 1000,      // 10 minutes
+  CLIENT_PROFITABILITY: 15 * 60 * 1000, // 15 minutes
+  GROWTH_TRENDS: 30 * 60 * 1000,       // 30 minutes - rarely changing
+  CLIENTS: 5 * 60 * 1000,              // 5 minutes
+  USERS: 5 * 60 * 1000,                // 5 minutes
+  CLIENT_DISTRIBUTION: 10 * 60 * 1000,  // 10 minutes
+  USER_ANALYTICS: 10 * 60 * 1000,      // 10 minutes
+} as const;
 
-export interface AdminDashboardState {
-  data: AdminDashboardData;
-  isLoading: boolean;
-  isRefreshing: boolean;
-  error: Error | null;
-  lastUpdated: Date | null;
-  
-  // Loading states for individual sections
-  loadingStates: {
-    dashboardMetrics: boolean;
-    platformMetrics: boolean;
-    financialMetrics: boolean;
-    costBreakdown: boolean;
-    clientProfitability: boolean;
-    growthTrends: boolean;
-    clients: boolean;
-    users: boolean;
-    clientDistribution: boolean;
-    userAnalytics: boolean;
+// Cache-aware data fetching functions
+const createCachedFetcher = <T>(
+  cacheKey: string,
+  fetcher: () => Promise<T>,
+  ttl: number,
+  tags: string[] = []
+) => {
+  return async (): Promise<T> => {
+    // Try to get from cache first
+    const cached = adminDashboardCache.get<T>(cacheKey);
+    if (cached !== null) {
+      console.log(`Cache hit for ${cacheKey}`);
+      return cached;
+    }
+
+    console.log(`Cache miss for ${cacheKey}, fetching...`);
+    
+    // Fetch fresh data
+    const data = await fetcher();
+    
+    // Store in cache
+    adminDashboardCache.set(cacheKey, data, {
+      ttl,
+      tags,
+      persist: true
+    });
+    
+    return data;
   };
-  
-  // Error states for individual sections
-  errors: {
-    dashboardMetrics: Error | null;
-    platformMetrics: Error | null;
-    financialMetrics: Error | null;
-    costBreakdown: Error | null;
-    clientProfitability: Error | null;
-    growthTrends: Error | null;
-    clients: Error | null;
-    users: Error | null;
-    clientDistribution: Error | null;
-    userAnalytics: Error | null;
-  };
-}
+};
 
-export interface UseAdminDashboardDataOptions {
-  clientId?: string;
-  autoRefresh?: boolean;
-  refreshInterval?: number; // in milliseconds
-  enableToasts?: boolean;
-  retryAttempts?: number;
-  retryDelay?: number; // in milliseconds
-}
-
-export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}) => {
+export const useCachedAdminDashboardData = (options: UseAdminDashboardDataOptions = {}) => {
   const {
     clientId,
     autoRefresh = true,
@@ -222,21 +182,117 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
     }
   }, [retryAttempts, retryDelay]);
 
-  // Individual data fetching functions
-  const fetchDashboardMetrics = useCallback(async () => {
-    setLoadingState('dashboardMetrics', true);
-    setErrorState('dashboardMetrics', null);
-    
-    try {
-      // Determine effective client ID based on user role
+  // Create cached fetchers for each data type
+  const cachedFetchers = {
+    dashboardMetrics: useCallback(() => {
       const isAdminUser = user && (
         user.client_id === null && 
         (user.role === 'admin' || user.role === 'owner')
       );
       const effectiveClientId = isAdminUser ? clientId : (user?.client_id || null);
       
-      const metrics = await retryWithBackoff(
+      return createCachedFetcher(
+        `${CACHE_KEYS.DASHBOARD_METRICS}_${effectiveClientId || 'all'}`,
         () => DashboardService.getDashboardMetrics(effectiveClientId),
+        CACHE_TTL.DASHBOARD_METRICS,
+        [CACHE_TAGS.METRICS]
+      )();
+    }, [user, clientId]),
+
+    platformMetrics: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.PLATFORM_METRICS,
+        () => DashboardService.getAdminPlatformMetrics(),
+        CACHE_TTL.PLATFORM_METRICS,
+        [CACHE_TAGS.METRICS, CACHE_TAGS.SYSTEM]
+      )();
+    }, []),
+
+    financialMetrics: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.FINANCIAL_METRICS,
+        () => MetricsCalculationService.getFinancialMetrics('current_month'),
+        CACHE_TTL.FINANCIAL_METRICS,
+        [CACHE_TAGS.FINANCIAL, CACHE_TAGS.METRICS]
+      )();
+    }, []),
+
+    costBreakdown: useCallback(() => {
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      return createCachedFetcher(
+        `${CACHE_KEYS.COST_BREAKDOWN}_${startDate.getTime()}_${endDate.getTime()}`,
+        () => MetricsCalculationService.getCostBreakdown(startDate, endDate),
+        CACHE_TTL.COST_BREAKDOWN,
+        [CACHE_TAGS.FINANCIAL, CACHE_TAGS.METRICS]
+      )();
+    }, []),
+
+    clientProfitability: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.CLIENT_PROFITABILITY,
+        () => MetricsCalculationService.getClientProfitability('current_month'),
+        CACHE_TTL.CLIENT_PROFITABILITY,
+        [CACHE_TAGS.FINANCIAL, CACHE_TAGS.CLIENTS, CACHE_TAGS.METRICS]
+      )();
+    }, []),
+
+    growthTrends: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.GROWTH_TRENDS,
+        () => MetricsCalculationService.getGrowthTrends(),
+        CACHE_TTL.GROWTH_TRENDS,
+        [CACHE_TAGS.METRICS]
+      )();
+    }, []),
+
+    clients: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.CLIENTS,
+        () => AdminService.getClients(),
+        CACHE_TTL.CLIENTS,
+        [CACHE_TAGS.CLIENTS]
+      )();
+    }, []),
+
+    users: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.USERS,
+        () => AdminService.getUsers(),
+        CACHE_TTL.USERS,
+        [CACHE_TAGS.USERS]
+      )();
+    }, []),
+
+    clientDistribution: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.CLIENT_DISTRIBUTION,
+        () => DashboardService.getClientDistributionMetrics(),
+        CACHE_TTL.CLIENT_DISTRIBUTION,
+        [CACHE_TAGS.CLIENTS, CACHE_TAGS.METRICS]
+      )();
+    }, []),
+
+    userAnalytics: useCallback(() => {
+      return createCachedFetcher(
+        CACHE_KEYS.USER_ANALYTICS,
+        () => DashboardService.getUserAnalytics(),
+        CACHE_TTL.USER_ANALYTICS,
+        [CACHE_TAGS.USERS, CACHE_TAGS.METRICS]
+      )();
+    }, [])
+  };
+
+  // Individual data fetching functions with caching
+  const fetchDashboardMetrics = useCallback(async () => {
+    setLoadingState('dashboardMetrics', true);
+    setErrorState('dashboardMetrics', null);
+    
+    try {
+      const metrics = await retryWithBackoff(
+        cachedFetchers.dashboardMetrics,
         'dashboardMetrics'
       );
       
@@ -255,7 +311,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
     } finally {
       setLoadingState('dashboardMetrics', false);
     }
-  }, [user, clientId, retryWithBackoff, setLoadingState, setErrorState, updateSectionData, enableToasts, toast]);
+  }, [cachedFetchers.dashboardMetrics, retryWithBackoff, setLoadingState, setErrorState, updateSectionData, enableToasts, toast]);
 
   const fetchPlatformMetrics = useCallback(async () => {
     setLoadingState('platformMetrics', true);
@@ -263,7 +319,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
     
     try {
       const metrics = await retryWithBackoff(
-        () => DashboardService.getAdminPlatformMetrics(),
+        cachedFetchers.platformMetrics,
         'platformMetrics'
       );
       
@@ -282,7 +338,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
     } finally {
       setLoadingState('platformMetrics', false);
     }
-  }, [retryWithBackoff, setLoadingState, setErrorState, updateSectionData, enableToasts, toast]);
+  }, [cachedFetchers.platformMetrics, retryWithBackoff, setLoadingState, setErrorState, updateSectionData, enableToasts, toast]);
 
   const fetchFinancialData = useCallback(async () => {
     // Fetch financial metrics, cost breakdown, client profitability, and growth trends in parallel
@@ -292,7 +348,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       
       try {
         const metrics = await retryWithBackoff(
-          () => MetricsCalculationService.getFinancialMetrics('current_month'),
+          cachedFetchers.financialMetrics,
           'financialMetrics'
         );
         updateSectionData('financialMetrics', metrics);
@@ -309,12 +365,8 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       setErrorState('costBreakdown', null);
       
       try {
-        const now = new Date();
-        const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        
         const breakdown = await retryWithBackoff(
-          () => MetricsCalculationService.getCostBreakdown(startDate, endDate),
+          cachedFetchers.costBreakdown,
           'costBreakdown'
         );
         updateSectionData('costBreakdown', breakdown);
@@ -332,7 +384,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       
       try {
         const profitability = await retryWithBackoff(
-          () => MetricsCalculationService.getClientProfitability('current_month'),
+          cachedFetchers.clientProfitability,
           'clientProfitability'
         );
         updateSectionData('clientProfitability', profitability);
@@ -350,7 +402,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       
       try {
         const trends = await retryWithBackoff(
-          () => MetricsCalculationService.getGrowthTrends(),
+          cachedFetchers.growthTrends,
           'growthTrends'
         );
         updateSectionData('growthTrends', trends);
@@ -369,7 +421,16 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       fetchClientProfitability(),
       fetchGrowthTrends()
     ]);
-  }, [retryWithBackoff, setLoadingState, setErrorState, updateSectionData]);
+  }, [
+    cachedFetchers.financialMetrics,
+    cachedFetchers.costBreakdown,
+    cachedFetchers.clientProfitability,
+    cachedFetchers.growthTrends,
+    retryWithBackoff,
+    setLoadingState,
+    setErrorState,
+    updateSectionData
+  ]);
 
   const fetchClientsAndUsers = useCallback(async () => {
     const fetchClients = async () => {
@@ -378,7 +439,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       
       try {
         const clients = await retryWithBackoff(
-          () => AdminService.getClients(),
+          cachedFetchers.clients,
           'clients'
         );
         updateSectionData('clients', clients);
@@ -396,7 +457,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       
       try {
         const users = await retryWithBackoff(
-          () => AdminService.getUsers(),
+          cachedFetchers.users,
           'users'
         );
         updateSectionData('users', users);
@@ -410,7 +471,14 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
 
     // Execute both in parallel
     await Promise.allSettled([fetchClients(), fetchUsers()]);
-  }, [retryWithBackoff, setLoadingState, setErrorState, updateSectionData]);
+  }, [
+    cachedFetchers.clients,
+    cachedFetchers.users,
+    retryWithBackoff,
+    setLoadingState,
+    setErrorState,
+    updateSectionData
+  ]);
 
   const fetchDistributionMetrics = useCallback(async () => {
     const fetchClientDistribution = async () => {
@@ -419,7 +487,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       
       try {
         const distribution = await retryWithBackoff(
-          () => DashboardService.getClientDistributionMetrics(),
+          cachedFetchers.clientDistribution,
           'clientDistribution'
         );
         updateSectionData('clientDistribution', distribution);
@@ -437,7 +505,7 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       
       try {
         const analytics = await retryWithBackoff(
-          () => DashboardService.getUserAnalytics(),
+          cachedFetchers.userAnalytics,
           'userAnalytics'
         );
         updateSectionData('userAnalytics', analytics);
@@ -451,7 +519,14 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
 
     // Execute both in parallel
     await Promise.allSettled([fetchClientDistribution(), fetchUserAnalytics()]);
-  }, [retryWithBackoff, setLoadingState, setErrorState, updateSectionData]);
+  }, [
+    cachedFetchers.clientDistribution,
+    cachedFetchers.userAnalytics,
+    retryWithBackoff,
+    setLoadingState,
+    setErrorState,
+    updateSectionData
+  ]);
 
   // Main data fetching function
   const fetchAllData = useCallback(async (isRefresh = false) => {
@@ -477,6 +552,11 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
 
       if (!isAdminUser) {
         throw new Error('Insufficient permissions for admin dashboard');
+      }
+
+      // If refreshing, invalidate relevant cache entries
+      if (isRefresh) {
+        CacheInvalidation.smartInvalidate('all');
       }
 
       // Fetch all data sections in parallel for better performance
@@ -533,32 +613,41 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
     toast
   ]);
 
-  // Manual refresh function
-  const refresh = useCallback(() => {
+  // Manual refresh function with cache invalidation
+  const refresh = useCallback((invalidateCache = true) => {
+    if (invalidateCache) {
+      CacheInvalidation.smartInvalidate('all');
+    }
     fetchAllData(true);
   }, [fetchAllData]);
 
-  // Retry specific section
+  // Retry specific section with cache invalidation
   const retrySection = useCallback(async (section: keyof AdminDashboardState['loadingStates']) => {
+    // Invalidate cache for the specific section
     switch (section) {
       case 'dashboardMetrics':
+        adminDashboardCache.clearByTags([CACHE_TAGS.METRICS]);
         await fetchDashboardMetrics();
         break;
       case 'platformMetrics':
+        adminDashboardCache.clearByTags([CACHE_TAGS.SYSTEM, CACHE_TAGS.METRICS]);
         await fetchPlatformMetrics();
         break;
       case 'financialMetrics':
       case 'costBreakdown':
       case 'clientProfitability':
       case 'growthTrends':
+        adminDashboardCache.clearByTags([CACHE_TAGS.FINANCIAL, CACHE_TAGS.METRICS]);
         await fetchFinancialData();
         break;
       case 'clients':
       case 'users':
+        adminDashboardCache.clearByTags([CACHE_TAGS.CLIENTS, CACHE_TAGS.USERS]);
         await fetchClientsAndUsers();
         break;
       case 'clientDistribution':
       case 'userAnalytics':
+        adminDashboardCache.clearByTags([CACHE_TAGS.CLIENTS, CACHE_TAGS.USERS, CACHE_TAGS.METRICS]);
         await fetchDistributionMetrics();
         break;
     }
@@ -634,8 +723,15 @@ export const useAdminDashboardData = (options: UseAdminDashboardDataOptions = {}
       error: state.errors[section],
       data: state.data[section as keyof AdminDashboardData],
       retry: () => retrySection(section)
-    })
+    }),
+
+    // Cache-specific methods
+    getCacheStats: () => adminDashboardCache.getStats(),
+    clearCache: () => adminDashboardCache.clear(),
+    invalidateCache: (type: 'client' | 'user' | 'financial' | 'system' | 'all') => {
+      CacheInvalidation.smartInvalidate(type);
+    }
   };
 };
 
-export default useAdminDashboardData;
+export default useCachedAdminDashboardData;

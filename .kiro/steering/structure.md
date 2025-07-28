@@ -51,6 +51,26 @@ src/
 ├──
 ├── components/            # Reusable UI components.
 │   ├── admin/             # Components specific to the Admin Dashboard.
+│   │   ├── dashboard/     # Admin dashboard specific components.
+│   │   │   ├── LoadingSkeletons.tsx # Comprehensive theme-aware loading skeletons for all dashboard components.
+│   │   │   ├── TabLoadingSkeleton.tsx # Enhanced tab-specific loading skeletons with progressive states.
+│   │   │   ├── LoadingOverlay.tsx # Full-screen loading overlay with progress tracking.
+│   │   │   ├── LoadingStatesProvider.tsx # Context provider for managing loading states across dashboard.
+│   │   │   ├── SmartLoadingWrapper.tsx # Intelligent loading wrapper component with error handling.
+│   │   │   ├── LoadingStatesDemo.tsx # Comprehensive demo of all loading states and skeletons.
+│   │   │   ├── LazyTabLoader.tsx # Lazy loading system with preloading and performance monitoring.
+│   │   │   ├── DashboardHeader.tsx # Dashboard header with refresh functionality.
+│   │   │   ├── FinancialOverview.tsx # Financial metrics overview cards.
+│   │   │   ├── BusinessMetrics.tsx # Business KPI cards.
+│   │   │   ├── TabErrorBoundary.tsx # Error boundary for tab components.
+│   │   │   ├── ErrorFallback.tsx # Error fallback UI component.
+│   │   │   ├── PartialDataProvider.tsx # Provider for handling partial data loading.
+│   │   │   └── tabs/       # Individual dashboard tab components.
+│   │   │       ├── FinancialTab.tsx # Financial analysis tab with real-time data.
+│   │   │       ├── ClientsTab.tsx # Client analytics tab.
+│   │   │       ├── UsersTab.tsx # User analytics tab.
+│   │   │       ├── SystemTab.tsx # System health monitoring tab.
+│   │   │       └── OperationsTab.tsx # Operations metrics tab.
 │   │   ├── AdminSidebar.tsx # Admin navigation with role-based filtering.
 │   │   ├── ProtectedAdminRoute.tsx # Route protection based on user permissions.
 │   │   └── ... # Other admin components
@@ -79,7 +99,11 @@ src/
 ├── hooks/                 # Custom React hooks for shared logic.
 │   ├── useAuthSession.ts  # Hook for accessing user session and profile.
 │   ├── use-theme-init.tsx # Enhanced theme initialization with error recovery.
-│   └── useOptimizedTheme.ts # Performance-optimized theme utilities and calculations.
+│   ├── useOptimizedTheme.ts # Performance-optimized theme utilities and calculations.
+│   ├── useLoadingStates.ts # Comprehensive hook for managing loading states with progress tracking, error handling, and retry logic.
+│   ├── useDashboardMetrics.ts # Basic dashboard metrics hook for client-specific data.
+│   ├── useAdminDashboardData.ts # Extended admin dashboard hook with comprehensive data fetching, auto-refresh, and error handling.
+│   └── useCachedAdminDashboardData.ts # Cached version of admin dashboard hook with intelligent caching and query optimization.
 ├──
 ├── layouts/               # Components that define the structure of pages.
 │   └── AdminLayout.tsx    # Admin panel layout with role-based access control - Mobile responsive with overflow handling.
@@ -105,7 +129,12 @@ src/
 │   ├── analyticsService.ts# Fetches data for the Analytics pages.
 │   ├── simpleAIAnalyticsService.ts # AI model performance analytics using real database data.
 │   ├── supabaseService.ts # Generic Supabase client and helper functions.
-│   └── themeService.ts    # Centralized theme management with caching and synchronization.
+│   ├── themeService.ts    # Centralized theme management with caching and synchronization.
+│   ├── cacheService.ts    # Comprehensive caching system with TTL, tags, and persistence.
+│   ├── queryOptimizationService.ts # Database query optimization and performance monitoring.
+│   ├── metricsCalculationService.ts # Financial calculations and client profitability analysis.
+│   ├── makeComAnalyticsService.ts # Make.com operations analytics and cost tracking.
+│   └── makeOperationsService.ts # Make.com scenario-level operations monitoring.
 ├──
 ├── types/                 # TypeScript type definitions and interfaces.
 │   └── supabase.ts        # Auto-generated types from the Supabase schema.

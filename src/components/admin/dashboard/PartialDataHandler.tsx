@@ -75,7 +75,7 @@ const PartialDataHandler: React.FC<PartialDataHandlerProps> = ({
   // If there's an error and no data, show error state
   if (error && !hasData) {
     return (
-      <Card className="bg-card text-card-foreground border-border border-destructive/20">
+      <Card className="bg-card text-card-foreground border-destructive/20">
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 text-destructive mb-2">
             <AlertTriangle className="h-5 w-5" />

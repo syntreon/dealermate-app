@@ -15,12 +15,17 @@ import TabErrorBoundary from '@/components/admin/dashboard/TabErrorBoundary';
 import ErrorFallback from '@/components/admin/dashboard/ErrorFallback';
 import PartialDataProvider from '@/components/admin/dashboard/PartialDataProvider';
 
-// Lazy load tab components for better performance
-const FinancialTab = React.lazy(() => import('@/components/admin/dashboard/tabs/FinancialTab').then(m => ({ default: m.FinancialTab })));
-const ClientsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/ClientsTab').then(m => ({ default: m.ClientsTab })));
-const UsersTab = React.lazy(() => import('@/components/admin/dashboard/tabs/UsersTab').then(m => ({ default: m.UsersTab })));
-const SystemTab = React.lazy(() => import('@/components/admin/dashboard/tabs/SystemTab').then(m => ({ default: m.SystemTab })));
-const OperationsTab = React.lazy(() => import('@/components/admin/dashboard/tabs/OperationsTab').then(m => ({ default: m.OperationsTab })));
+// Enhanced lazy loading system
+import { 
+  LazyTabWrapper, 
+  useTabPreloading, 
+  LazyLoadingPerformanceMonitor,
+  LazyFinancialTab,
+  LazyClientsTab,
+  LazyUsersTab,
+  LazySystemTab,
+  LazyOperationsTab
+} from '@/components/admin/dashboard/LazyTabLoader';
 
 // Import existing services (will be extended in later tasks)
 import { AdminService } from '@/services/adminService';
@@ -105,9 +110,13 @@ const AdminDashboard = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState('financial');
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Enhanced lazy loading hooks
+  const { preloadHighPriorityTabs, preloadOnHover, cancelPreload, isPreloading, getMetrics } = useTabPreloading();
   
   // Tab options following Analytics page pattern
   const tabOptions = [
@@ -277,10 +286,19 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadDashboardData();
 
+    // Preload high priority tabs after initial load
+    const preloadTimer = setTimeout(() => {
+      preloadHighPriorityTabs();
+    }, 1000); // Wait 1 second after initial load
+
     // Auto-refresh every 5 minutes
     const interval = setInterval(loadDashboardData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+    
+    return () => {
+      clearTimeout(preloadTimer);
+      clearInterval(interval);
+    };
+  }, [preloadHighPriorityTabs]);
 
   const handleRefresh = () => {
     loadDashboardData();
@@ -371,8 +389,13 @@ const AdminDashboard = () => {
         }}
       />
 
-      {/* Dashboard Tabs - Following Analytics page pattern */}
-      <Tabs defaultValue="financial" className="space-y-4">
+      {/* Dashboard Tabs - Following Analytics page pattern with enhanced lazy loading */}
+      <Tabs 
+        defaultValue="financial" 
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         {/* Mobile-optimized tabs with horizontal scrolling */}
         {isMobile ? (
           <div className="relative mb-6">
@@ -396,6 +419,8 @@ const AdminDashboard = () => {
                     key={tab.id}
                     value={tab.id}
                     className="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap"
+                    onMouseEnter={() => preloadOnHover(tab.id)}
+                    onMouseLeave={() => cancelPreload(tab.id)}
                   >
                     {tab.shortLabel}
                   </TabsTrigger>
@@ -412,55 +437,57 @@ const AdminDashboard = () => {
             </button>
           </div>
         ) : (
-          /* Desktop tabs */
+          /* Desktop tabs with preloading on hover */
           <TabsList className="grid w-full grid-cols-5">
             {tabOptions.map(tab => (
-              <TabsTrigger key={tab.id} value={tab.id}>
+              <TabsTrigger 
+                key={tab.id} 
+                value={tab.id}
+                onMouseEnter={() => preloadOnHover(tab.id)}
+                onMouseLeave={() => cancelPreload(tab.id)}
+              >
                 {tab.label}
               </TabsTrigger>
             ))}
           </TabsList>
         )}
 
+        {/* Enhanced lazy-loaded tab content */}
         <TabsContent value="financial">
-          <TabErrorBoundary tabName="Financial Analysis" fallback={ErrorFallback}>
-            <Suspense fallback={<TabLoadingSkeleton />}>
-              <FinancialTab />
-            </Suspense>
-          </TabErrorBoundary>
+          <LazyFinancialTab />
         </TabsContent>
 
         <TabsContent value="clients">
-          <TabErrorBoundary tabName="Client Analytics" fallback={ErrorFallback}>
-            <Suspense fallback={<TabLoadingSkeleton />}>
-              <ClientsTab />
-            </Suspense>
-          </TabErrorBoundary>
+          <LazyClientsTab />
         </TabsContent>
 
         <TabsContent value="users">
-          <TabErrorBoundary tabName="User Analytics" fallback={ErrorFallback}>
-            <Suspense fallback={<TabLoadingSkeleton />}>
-              <UsersTab />
-            </Suspense>
-          </TabErrorBoundary>
+          <LazyUsersTab />
         </TabsContent>
 
         <TabsContent value="system">
-          <TabErrorBoundary tabName="System Health" fallback={ErrorFallback}>
-            <Suspense fallback={<TabLoadingSkeleton />}>
-              <SystemTab />
-            </Suspense>
-          </TabErrorBoundary>
+          <LazySystemTab />
         </TabsContent>
 
         <TabsContent value="operations">
-          <TabErrorBoundary tabName="Operations" fallback={ErrorFallback}>
-            <Suspense fallback={<TabLoadingSkeleton />}>
-              <OperationsTab />
-            </Suspense>
-          </TabErrorBoundary>
+          <LazyOperationsTab />
         </TabsContent>
+        
+        {/* Performance monitoring in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="fixed bottom-4 right-4 z-50 bg-card border border-border rounded-md p-2 text-xs max-w-xs">
+            <div className="font-semibold mb-1">Lazy Loading Stats</div>
+            <div>Metrics: {getMetrics().length} tabs tracked</div>
+            {isPreloading && <div className="text-blue-500 animate-pulse">Preloading...</div>}
+            <LazyLoadingPerformanceMonitor 
+              metrics={getMetrics()} 
+              onMetricsUpdate={(metrics) => {
+                // Optional: Send metrics to analytics service
+                console.log('Updated lazy loading metrics:', metrics);
+              }}
+            />
+          </div>
+        )}
       </Tabs>
     </div>
     </PartialDataProvider>
