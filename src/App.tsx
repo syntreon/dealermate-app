@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,37 +8,24 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CallsProvider } from "@/context/CallsContext";
 import { LeadProvider } from "@/context/LeadContext";
 import { ThemeInitProvider } from "@/context/ThemeInitProvider";
-
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Call from "./pages/Call";
-import Settings from "./pages/Settings";
-import ManageUsers from "./pages/ManageUsers";
-import NotFound from "./pages/NotFound";
-import Logs from "./pages/Logs";
-import Analytics from "./pages/Analytics";
-import Leads from "./pages/Leads";
-import Agents from "./pages/Agents";
-import AppLayout from "./components/AppLayout";
-import AdminLayout from "./layouts/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminSystemStatus from "./pages/AdminSystemStatus";
-import ClientManagement from "./pages/admin/ClientManagement";
-import ClientDetails from "./pages/admin/ClientDetails";
-import UserManagement from "./pages/admin/UserManagement";
-import AdminSettings from "./pages/admin/AdminSettings";
-import SystemHealthMonitoring from "./pages/admin/SystemHealthMonitoring";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminAudit from "./pages/admin/AdminAudit";
-import AdminIndex from "./pages/admin/AdminIndex";
-import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
-import AuthTest from "./test/AuthTest";
-import AuthCallback from "./pages/auth/AuthCallback";
-import ResetPassword from "./pages/auth/ResetPassword";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { RouteGroups, preloadCriticalRoutes } from "@/utils/routeCodeSplitting";
+import bundleAnalyzer from "@/utils/bundleAnalyzer";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  // Preload critical routes after app initialization
+  useEffect(() => {
+    preloadCriticalRoutes();
+    
+    // Clean up bundle analyzer on unmount
+    return () => {
+      bundleAnalyzer.destroy();
+    };
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
@@ -45,74 +33,162 @@ const App = () => (
           <ThemeInitProvider>
             <CallsProvider>
               <LeadProvider>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/auth-test" element={<AuthTest />} />
-                
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/call" element={<Call />} />
-                  <Route path="/logs" element={<Logs />} />
-                  <Route path="/leads" element={<Leads />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/agents" element={<Agents />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/manage-users" element={<ManageUsers />} />
-                </Route>
+                <Suspense fallback={<LoadingSpinner text="Loading application..." />}>
+                  <Routes>
+                    <Route path="/login" element={
+                      <Suspense fallback={<LoadingSpinner text="Loading login..." />}>
+                        <RouteGroups.auth.Login />
+                      </Suspense>
+                    } />
+                    <Route path="/auth/callback" element={
+                      <Suspense fallback={<LoadingSpinner text="Processing authentication..." />}>
+                        <RouteGroups.auth.AuthCallback />
+                      </Suspense>
+                    } />
+                    <Route path="/reset-password" element={
+                      <Suspense fallback={<LoadingSpinner text="Loading reset password..." />}>
+                        <RouteGroups.auth.ResetPassword />
+                      </Suspense>
+                    } />
+                    <Route path="/auth-test" element={
+                      <Suspense fallback={<LoadingSpinner text="Loading auth test..." />}>
+                        <RouteGroups.test.AuthTest />
+                      </Suspense>
+                    } />
+                    
+                    <Route element={
+                      <Suspense fallback={<LoadingSpinner text="Loading dashboard..." />}>
+                        <RouteGroups.layouts.AppLayout />
+                      </Suspense>
+                    }>
+                      <Route path="/" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading dashboard..." />}>
+                          <RouteGroups.main.Dashboard />
+                        </Suspense>
+                      } />
+                      <Route path="/dashboard" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading dashboard..." />}>
+                          <RouteGroups.main.Dashboard />
+                        </Suspense>
+                      } />
+                      <Route path="/call" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading call interface..." />}>
+                          <RouteGroups.main.Call />
+                        </Suspense>
+                      } />
+                      <Route path="/logs" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading call logs..." />}>
+                          <RouteGroups.main.Logs />
+                        </Suspense>
+                      } />
+                      <Route path="/leads" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading leads..." />}>
+                          <RouteGroups.main.Leads />
+                        </Suspense>
+                      } />
+                      <Route path="/analytics" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading analytics..." />}>
+                          <RouteGroups.main.Analytics />
+                        </Suspense>
+                      } />
+                      <Route path="/agents" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading agents..." />}>
+                          <RouteGroups.main.Agents />
+                        </Suspense>
+                      } />
+                      <Route path="/settings" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading settings..." />}>
+                          <RouteGroups.main.Settings />
+                        </Suspense>
+                      } />
+                      <Route path="/manage-users" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading user management..." />}>
+                          <RouteGroups.main.ManageUsers />
+                        </Suspense>
+                      } />
+                    </Route>
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route path="dashboard" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <AdminDashboard />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route path="clients" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <ClientManagement />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route path="clients/:id" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <ClientDetails />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route path="users" element={<UserManagement />} />
-                  <Route path="analytics" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <AdminAnalytics />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route path="audit" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <AdminAudit />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route path="system-status" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <AdminSystemStatus />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route path="system-health" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <SystemHealthMonitoring />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route path="settings" element={
-                    <ProtectedAdminRoute requireSystemAccess={true}>
-                      <AdminSettings />
-                    </ProtectedAdminRoute>
-                  } />
-                  <Route index element={<AdminIndex />} />
-                </Route>
-
-                
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={
+                      <Suspense fallback={<LoadingSpinner text="Loading admin panel..." />}>
+                        <RouteGroups.layouts.AdminLayout />
+                      </Suspense>
+                    }>
+                      <Route path="dashboard" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading admin dashboard..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AdminDashboard />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="clients" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading client management..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.ClientManagement />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="clients/:id" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading client details..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.ClientDetails />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="users" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading user management..." />}>
+                          <RouteGroups.admin.UserManagement />
+                        </Suspense>
+                      } />
+                      <Route path="analytics" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading admin analytics..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AdminAnalytics />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="audit" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading audit logs..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AdminAudit />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="system-status" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading system status..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AdminSystemStatus />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="system-health" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading system health..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.SystemHealthMonitoring />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="settings" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading admin settings..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AdminSettings />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route index element={
+                        <Suspense fallback={<LoadingSpinner text="Loading admin..." />}>
+                          <RouteGroups.admin.AdminIndex />
+                        </Suspense>
+                      } />
+                    </Route>
+                    
+                    <Route path="*" element={
+                      <Suspense fallback={<LoadingSpinner text="Loading page..." />}>
+                        <RouteGroups.common.NotFound />
+                      </Suspense>
+                    } />
+                  </Routes>
+                </Suspense>
               </LeadProvider>
             </CallsProvider>
           </ThemeInitProvider>
@@ -122,6 +198,7 @@ const App = () => (
       <Sonner />
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

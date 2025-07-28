@@ -74,10 +74,23 @@ src/
 │   │   ├── AdminSidebar.tsx # Admin navigation with role-based filtering.
 │   │   ├── ProtectedAdminRoute.tsx # Route protection based on user permissions.
 │   │   └── ... # Other admin components
+│   ├── optimized/         # Performance-optimized components for large datasets.
+│   │   ├── MemoizedCallLogsTable.tsx # Memoized version of CallLogsTable with intelligent prop comparison.
+│   │   ├── VirtualizedCallLogsTable.tsx # Virtualized table for handling thousands of call logs efficiently.
+│   │   ├── MemoizedLeadsTable.tsx # Memoized version of LeadsTable with efficient lead comparison.
+│   │   ├── VirtualizedLeadsTable.tsx # Virtualized table for managing large lead datasets.
+│   │   ├── MemoizedMetricsSummaryCards.tsx # Optimized dashboard metrics with granular change detection.
+│   │   ├── MemoizedFinancialTab.tsx # Optimized financial tab that prevents unnecessary re-mounting.
+│   │   ├── MemoizedClientsTab.tsx # Optimized clients tab with stable rendering.
+│   │   ├── OptimizedLogsPage.tsx # Example implementation showing both memoized and virtualized components.
+│   │   ├── README.md # Comprehensive guide for using optimized components.
+│   │   └── __tests__/     # Performance tests for optimized components.
+│   │       └── performance.test.tsx # Comprehensive performance testing suite.
 │   ├── analytics/         # Components for the Analytics pages.
 │   │   └── SimpleAIAnalytics.tsx # AI model performance dashboard using real data.
 │   ├── calls/             # Components related to call details and evaluation.
 │   ├── common/            # Generic, shared components (buttons, inputs, etc.).
+│   │   └── LoadingSpinner.tsx # Theme-aware loading spinner component for code splitting.
 │   ├── leads/             # Components for lead management.
 │   │   ├── LeadsTable.tsx # Mobile-responsive leads table with filtering and sorting.
 │   │   ├── LeadDetailsView.tsx # Lead details modal/drawer component.
@@ -103,7 +116,8 @@ src/
 │   ├── useLoadingStates.ts # Comprehensive hook for managing loading states with progress tracking, error handling, and retry logic.
 │   ├── useDashboardMetrics.ts # Basic dashboard metrics hook for client-specific data.
 │   ├── useAdminDashboardData.ts # Extended admin dashboard hook with comprehensive data fetching, auto-refresh, and error handling.
-│   └── useCachedAdminDashboardData.ts # Cached version of admin dashboard hook with intelligent caching and query optimization.
+│   ├── useCachedAdminDashboardData.ts # Cached version of admin dashboard hook with intelligent caching and query optimization.
+│   └── useRoutePreloading.ts # Hook for intelligent route preloading based on user navigation patterns.
 ├──
 ├── layouts/               # Components that define the structure of pages.
 │   └── AdminLayout.tsx    # Admin panel layout with role-based access control - Mobile responsive with overflow handling.
@@ -146,7 +160,16 @@ src/
         ├── themeValidation.ts # Theme validation and sanitization utilities.
         ├── themePerformance.ts # Performance monitoring for theme operations.
         ├── themeTransitions.ts # Smooth theme transition management.
-        └── themeBackgroundSync.ts # Background synchronization for theme preferences.
+        ├── themeBackgroundSync.ts # Background synchronization for theme preferences.
+        ├── performanceOptimization.ts # Performance optimization utilities and hooks for React components.
+        ├── performanceTesting.ts # Performance testing utilities and benchmarking tools.
+        ├── routeCodeSplitting.ts # Route-based code splitting utilities with intelligent preloading.
+        ├── bundleAnalyzer.ts # Bundle size monitoring and optimization utilities.
+        └── code-splitting/    # Code splitting implementation documentation and guides.
+            ├── README.md      # Comprehensive code splitting implementation guide.
+            ├── DEVELOPER_GUIDE.md # Developer guide for working with code splitting.
+            ├── DEBUG_CHEATSHEET.md # Quick debugging reference for code splitting issues.
+            └── TROUBLESHOOTING_FLOW.md # Visual problem-solving guide for code splitting.
 ```
 
 ### Key Directory Explanations
