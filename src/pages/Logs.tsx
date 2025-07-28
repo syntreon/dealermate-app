@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, RefreshCw, Filter } from 'lucide-react';
 import { useCallLogs } from '@/hooks/useCallLogs';
+import { leadService } from '@/integrations/supabase/lead-service';
 import CallLogsTable, { ExtendedCallLog } from '@/components/CallLogsTable';
 import ClientSelector from '@/components/ClientSelector';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +15,10 @@ import { CachedAdminService } from '@/services/cachedAdminService';
  * Shows a table of call logs with caller information, appointment details, and status
  */
 const Logs: React.FC = () => {
+  // State for call IDs that have an associated lead
+  const [leadCallIds, setLeadCallIds] = useState<Set<string>>(new Set());
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadsError, setLeadsError] = useState<string | null>(null);
   const { user } = useAuth();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
@@ -69,6 +74,44 @@ const Logs: React.FC = () => {
     fetchClientsData();
   }, [user]);
   
+  useEffect(() => {
+    // Only fetch if admin or a client is selected
+    if (!user) return;
+  
+    const isAdmin = canViewSensitiveInfo(user);
+    const allClientsSelected = !selectedClientId || selectedClientId === 'all';
+  
+    setLeadsLoading(true);
+    setLeadsError(null);
+  
+    let fetchLeadsPromise;
+    if (isAdmin && allClientsSelected) {
+      // Admin: fetch all leads
+      fetchLeadsPromise = leadService.getLeads();
+    } else if (selectedClientId) {
+      // Non-admin or admin with a client selected: fetch leads for that client
+      fetchLeadsPromise = leadService.getLeadsByClientId(selectedClientId);
+    } else {
+      setLeadCallIds(new Set());
+      setLeadsLoading(false);
+      return;
+    }
+  
+    fetchLeadsPromise
+      .then(leads => {
+        const callIdSet = new Set<string>();
+        leads.forEach(lead => {
+          if (lead.call_id) callIdSet.add(lead.call_id);
+        });
+        setLeadCallIds(callIdSet);
+      })
+      .catch(err => {
+        setLeadsError(typeof err === 'string' ? err : err?.message || 'Unknown error fetching leads');
+        setLeadCallIds(new Set());
+      })
+      .finally(() => setLeadsLoading(false));
+  }, [user, selectedClientId]);
+
   // Enhance call logs with client name
   const enhancedCallLogs: ExtendedCallLog[] = callLogs.map(log => {
     // If filtering by a specific client, use the selected client name
@@ -126,8 +169,9 @@ const Logs: React.FC = () => {
           ) : (
             <CallLogsTable 
               callLogs={enhancedCallLogs} 
-              loading={loading} 
+              loading={loading || leadsLoading} 
               onRefresh={forceRefresh} 
+              leadCallIds={leadCallIds}
             />
           )}
         </CardContent>

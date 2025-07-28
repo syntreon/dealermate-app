@@ -70,6 +70,11 @@ interface CallLogsTableProps {
   callLogs: ExtendedCallLog[];
   loading: boolean;
   onRefresh: () => void;
+  /**
+   * Set of call IDs that have an associated lead. This enables efficient lookup
+   * when displaying the 'Lead' column, and should be batch-fetched by the parent.
+   */
+  leadCallIds?: Set<string>;
 }
 
 /**
@@ -79,7 +84,12 @@ interface CallLogsTableProps {
 const CallLogsTable: React.FC<CallLogsTableProps> = ({
   callLogs,
   loading,
-  onRefresh
+  onRefresh,
+  /**
+   * Default to empty Set if parent does not provide leadCallIds.
+   * This prevents runtime errors when checking for lead associations.
+   */
+  leadCallIds = new Set(),
 }) => {
   const { user } = useAuth();
   const [sortField, setSortField] = useState<keyof CallLog>('call_start_time');
@@ -208,7 +218,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
     </TableHead>
   );
 
-  const colSpan = isAdmin ? 6 : 5; // Adjust colspan based on admin status
+  const colSpan = isAdmin ? 7 : 6; // Adjust colspan based on admin status
 
   return (
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden w-full mx-auto">
@@ -258,6 +268,13 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
           <TableHeader>
             <TableRow>
               <SortableHeader field="caller_full_name" label="Caller" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap" />
+              {/* Phone Number column (desktop only) - shows caller's phone number */}
+              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">
+                Phone Number
+              </TableHead>
+              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">
+                Lead
+              </TableHead>
               <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">Inquiry Type</TableHead>
               <SortableHeader field="call_start_time" label="Time" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap" />
               <SortableHeader field="call_type" label="Type" className="px-3 sm:px-4 py-3 text-xs hidden sm:table-cell whitespace-nowrap" />
@@ -339,6 +356,25 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                         )}
                       </div>
                     </div>
+                  </TableCell>
+                  {/* Phone Number column (desktop only) */}
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
+                    {/* Show caller phone number, or N/A if missing */}
+                    {log.caller_phone_number || <span className="text-xs text-foreground/50">N/A</span>}
+                  </TableCell>
+                  {/* Lead column (desktop only): shows badge if call has an associated lead */}
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
+                    {/*
+                      Batch association: parent fetches all leads for visible calls and passes call IDs with leads.
+                      This avoids per-row queries and is efficient for large tables.
+                    */}
+                    {leadCallIds?.has(log.id) ? (
+                      <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800 px-2 py-1 rounded-full text-xs font-medium w-fit">
+                        Lead
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-foreground/50">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
                     {log.id && inquiryTypes.get(log.id) ? (
