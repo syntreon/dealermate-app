@@ -45,17 +45,19 @@ The `AuthCallback.tsx` component handles multiple authentication scenarios:
 
 ### User Deletion Process
 
-User deletion is implemented with a robust multi-step approach:
+User deletion is implemented with a robust, security-first, multi-step approach:
 
-1. **Client-side deletion**: First attempts to delete the user from both `public.users` and `auth.users` tables using `supabase.auth.admin.deleteUser()`.
+1. **Client-side attempt (expected to fail on client)**: The UI first tries to delete the user from both `public.users` and `auth.users` tables using `supabase.auth.admin.deleteUser()`. This call requires the Supabase service role key, which is **never exposed to client-side code** for security reasons. If run from the client, this will throw a 403 Forbidden error (caught and logged as a warning).
 
-2. **Server-side fallback**: If client-side auth deletion fails (due to permission restrictions), falls back to a secure PostgreSQL function `delete_user_auth()`.
+2. **Secure server-side fallback (best practice)**: When the admin API fails, the system falls back to a secure PostgreSQL function `delete_user_auth()`. This function is defined with `SECURITY DEFINER` and can perform privileged actions, but only after verifying the caller's role is 'admin' or 'owner'.
 
-3. **Security controls**: The PostgreSQL function runs with elevated privileges but validates that only users with 'admin' or 'owner' roles can delete users.
+   - **Why not use the service role key client-side?**
+     - The service role key grants unrestricted access to your entire database, bypassing all security policies. Exposing it to the client would create a massive security vulnerability.
+     - Instead, we use a secure RPC function with strict permission checks. This allows safe, auditable admin actions from the UI without ever exposing sensitive credentials.
 
-4. **Audit logging**: All deletion attempts are logged asynchronously for accountability.
+3. **Audit logging**: All deletion attempts are logged asynchronously for accountability.
 
-5. **Error handling**: Failed deletions are logged to a `system_alerts` table for admin attention.
+4. **Error handling**: Failed deletions are logged to a `system_alerts` table for admin attention.
 
 ```sql
 -- Core server-side deletion function

@@ -36,10 +36,31 @@ const AuthCallback: React.FC = () => {
           }
         }
         
+        // Check for magic link or invitation verification flow
+        const token = searchParams.get('token');
+        const type = searchParams.get('type');
+        
+        if (token && (type === 'magiclink' || type === 'invite' || type === 'recovery')) {
+          console.log('Processing magic link or invitation with token:', token, 'type:', type);
+          // For magic links and invitations, we need to get the session
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: type === 'magiclink' ? 'email' : type === 'invite' ? 'invite' : 'recovery'
+          });
+          
+          if (error) {
+            console.error('Error verifying OTP:', error);
+            throw error;
+          }
+          
+          if (data?.session) {
+            await processSession(data.session);
+            return;
+          }
+        }
+        
         // If no tokens in hash, try to exchange the code for a session
         // This handles the OAuth2 PKCE flow where code is in query params
-        // If no tokens in hash, try to exchange the code for a session.
-        // This handles the OAuth2 PKCE flow where 'code' is in the query params.
         const code = searchParams.get('code');
         if (code) {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -99,27 +120,36 @@ const AuthCallback: React.FC = () => {
       handleSuccessfulAuth(session.user, type);
     };
     
-    // Common handler for successful authentication
     const handleSuccessfulAuth = (user: any, type: string | null) => {
-      // Check if this is an email confirmation or password reset
-      if (type === 'signup' || type === 'invite' || !user.last_sign_in_at) {
-        setStatus('success');
-        setMessage('Email confirmed successfully! Redirecting to password setup...');
-        
-        // Redirect to password reset page after a short delay
+      setStatus('success');
+      
+      // For invites, always redirect to reset-password
+      if (type === 'invite' || searchParams.get('type') === 'invite') {
+        setMessage('Invitation accepted! Redirecting to set your password...');
         setTimeout(() => {
-          const nextUrl = searchParams.get('next') || '/reset-password';
-          navigate(nextUrl);
-        }, 2000);
-      } else {
-        // For other auth types, redirect to dashboard
-        setStatus('success');
-        setMessage('Authentication successful! Redirecting...');
-        
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
+          navigate('/reset-password', { replace: true });
+        }, 1500);
+        return;
       }
+      
+      setMessage('Authentication successful! Redirecting...');
+
+      // Prioritize 'next' parameter for custom redirects
+      const nextPath = searchParams.get('next');
+      if (nextPath) {
+        console.log('Redirecting to next path:', nextPath);
+        setTimeout(() => {
+          navigate(nextPath, { replace: true });
+        }, 1500);
+        return; // Stop execution to prevent default redirect
+      }
+
+      // Default redirect logic if 'next' is not present
+      const redirectPath = type === 'signup' ? '/welcome' : '/dashboard';
+      console.log('Redirecting to default path:', redirectPath);
+      setTimeout(() => {
+        navigate(redirectPath, { replace: true });
+      }, 1500);
     };
     
     // Execute the auth callback handler

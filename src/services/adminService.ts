@@ -587,108 +587,28 @@ export const AdminService = {
 
   createUser: async (data: CreateUserData, createdBy?: string): Promise<User> => {
     try {
-      // Use admin invitation flow instead of signup
-      // This sends an invitation email to the user with a link to set their password
-      let userData: any;
-      
-      try {
-        // First try using the admin invitation API
-        const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-          data.email,
-          {
-            data: {
-              full_name: data.full_name,
-              role: data.role
-            },
-            redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
-          }
-        );
-        
-        if (inviteError) {
-          throw inviteError;
-        }
-        
-        userData = inviteData;
-      } catch (adminApiError) {
-        // If admin API fails (due to permissions), fall back to regular signup
-        console.warn('Admin invitation failed, falling back to regular signup:', adminApiError);
-        
-        // Create a temporary password for initial signup
-        const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
-        
-        const { data: signupData, error: signupError } = await supabase.auth.signUp({
-          email: data.email,
-          password: tempPassword,
-          options: {
-            data: {
-              full_name: data.full_name,
-              role: data.role
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
-          }
-        });
-        
-        if (signupError) {
-          throw signupError;
-        }
-        
-        userData = signupData;
-      }
-      
-      // Validate user data from either method
-      if (!userData || !userData.user) {
-        throw new Error('Failed to create auth user');
-      }
-      
-      // Get the user ID from the auth user
-      const userId = userData.user.id;
-
-      // Now insert into public.users with the auth user's ID
-      const { data: directUser, error: directError } = await supabase
-        .from('users')
-        .insert({
-          id: userId,
+      // Invoke the secure edge function to create the user
+      const { data: newUser, error } = await supabase.functions.invoke('invite-user', {
+        body: {
           email: data.email,
           full_name: data.full_name,
           role: data.role,
-          client_id: data.client_id || null,
-          phone: null,
-          preferences: {
-            language: 'en',
-            timezone: 'America/Toronto',
-            notifications: {
-              email: true,
-              leadAlerts: data.role.includes('admin'),
-              systemAlerts: data.role.includes('admin'),
-              notificationEmails: [data.email]
-            },
-            displaySettings: {
-              theme: 'light',
-              dashboardLayout: 'detailed'
-            }
-          }
-        })
-        .select()
-        .single();
+          client_id: data.client_id,
+        },
+      });
 
-      if (directError) {
-        // If public.users creation fails, clean up the auth user
-        try {
-          await supabase.auth.admin.deleteUser(userId);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup auth user after public.users creation failure:', cleanupError);
-        }
-        throw handleDatabaseError(directError);
+      if (error) {
+        // The error from the function could be a string or an object
+        const errorMessage = typeof error === 'object' ? error.message : error;
+        throw new Error(errorMessage || 'An unknown error occurred while creating the user.');
       }
 
-      const user = transformUser(directUser);
+      const user = transformUser(newUser);
 
-      // Log audit event asynchronously to prevent RLS policy errors from breaking user creation
+      // Log audit event asynchronously after successful creation
       if (createdBy) {
-        // Store user data for audit logging
         const newUserData = { email: user.email, role: user.role, full_name: user.full_name };
         const clientId = user.client_id || undefined;
-        const userId = user.id;
 
         // Use setTimeout to make audit logging non-blocking
         setTimeout(async () => {
@@ -696,7 +616,7 @@ export const AdminService = {
             await AuditService.logUserAction(
               createdBy,
               'create',
-              userId,
+              user.id,
               undefined,
               newUserData,
               clientId
@@ -800,15 +720,25 @@ export const AdminService = {
       
       try {
         // First try using admin API (this will likely fail in client-side code)
-        const { error: authError } = await supabase.auth.admin.deleteUser(id);
+        let adminApiWorked = false;
         
-        if (!authError) {
-          console.log('Successfully deleted auth user via admin API');
-          authUserDeleted = true;
-        } else {
-          console.warn('Admin API not available for auth user deletion:', authError);
+        try {
+          const { error: authError } = await supabase.auth.admin.deleteUser(id);
           
-          // If admin API fails, try using the server function to delete the auth user
+          if (!authError) {
+            console.log('Successfully deleted auth user via admin API');
+            authUserDeleted = true;
+            adminApiWorked = true;
+          } else {
+            console.warn('Admin API returned error:', authError);
+          }
+        } catch (adminApiError) {
+          // This catches 403 Forbidden and other exceptions from admin API
+          console.warn('Admin API not available for auth user deletion (expected):', adminApiError.message);
+        }
+        
+        // If admin API didn't work, try using the RPC function
+        if (!adminApiWorked) {
           const { data: rpcResult, error: rpcError } = await supabase.rpc('delete_user_auth', { user_id: id });
           
           if (!rpcError && rpcResult === true) {
