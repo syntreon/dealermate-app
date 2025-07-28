@@ -148,21 +148,27 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   // Filter and sort call logs
   const filteredAndSortedLogs = callLogs
     .filter(log => {
-      // Apply call type filter
-      if (selectedCallType && log.call_type !== selectedCallType) {
+      // Apply call type filter (case-insensitive to match data and filter values)
+      if (selectedCallType && log.call_type?.toLowerCase() !== selectedCallType.toLowerCase()) {
         return false;
       }
 
       // Apply search filter if search term exists
+      // Search now includes: caller name, phone number, transcript, client ID, inquiry type, and call type
+      // This ensures users can search by call type keywords (e.g., 'inbound', 'outbound')
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
-        // Search in multiple fields with null/undefined checks
+        // Debug: log call_type being checked
+        if (log.call_type && search) {
+          console.log('[CallType Search Debug]', { callType: log.call_type, search });
+        }
         return (
           (log.caller_full_name?.toLowerCase().includes(search) || false) ||
           (log.caller_phone_number?.toLowerCase().includes(search) || false) ||
           (log.transcript?.toLowerCase().includes(search) || false) ||
           (log.client_id?.toLowerCase().includes(search) || false) ||
-          (inquiryTypes.get(log.id)?.toLowerCase().includes(search) || false)
+          (inquiryTypes.get(log.id)?.toLowerCase().includes(search) || false) ||
+          (log.call_type?.toLowerCase().includes(search) || false)
         );
       }
 
@@ -264,24 +270,18 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
       
       {/* Table */}
       <div className="overflow-x-auto w-full">
-        <Table>
+        <Table className="w-full ">
           <TableHeader>
             <TableRow>
-              <SortableHeader field="caller_full_name" label="Caller" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap" />
+              <SortableHeader field="caller_full_name" label="Caller" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap w-[220px]" />
               {/* Phone Number column (desktop only) - shows caller's phone number */}
-              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">
-                Phone Number
-              </TableHead>
-              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">
-                Lead
-              </TableHead>
-              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">Inquiry Type</TableHead>
+              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">Phone Number</TableHead>
+              {/* Reduce Lead column width */}
+              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap w-[90px]">Lead</TableHead>
+              <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap w-[120px]">Inquiry Type</TableHead>
               <SortableHeader field="call_start_time" label="Time" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap" />
-              <SortableHeader field="call_type" label="Type" className="px-3 sm:px-4 py-3 text-xs hidden sm:table-cell whitespace-nowrap" />
-              {isAdmin && (
-                <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden lg:table-cell whitespace-nowrap">Client/Business</TableHead>
-              )}
-              <TableHead className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider whitespace-nowrap">Actions</TableHead>
+              <SortableHeader field="call_type" label="Type" className="px-3 sm:px-4 py-3 text-xs hidden sm:table-cell whitespace-nowrap w-[110px]" />
+              <TableHead className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider w-[60px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -321,15 +321,22 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                   }}
                   title="Click to view call details"
                 >
-                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4">
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 w-[220px]">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary/10 flex items-center justify-center">
                         <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                       </div>
-                      <div className="ml-2 sm:ml-3 md:ml-4 min-w-0 flex-1">
-                        <div className="text-xs sm:text-sm font-medium text-foreground truncate">
+                      <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+                        <div className="text-sm sm:text-base font-semibold text-foreground truncate">
                           {log.caller_full_name || 'Unknown'}
                         </div>
+                        {/* For admin: show client name below caller name, just like LeadsTable */}
+                        {isAdmin && log.client_name && (
+                          <div className="flex items-center mt-0.5 text-xs text-foreground/60">
+                            <User className="h-3 w-3 mr-1" />
+                            <span className="truncate">Client: {log.client_name}</span>
+                          </div>
+                        )}
                         {/* Mobile: Show phone number below name */}
                         <div className="sm:hidden text-xs text-foreground/60 mt-0.5 flex items-center">
                           <Phone className="h-3 w-3 mr-1" />
@@ -348,22 +355,17 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                           <CallTypeBadge callType={log.call_type || 'unknown'} />
                         </div>
                         {/* For admin view: show client name */}
-                        {isAdmin && (
-                          <div className="lg:hidden text-xs text-foreground/60 mt-0.5 flex items-center">
-                            <User className="h-3 w-3 mr-1" />
-                            <span className="truncate">Client: {log.client_name || 'Unknown'}</span>
-                          </div>
-                        )}
+                        
                       </div>
                     </div>
                   </TableCell>
                   {/* Phone Number column (desktop only) */}
-                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
                     {/* Show caller phone number, or N/A if missing */}
                     {log.caller_phone_number || <span className="text-xs text-foreground/50">N/A</span>}
                   </TableCell>
                   {/* Lead column (desktop only): shows badge if call has an associated lead */}
-                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
                     {/*
                       Batch association: parent fetches all leads for visible calls and passes call IDs with leads.
                       This avoids per-row queries and is efficient for large tables.
@@ -398,20 +400,11 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                       <span>{log.call_duration_mins ? `${log.call_duration_mins}m` : 'N/A'}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell w-[110px]">
                     <CallTypeBadge callType={log.call_type || 'unknown'} />
                   </TableCell>
-                  {isAdmin && (
-                    <TableCell className="px-3 sm:px-4 py-3 sm:py-4 hidden lg:table-cell">
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 text-foreground/50 mr-2" />
-                        <span className="text-sm text-foreground truncate">
-                          {log.client_name || 'Unknown'}
-                        </span>
-                      </div>
-                    </TableCell>
-                  )}
-                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 text-right">
+                  
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 text-right w-[60px]">
                     <Button
                       variant="ghost"
                       size="sm"
