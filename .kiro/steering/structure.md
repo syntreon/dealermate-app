@@ -24,7 +24,15 @@ The root directory contains configuration files, documentation, and the main sou
 │   │   ├── role-based-access-control-implementation.md
 │   │   └── user-admin-views-guide.md
 │   ├── analytics/     # Analytics and reporting documentation.
-│   └── status-messages/ # System status and messaging documentation.
+│   ├── bug-analysis/  # Comprehensive bug analysis and testing documentation.
+│   │   ├── README.md  # Overview and navigation guide for bug analysis docs
+│   │   ├── comprehensive-bug-analysis.md # Main bug analysis document with all identified issues
+│   │   ├── developer-guide.md # Developer guide for bug prevention and best practices
+│   │   ├── debug-cheatsheet.md # Quick debugging reference and solutions
+│   │   ├── troubleshooting-flow.md # Visual problem-solving guides and decision trees
+│   │   └── testing-strategy.md # Comprehensive testing approach and implementation
+│   ├── status-messages/ # System status and messaging documentation.
+│   └── comprehensive-bug-analysis.md # Main bug analysis document (also available in bug-analysis/ folder)
 ├── node_modules/      # Project dependencies.
 ├── public/            # Static assets (images, fonts, etc.) served directly.
 ├── scripts/           # Standalone scripts for various tasks.
