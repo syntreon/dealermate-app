@@ -92,9 +92,8 @@ const Logs: React.FC = () => {
       // Non-admin or admin with a client selected: fetch leads for that client
       fetchLeadsPromise = leadService.getLeadsByClientId(selectedClientId);
     } else {
-      setLeadCallIds(new Set());
-      setLeadsLoading(false);
-      return;
+      // Non-admin: fetch all leads user is allowed to see (same as admin, but for their scope)
+      fetchLeadsPromise = leadService.getLeads();
     }
   
     fetchLeadsPromise

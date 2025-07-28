@@ -224,7 +224,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
     </TableHead>
   );
 
-  const colSpan = isAdmin ? 7 : 6; // Adjust colspan based on admin status
+  const colSpan = 7; // Always show all 7 columns, including Lead, for all users
 
   return (
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden w-full mx-auto">
