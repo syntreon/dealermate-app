@@ -38,18 +38,23 @@ const AuthCallback: React.FC = () => {
         
         // If no tokens in hash, try to exchange the code for a session
         // This handles the OAuth2 PKCE flow where code is in query params
-        if (window.location.search && window.location.search.includes('code=')) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.search);
-          
+        // If no tokens in hash, try to exchange the code for a session.
+        // This handles the OAuth2 PKCE flow where 'code' is in the query params.
+        const code = searchParams.get('code');
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
           if (error) {
+            // The original error likely stems from here.
+            // We'll throw it to be caught by our handler.
             throw error;
           }
-          
+
           if (!data.session) {
-            throw new Error('No session data received');
+            throw new Error('No session data received after code exchange.');
           }
-          
-          // Process the session we got from code exchange
+
+          // Process the session we got from the code exchange.
           await processSession(data.session);
           return;
         }
