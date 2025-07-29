@@ -294,12 +294,15 @@ const DesktopAdminSidebar = () => {
     const filteredLinks = activeNavItem.subSidebar.links.filter(link => hasRequiredAccess(user, link.requiredAccess));
     if (filteredLinks.length === 0) return;
     
-    // Check if we're already on ANY valid sub-link, not just the first one
     const current = location.pathname;
-    const isOnValidSubLink = filteredLinks.some(link => current === link.href || current.startsWith(link.href + '/'));
     
-    // Only redirect if we're not already on a valid sub-link
-    if (!isOnValidSubLink) {
+    // Get the base section path (e.g., "/admin/analytics" from "/admin/analytics/financials")
+    const sectionBasePath = `/${current.split('/').slice(1, 3).join('/')}`; // e.g., "/admin"
+    const fullSectionPath = `${sectionBasePath}/${activeNavItem.id}`; // e.g., "/admin/analytics"
+    
+    // Only redirect if we're exactly on the base section path (e.g., "/admin/analytics")
+    // but NOT if we're already on a specific sub-page
+    if (current === fullSectionPath) {
       if (navigate) {
         navigate(filteredLinks[0].href, { replace: true });
       }

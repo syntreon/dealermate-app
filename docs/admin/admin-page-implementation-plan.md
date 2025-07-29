@@ -60,6 +60,17 @@ const YourPage: React.FC = () => {
         Short description or instructions for this page.
       </p>
       {/* Main content goes here */}
+      {/* Main content area */}
+          <div 
+            className="min-h-screen transition-all duration-300"
+            style={{ 
+               marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
+               width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
+            }}
+          >
+            
+          </div>
+      
     </div>
   );
 };
