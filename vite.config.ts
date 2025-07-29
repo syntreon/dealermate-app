@@ -37,11 +37,10 @@ export default defineConfig(({ mode }) => ({
           
           // Feature-based chunks
           'admin-pages': [
-            './src/pages/admin/AdminDashboard',
+            './src/pages/admin/dashboard',
             './src/pages/admin/ClientManagement',
-            './src/pages/admin/UserManagement',
+            './src/pages/admin/user-management',
             './src/pages/admin/AdminSettings',
-            './src/pages/admin/AdminAnalytics',
             './src/pages/admin/AdminAudit',
             './src/pages/admin/SystemHealthMonitoring',
           ],

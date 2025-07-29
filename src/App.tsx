@@ -114,6 +114,8 @@ const App = () => {
                         <RouteGroups.layouts.AdminLayout />
                       </Suspense>
                     }>
+                      {/* Redirect /admin to /admin/dashboard */}
+                      <Route index element={<Navigate to="dashboard" replace />} />
                       {/* Main Dashboard Route */}
                       <Route path="dashboard" element={
                         <Suspense fallback={<LoadingSpinner text="Loading admin dashboard..." />}>
@@ -123,42 +125,44 @@ const App = () => {
                         </Suspense>
                       } />
                       
-                      {/* Analytics Section Routes */}
-                      <Route path="analytics/financials" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading financial analytics..." />}>
+                      {/* Analytics Section with Nested Routes */}
+                      <Route path="analytics" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading analytics..." />}>
                           <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.layouts.AnalyticsLayout />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      }>
+                        {/* Default redirect for /admin/analytics */}
+                        <Route index element={<Navigate to="financials" replace />} />
+                        
+                        {/* Analytics sub-pages */}
+                        <Route path="financials" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading financial analytics..." />}>
                             <RouteGroups.admin.AnalyticsFinancials />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      } />
-                      <Route path="analytics/clients" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading client analytics..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                          </Suspense>
+                        } />
+                        <Route path="clients" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading client analytics..." />}>
                             <RouteGroups.admin.AnalyticsClients />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      } />
-                      <Route path="analytics/users" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading user analytics..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                          </Suspense>
+                        } />
+                        <Route path="users" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading user analytics..." />}>
                             <RouteGroups.admin.AnalyticsUsers />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      } />
-                      <Route path="analytics/platform" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading platform analytics..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                          </Suspense>
+                        } />
+                        <Route path="platform" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading platform analytics..." />}>
                             <RouteGroups.admin.AnalyticsPlatform />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      } />
-                      <Route path="analytics/system-ops" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading system operations..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                          </Suspense>
+                        } />
+                        <Route path="system-ops" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading system operations..." />}>
                             <RouteGroups.admin.AnalyticsSystemOps />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      } />
+                          </Suspense>
+                        } />
+                      </Route>
                       
                       {/* Existing Routes */}
                       <Route path="clients" element={

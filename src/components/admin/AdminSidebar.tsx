@@ -293,10 +293,13 @@ const DesktopAdminSidebar = () => {
     if (!activeNavItem) return;
     const filteredLinks = activeNavItem.subSidebar.links.filter(link => hasRequiredAccess(user, link.requiredAccess));
     if (filteredLinks.length === 0) return;
-    // If not already on a sub-link, redirect to the first one
+    
+    // Check if we're already on ANY valid sub-link, not just the first one
     const current = location.pathname;
-    const baseHref = filteredLinks[0].href.split('/').slice(0, 4).join('/');
-    if (!current.startsWith(baseHref)) {
+    const isOnValidSubLink = filteredLinks.some(link => current === link.href || current.startsWith(link.href + '/'));
+    
+    // Only redirect if we're not already on a valid sub-link
+    if (!isOnValidSubLink) {
       if (navigate) {
         navigate(filteredLinks[0].href, { replace: true });
       }

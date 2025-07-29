@@ -123,8 +123,7 @@ const AdminLayout = () => {
           <div 
             className="min-h-screen transition-all duration-300"
             style={{ 
-              marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
-              width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
+              marginLeft: isMobile ? 0 : `${totalLeftMargin}px`
             }}
           >
 

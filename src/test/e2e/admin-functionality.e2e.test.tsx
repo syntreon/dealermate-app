@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import UserManagement from '@/pages/admin/UserManagement';
+import AdminDashboard from '@/pages/admin/dashboard';
+import UserManagement from '@/pages/admin/user-management';
 import ClientManagement from '@/pages/admin/ClientManagement';
 
 // Mock admin user

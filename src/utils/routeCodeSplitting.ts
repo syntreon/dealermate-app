@@ -73,14 +73,12 @@ export const RouteGroups = {
 
   // Admin panel routes
   admin: {
-    AdminDashboard: createLazyRoute(() => import('../pages/admin/AdminDashboard')),
     Dashboard: createLazyRoute(() => import('../pages/admin/dashboard')),
     ClientManagement: createLazyRoute(() => import('../pages/admin/ClientManagement')),
     ClientDetails: createLazyRoute(() => import('../pages/admin/ClientDetails')),
     UserManagement: createLazyRoute(() => import('../pages/admin/user-management')),
     AdminSettings: createLazyRoute(() => import('../pages/admin/AdminSettings')),
     SystemHealthMonitoring: createLazyRoute(() => import('../pages/admin/SystemHealthMonitoring')),
-    AdminAnalytics: createLazyRoute(() => import('../pages/admin/AdminAnalytics')),
     AdminAudit: createLazyRoute(() => import('../pages/admin/AdminAudit')),
     AdminIndex: createLazyRoute(() => import('../pages/admin/AdminIndex')),
     AdminSystemStatus: createLazyRoute(() => import('../pages/AdminSystemStatus')),
@@ -96,6 +94,7 @@ export const RouteGroups = {
   layouts: {
     AppLayout: createLazyRoute(() => import('../components/AppLayout'), { preload: true }),
     AdminLayout: createLazyRoute(() => import('../layouts/AdminLayout')),
+    AnalyticsLayout: createLazyRoute(() => import('../layouts/AnalyticsLayout')),
   },
 
   // Utility components
