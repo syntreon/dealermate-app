@@ -35,6 +35,27 @@ This document provides a scalable, modular, and consistent approach for adding n
 
 ---
 
+## 2B.1. **Sidebar/Subsidebar Navigation & Redirect Pattern**
+
+For any admin section with multiple sub-pages (e.g., Analytics), use the following pattern to ensure the correct default sub-page is shown when clicking the main sidebar link:
+
+1. **Add a `basePath` property** to the parent section in `mainNavItems` (see `src/config/adminNav.ts`). This should match the route path (e.g., `/admin/analytics`).
+2. **Main Sidebar Navigation:** When a user clicks the main sidebar item, the app navigates to `basePath`.
+3. **Automatic Redirect:** The `DesktopAdminSidebar` in `src/components/admin/AdminSidebar.tsx` contains a `useEffect` that detects when the current path matches a section's `basePath` and automatically redirects to the first sub-sidebar link (if access is allowed).
+4. **Add sub-links** as usual to the `subSidebar.links` array for the parent item in `mainNavItems`.
+5. **Add nested routes** for sub-pages in your router (e.g., `App.tsx`).
+
+**Reference Implementation:**
+- See `src/components/admin/AdminSidebar.tsx` (search for `basePath` and the relevant `useEffect`)
+- See `src/config/adminNav.ts` for navigation config pattern
+
+**Why:**
+- Ensures clicking a main sidebar section always opens the first sub-page (not a blank or duplicate page)
+- Keeps navigation logic centralized and config-driven
+- Prevents infinite redirect loops and navigation bugs
+
+---
+
 ## 3. **Boilerplate for Admin Pages**
 
 > Copy and use this for all new admin page components for consistency.
@@ -59,17 +80,7 @@ const YourPage: React.FC = () => {
       <p className="text-muted-foreground mb-4">
         Short description or instructions for this page.
       </p>
-      {/* Main content goes here */}
       {/* Main content area */}
-          <div 
-            className="min-h-screen transition-all duration-300"
-            style={{ 
-               marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
-               width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
-            }}
-          >
-            
-          </div>
       
     </div>
   );
