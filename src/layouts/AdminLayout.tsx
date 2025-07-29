@@ -127,21 +127,7 @@ const AdminLayout = () => {
               width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
             }}
           >
-            {/* Debug overlay - temporary */}
-            {!isMobile && (
-              <div 
-                className="fixed top-2 right-2 bg-purple-500 text-white p-2 text-xs z-50 rounded"
-                style={{ fontSize: '10px' }}
-              >
-                Debug: ML={totalLeftMargin}px, flex-1
-                <br />
-                MainSB: {mainSidebarWidth}px, SubSB: {subSidebarVisible ? 'visible' : 'hidden'}
-                <br />
-                Path: {location.pathname}
-                <br />
-                Section: {activeSection}
-              </div>
-            )}
+
             
             {/* Top Bar - Only show on desktop */}
             {!isMobile && <TopBar />}

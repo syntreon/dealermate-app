@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LogOut, 
   Shield,
@@ -258,7 +258,10 @@ const SubSidebar: React.FC<SubSidebarProps> = ({ activeSection, mainSidebarWidth
 
 // Desktop Admin Dual Sidebar Component
 const DesktopAdminSidebar = () => {
+  // Get user context for access checks
+  const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState(() => getActiveSection(location.pathname));
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const saved = localStorage.getItem('admin-sidebar-collapsed');
@@ -283,6 +286,22 @@ const DesktopAdminSidebar = () => {
     setIsCollapsed(!isCollapsed);
     setIsHovered(false); // Reset hover state when toggling
   };
+
+  // Automatically navigate to the first sub-sidebar link when a main section is selected
+  useEffect(() => {
+    const activeNavItem = mainNavItems.find(item => item.id === activeSection);
+    if (!activeNavItem) return;
+    const filteredLinks = activeNavItem.subSidebar.links.filter(link => hasRequiredAccess(user, link.requiredAccess));
+    if (filteredLinks.length === 0) return;
+    // If not already on a sub-link, redirect to the first one
+    const current = location.pathname;
+    const baseHref = filteredLinks[0].href.split('/').slice(0, 4).join('/');
+    if (!current.startsWith(baseHref)) {
+      if (navigate) {
+        navigate(filteredLinks[0].href, { replace: true });
+      }
+    }
+  }, [activeSection, user, location.pathname, navigate]);
 
   const handleWidthChange = (width: number) => {
     // Update the main sidebar width state
