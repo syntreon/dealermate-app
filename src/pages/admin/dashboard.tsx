@@ -5,7 +5,7 @@ import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { FinancialOverview } from '@/components/admin/dashboard/FinancialOverview';
 import { BusinessMetrics } from '@/components/admin/dashboard/BusinessMetrics';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { AlertCircle, BarChart3, Users, Building2, Activity, ArrowRight } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -243,6 +243,8 @@ const AdminDashboardPage: React.FC = () => {
     <div className="space-y-6">
       {/* Dashboard Header */}
       <DashboardHeader 
+        title="Admin Dashboard"
+        subtitle="System overview and key metrics"
         lastUpdated={lastUpdated || new Date()}
         isLoading={isLoading}
         onRefresh={refresh}

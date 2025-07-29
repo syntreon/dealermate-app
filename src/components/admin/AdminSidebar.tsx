@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
 import Logo from '@/components/Logo';
 import { mainNavItems, hasRequiredAccess, type MainNavItem } from '@/config/adminNav';
 
@@ -41,6 +41,7 @@ interface MainSidebarProps {
   onToggleCollapse: () => void;
   isHovered: boolean;
   onHoverChange: (hovered: boolean) => void;
+  onWidthChange?: (width: number) => void;
 }
 
 const MainSidebar: React.FC<MainSidebarProps> = ({
@@ -49,7 +50,8 @@ const MainSidebar: React.FC<MainSidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
   isHovered,
-  onHoverChange
+  onHoverChange,
+  onWidthChange
 }) => {
   const { user, logout } = useAuth();
 
@@ -59,6 +61,17 @@ const MainSidebar: React.FC<MainSidebarProps> = ({
   // Calculate sidebar width based on state
   const sidebarWidth = isCollapsed ? (isHovered ? 'w-64' : 'w-16') : 'w-64';
   const isExpanded = !isCollapsed || isHovered;
+  
+  // Calculate numeric width and notify parent
+  const numericWidth = isCollapsed ? (isHovered ? 256 : 64) : 256;
+  
+  useEffect(() => {
+    onWidthChange?.(numericWidth);
+    // Dispatch custom event for layout to listen to
+    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
+      detail: { width: numericWidth } 
+    }));
+  }, [numericWidth, onWidthChange]);
 
   return (
     <div 
@@ -140,12 +153,12 @@ const MainSidebar: React.FC<MainSidebarProps> = ({
           onClick={logout}
           className={cn(
             "w-full flex items-center gap-3 px-3 py-3 text-foreground/70 hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200",
-            !isExpanded && "justify-center"
+            !isExpanded && "justify-center px-3"
           )}
           title={!isExpanded ? "Logout" : undefined}
         >
-          <LogOut className="h-5 w-5" />
-          {isExpanded && <span>Logout</span>}
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          {isExpanded && <span className="whitespace-nowrap">Logout</span>}
         </button>
 
         {/* Collapse Toggle Button - Below Logout */}
@@ -154,17 +167,17 @@ const MainSidebar: React.FC<MainSidebarProps> = ({
             onClick={onToggleCollapse}
             className={cn(
               "w-full flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground rounded-lg transition-all duration-200",
-              !isExpanded && "justify-center"
+              !isExpanded && "justify-center px-3"
             )}
             title={!isExpanded ? (isCollapsed ? "Expand" : "Collapse") : undefined}
           >
             {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 flex-shrink-0" />
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 flex-shrink-0" />
             )}
             {isExpanded && (
-              <span className="text-xs">{isCollapsed ? "Expand" : "Collapse"}</span>
+              <span className="text-xs whitespace-nowrap">{isCollapsed ? "Expand" : "Collapse"}</span>
             )}
           </button>
         </div>
@@ -186,7 +199,12 @@ const SubSidebar: React.FC<SubSidebarProps> = ({ activeSection, mainSidebarWidth
   // Find the active main nav item
   const activeNavItem = mainNavItems.find(item => item.id === activeSection);
   
-  if (!activeNavItem || !hasRequiredAccess(user, activeNavItem.requiredAccess)) {
+  const isVisible = activeNavItem && hasRequiredAccess(user, activeNavItem.requiredAccess);
+  
+  // Note: SubSidebar visibility is now calculated directly in AdminLayout
+  // No need to communicate visibility via events
+  
+  if (!isVisible) {
     return null;
   }
 
@@ -197,18 +215,18 @@ const SubSidebar: React.FC<SubSidebarProps> = ({ activeSection, mainSidebarWidth
 
   return (
     <div 
-      className="fixed top-0 h-full w-64 bg-muted/30 border-r border-border transition-all duration-300"
+      className="fixed top-0 h-full w-64 bg-card border-r border-border shadow-sm transition-all duration-300 z-40"
       style={{ left: mainSidebarWidth }}
     >
       {/* Sub-sidebar Header */}
-      <div className="p-6 border-b border-border">
+      <div className="p-6 border-b border-border bg-card">
         <h2 className="text-lg font-semibold text-foreground">
           {activeNavItem.subSidebar.title}
         </h2>
       </div>
 
       {/* Sub-navigation Links */}
-      <nav className="p-4 space-y-2">
+      <nav className="p-4 space-y-2 bg-card">
         {filteredLinks.map((link) => {
           const isActive = location.pathname === link.href || 
                           location.pathname.startsWith(link.href + '/');
@@ -247,6 +265,9 @@ const DesktopAdminSidebar = () => {
     return saved ? JSON.parse(saved) : false;
   });
   const [isHovered, setIsHovered] = useState(false);
+  const [mainSidebarWidth, setMainSidebarWidth] = useState(() => {
+    return isCollapsed ? 64 : 256;
+  });
 
   // Update active section when location changes
   useEffect(() => {
@@ -263,7 +284,18 @@ const DesktopAdminSidebar = () => {
     setIsHovered(false); // Reset hover state when toggling
   };
 
-  const mainSidebarWidth = isCollapsed ? (isHovered ? 256 : 64) : 256; // 256px = w-64, 64px = w-16
+  const handleWidthChange = (width: number) => {
+    // Update the main sidebar width state
+    setMainSidebarWidth(width);
+    
+    // Also dispatch the event to ensure layout is updated
+    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
+      detail: { 
+        width: width,
+        subSidebarVisible: true // Default to true, SubSidebar will override if needed
+      } 
+    }));
+  };
 
   return (
     <>
@@ -274,6 +306,7 @@ const DesktopAdminSidebar = () => {
         onToggleCollapse={handleToggleCollapse}
         isHovered={isHovered}
         onHoverChange={setIsHovered}
+        onWidthChange={handleWidthChange}
       />
       <SubSidebar
         activeSection={activeSection}

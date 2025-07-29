@@ -65,8 +65,7 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'User Management',
       links: [
-        { title: 'All Users', href: '/admin/user-management', requiredAccess: 'client_admin', description: 'Manage user accounts' },
-        { title: 'Roles & Permissions', href: '/admin/user-management/roles', requiredAccess: 'system_admin', description: 'Configure user roles' }
+        { title: 'All Users', href: '/admin/user-management', requiredAccess: 'client_admin', description: 'Manage user accounts' }
       ]
     }
   },
@@ -78,7 +77,7 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Client Management',
       links: [
-        { title: 'All Clients', href: '/admin/client-management', requiredAccess: 'system_admin', description: 'Manage client accounts' }
+        { title: 'All Clients', href: '/admin/clients', requiredAccess: 'system_admin', description: 'Manage client accounts' }
       ]
     }
   },
@@ -90,20 +89,7 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Audit Logs',
       links: [
-        { title: 'All Logs', href: '/admin/admin-audit', requiredAccess: 'system_admin', description: 'View all audit logs' }
-      ]
-    }
-  },
-  {
-    id: 'system',
-    title: 'System',
-    icon: Activity,
-    requiredAccess: 'system_admin',
-    subSidebar: {
-      title: 'System',
-      links: [
-        { title: 'System Status', href: '/admin/system-status', requiredAccess: 'system_admin', description: 'System health monitoring' },
-        { title: 'System Health', href: '/admin/system-health-monitoring', requiredAccess: 'system_admin', description: 'Detailed system health metrics' }
+        { title: 'All Logs', href: '/admin/audit', requiredAccess: 'system_admin', description: 'View all audit logs' }
       ]
     }
   },
@@ -115,7 +101,7 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Settings',
       links: [
-        { title: 'Admin Settings', href: '/admin/admin-settings', requiredAccess: 'system_admin', description: 'General admin settings' }
+        { title: 'Admin Settings', href: '/admin/settings', requiredAccess: 'system_admin', description: 'General admin settings' }
       ]
     }
   }

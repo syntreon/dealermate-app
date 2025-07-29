@@ -19,7 +19,7 @@ const AdminIndex: React.FC = () => {
         return <Navigate to="/admin/dashboard" replace />;
     } else {
         // Client admins go directly to user management
-        return <Navigate to="/admin/users" replace />;
+        return <Navigate to="/admin/user-management" replace />;
     }
 };
 

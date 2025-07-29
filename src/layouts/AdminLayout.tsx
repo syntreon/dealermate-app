@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { canAccessAdminPanel, hasClientAdminAccess, hasSystemWideAccess } from '@/utils/clientDataIsolation';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ThemeProvider } from 'next-themes';
+import { mainNavItems, hasRequiredAccess } from '@/config/adminNav';
 
 const AdminLayout = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -65,29 +66,89 @@ const AdminLayout = () => {
 
   // Redirect client_admin users to User Management if they try to access admin dashboard
   if (hasClientAdmin && !hasSystemAccess && location.pathname === '/admin/dashboard') {
-    return <Navigate to="/admin/users" replace />;
+    return <Navigate to="/admin/user-management" replace />;
   }
 
   // Redirect client_admin users to User Management if they access /admin root
   if (hasClientAdmin && !hasSystemAccess && location.pathname === '/admin') {
-    return <Navigate to="/admin/users" replace />;
+    return <Navigate to="/admin/user-management" replace />;
   }
+
+  // Calculate sidebar widths for proper main content positioning
+  const [mainSidebarWidth, setMainSidebarWidth] = useState(256); // Default expanded width
+  const subSidebarWidth = 256; // Sub-sidebar is always 256px when visible
+  
+  // Determine if SubSidebar should be visible based on current route and user permissions
+  const getActiveSection = (pathname: string): string => {
+    for (const item of mainNavItems) {
+      for (const link of item.subSidebar.links) {
+        if (pathname.startsWith(link.href)) {
+          return item.id;
+        }
+      }
+    }
+    return mainNavItems[0]?.id || 'dashboard';
+  };
+  
+  const activeSection = getActiveSection(location.pathname);
+  const activeNavItem = mainNavItems.find(item => item.id === activeSection);
+  const subSidebarVisible = !!(activeNavItem && hasRequiredAccess(user, activeNavItem.requiredAccess));
+  
+  // Listen for sidebar width changes (only for main sidebar width)
+  useEffect(() => {
+    const handleSidebarResize = (event: CustomEvent) => {
+      const detail = event.detail;
+      if (detail.width) {
+        setMainSidebarWidth(detail.width);
+      }
+    };
+
+    window.addEventListener('admin-sidebar-resize', handleSidebarResize as EventListener);
+    return () => {
+      window.removeEventListener('admin-sidebar-resize', handleSidebarResize as EventListener);
+    };
+  }, []);
+
+  // Calculate total left margin for main content
+  const totalLeftMargin = isMobile ? 0 : mainSidebarWidth + (subSidebarVisible ? subSidebarWidth : 0);
 
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
       <SidebarProvider defaultOpen={!isMobile}>
-        <div className="min-h-screen bg-background text-foreground flex w-full">
+        <div className="min-h-screen bg-background text-foreground relative">
           {/* Sidebar */}
           <AdminSidebar />
           
           {/* Main content area */}
-          <div className="flex flex-col flex-1">
+          <div 
+            className="min-h-screen transition-all duration-300"
+            style={{ 
+              marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
+              width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
+            }}
+          >
+            {/* Debug overlay - temporary */}
+            {!isMobile && (
+              <div 
+                className="fixed top-2 right-2 bg-purple-500 text-white p-2 text-xs z-50 rounded"
+                style={{ fontSize: '10px' }}
+              >
+                Debug: ML={totalLeftMargin}px, flex-1
+                <br />
+                MainSB: {mainSidebarWidth}px, SubSB: {subSidebarVisible ? 'visible' : 'hidden'}
+                <br />
+                Path: {location.pathname}
+                <br />
+                Section: {activeSection}
+              </div>
+            )}
+            
             {/* Top Bar - Only show on desktop */}
             {!isMobile && <TopBar />}
             
             {/* Page content */}
-            <main className="flex-1 overflow-auto p-2 pb-24 md:p-4">
-              <div className="w-full max-w-full overflow-hidden">
+            <main className="p-2 pb-24 md:p-6 w-full">
+              <div className="w-full max-w-none overflow-x-hidden">
                 <Outlet />
               </div>
             </main>

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -114,13 +114,53 @@ const App = () => {
                         <RouteGroups.layouts.AdminLayout />
                       </Suspense>
                     }>
+                      {/* Main Dashboard Route */}
                       <Route path="dashboard" element={
                         <Suspense fallback={<LoadingSpinner text="Loading admin dashboard..." />}>
                           <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
-                            <RouteGroups.admin.AdminDashboard />
+                            <RouteGroups.admin.Dashboard />
                           </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
                       } />
+                      
+                      {/* Analytics Section Routes */}
+                      <Route path="analytics/financials" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading financial analytics..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AnalyticsFinancials />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="analytics/clients" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading client analytics..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AnalyticsClients />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="analytics/users" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading user analytics..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AnalyticsUsers />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="analytics/platform" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading platform analytics..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AnalyticsPlatform />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="analytics/system-ops" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading system operations..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.admin.AnalyticsSystemOps />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      } />
+                      
+                      {/* Existing Routes */}
                       <Route path="clients" element={
                         <Suspense fallback={<LoadingSpinner text="Loading client management..." />}>
                           <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
@@ -135,16 +175,9 @@ const App = () => {
                           </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
                       } />
-                      <Route path="users" element={
+                      <Route path="user-management" element={
                         <Suspense fallback={<LoadingSpinner text="Loading user management..." />}>
                           <RouteGroups.admin.UserManagement />
-                        </Suspense>
-                      } />
-                      <Route path="analytics" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading admin analytics..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
-                            <RouteGroups.admin.AdminAnalytics />
-                          </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
                       } />
                       <Route path="audit" element={
@@ -175,11 +208,12 @@ const App = () => {
                           </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
                       } />
-                      <Route index element={
-                        <Suspense fallback={<LoadingSpinner text="Loading admin..." />}>
-                          <RouteGroups.admin.AdminIndex />
-                        </Suspense>
-                      } />
+                      
+                      {/* Backward Compatibility Redirects */}
+                      <Route path="analytics" element={<Navigate to="/admin/analytics/financials" replace />} />
+                      <Route path="users" element={<Navigate to="/admin/user-management" replace />} />
+                      
+                      <Route index element={<Navigate to="/admin/dashboard" replace />} />
                     </Route>
                     
                     <Route path="*" element={

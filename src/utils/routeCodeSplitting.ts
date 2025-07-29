@@ -74,15 +74,22 @@ export const RouteGroups = {
   // Admin panel routes
   admin: {
     AdminDashboard: createLazyRoute(() => import('../pages/admin/AdminDashboard')),
+    Dashboard: createLazyRoute(() => import('../pages/admin/dashboard')),
     ClientManagement: createLazyRoute(() => import('../pages/admin/ClientManagement')),
     ClientDetails: createLazyRoute(() => import('../pages/admin/ClientDetails')),
-    UserManagement: createLazyRoute(() => import('../pages/admin/UserManagement')),
+    UserManagement: createLazyRoute(() => import('../pages/admin/user-management')),
     AdminSettings: createLazyRoute(() => import('../pages/admin/AdminSettings')),
     SystemHealthMonitoring: createLazyRoute(() => import('../pages/admin/SystemHealthMonitoring')),
     AdminAnalytics: createLazyRoute(() => import('../pages/admin/AdminAnalytics')),
     AdminAudit: createLazyRoute(() => import('../pages/admin/AdminAudit')),
     AdminIndex: createLazyRoute(() => import('../pages/admin/AdminIndex')),
     AdminSystemStatus: createLazyRoute(() => import('../pages/AdminSystemStatus')),
+    // Analytics section pages
+    AnalyticsFinancials: createLazyRoute(() => import('../pages/admin/analytics/financials')),
+    AnalyticsClients: createLazyRoute(() => import('../pages/admin/analytics/clients')),
+    AnalyticsUsers: createLazyRoute(() => import('../pages/admin/analytics/users')),
+    AnalyticsPlatform: createLazyRoute(() => import('../pages/admin/analytics/platform')),
+    AnalyticsSystemOps: createLazyRoute(() => import('../pages/admin/analytics/system-ops')),
   },
 
   // Layout components
@@ -155,8 +162,16 @@ export const BundleOptimization = {
         () => import('../pages/Analytics'),
       ],
       '/admin': [
-        () => import('../pages/admin/AdminDashboard'),
-        () => import('../pages/admin/UserManagement'),
+        () => import('../pages/admin/dashboard'),
+        () => import('../pages/admin/user-management'),
+      ],
+      '/admin/dashboard': [
+        () => import('../pages/admin/analytics/financials'),
+        () => import('../pages/admin/analytics/clients'),
+      ],
+      '/admin/analytics/financials': [
+        () => import('../pages/admin/analytics/clients'),
+        () => import('../pages/admin/analytics/users'),
       ],
     };
 

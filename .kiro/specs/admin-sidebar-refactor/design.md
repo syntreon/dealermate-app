@@ -699,3 +699,32 @@ const AdminSystemOpsPage = lazy(() => import('./analytics/system-ops'));
 - Ensure all existing data sources continue to work
 - Maintain existing API contracts
 - Preserve user preferences and settings
+## Layout Details: Fixed Sidebar & Content Sizing (2025-07-29 Update)
+
+**Problem Encountered:**
+Some admin pages (except dashboard) had a persistent empty space on the right side. This was caused by the main content area not properly filling the available space when both sidebars (MainSidebar, SubSidebar) are `position: fixed`.
+
+**Root Cause:**
+- The main content container used `width: 100%` or percentage-based sizing, which referenced its parent container, not the full viewport.
+- With fixed sidebars, the main content must explicitly account for sidebar widths to avoid layout gaps.
+
+**Solution Implemented:**
+- The main content area now uses:
+  ```tsx
+  style={{
+    marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
+    width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
+  }}
+  ```
+  Where `totalLeftMargin` is the sum of the main and sub sidebar widths when visible.
+- This ensures the content always fills the viewport, minus the sidebars, with no right-side gap.
+
+**Best Practice:**
+- **Always use `width: calc(100vw - [sidebar widths])` for main content when sidebars are fixed-position.**
+- Avoid `width: 100%` or parent-relative sizing for main content in this layout.
+
+**Result:**
+- All admin pages now fill the available space correctly.
+- The layout is robust to sidebar expand/collapse and works for all routes.
+
+---

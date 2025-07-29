@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useState, useEffect, useCallback, useRef } from 
 import { TabLoadingSkeleton } from './TabLoadingSkeleton';
 import { ErrorBoundary } from 'react-error-boundary';
 import ErrorFallback from './ErrorFallback';
+import { PartialDataProvider } from './PartialDataProvider';
 
 // Performance monitoring for lazy loading
 interface LazyLoadingMetrics {
@@ -281,7 +282,9 @@ export const LazyTabWrapper: React.FC<LazyTabWrapperProps> = ({
 // Individual lazy tab components with proper error boundaries
 export const LazyFinancialTab: React.FC = () => (
   <LazyTabWrapper tabId="financial">
-    <FinancialTab />
+    <PartialDataProvider>
+      <FinancialTab />
+    </PartialDataProvider>
   </LazyTabWrapper>
 );
 
