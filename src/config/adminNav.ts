@@ -14,6 +14,7 @@ export interface MainNavItem {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   requiredAccess: 'system_admin' | 'client_admin';
   subSidebar: SubSidebarConfig;
+  basePath?: string; // Base path for sections with sub-sidebars
 }
 
 export interface SubSidebarConfig {
@@ -44,6 +45,7 @@ export const mainNavItems: MainNavItem[] = [
   {
     id: 'analytics',
     title: 'Analytics',
+    basePath: '/admin/analytics',
     icon: BarChart3,
     requiredAccess: 'system_admin',
     subSidebar: {

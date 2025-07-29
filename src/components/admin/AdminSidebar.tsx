@@ -294,15 +294,12 @@ const DesktopAdminSidebar = () => {
     const filteredLinks = activeNavItem.subSidebar.links.filter(link => hasRequiredAccess(user, link.requiredAccess));
     if (filteredLinks.length === 0) return;
     
-    const current = location.pathname;
-    
-    // Get the base section path (e.g., "/admin/analytics" from "/admin/analytics/financials")
-    const sectionBasePath = `/${current.split('/').slice(1, 3).join('/')}`; // e.g., "/admin"
-    const fullSectionPath = `${sectionBasePath}/${activeNavItem.id}`; // e.g., "/admin/analytics"
-    
-    // Only redirect if we're exactly on the base section path (e.g., "/admin/analytics")
-    // but NOT if we're already on a specific sub-page
-    if (current === fullSectionPath) {
+    const currentPath = location.pathname;
+
+    // A section's base path is now defined in the nav item's 'basePath' property.
+    // We should only redirect if the user lands exactly on this base path.
+    if (activeNavItem.basePath && currentPath === activeNavItem.basePath) {
+      // Navigate to the first available link in the sub-sidebar.
       if (navigate) {
         navigate(filteredLinks[0].href, { replace: true });
       }
@@ -322,11 +319,25 @@ const DesktopAdminSidebar = () => {
     }));
   };
 
+  const handleSectionChange = (sectionId: string) => {
+    setActiveSection(sectionId);
+
+    // Find the selected nav item to navigate to its primary link
+    const navItem = mainNavItems.find(item => item.id === sectionId);
+    if (navItem) {
+      // Navigate to the base path if it exists, otherwise to the first sub-link
+      const targetUrl = navItem.basePath || navItem.subSidebar?.links[0]?.href;
+      if (targetUrl) {
+        navigate(targetUrl);
+      }
+    }
+  };
+
   return (
     <>
       <MainSidebar
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
         isCollapsed={isCollapsed}
         onToggleCollapse={handleToggleCollapse}
         isHovered={isHovered}
