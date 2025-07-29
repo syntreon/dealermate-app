@@ -49,7 +49,11 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Analytics',
       links: [
-        { title: 'Analytics Dashboard', href: '/admin/analytics', requiredAccess: 'system_admin', description: 'Comprehensive analytics overview' }
+        { title: 'Financials', href: '/admin/analytics/financials', requiredAccess: 'system_admin', description: 'Revenue, costs, and profitability' },
+        { title: 'Clients', href: '/admin/analytics/clients', requiredAccess: 'system_admin', description: 'Client performance and metrics' },
+        { title: 'Users', href: '/admin/analytics/users', requiredAccess: 'system_admin', description: 'User activity and engagement' },
+        { title: 'Platform', href: '/admin/analytics/platform', requiredAccess: 'system_admin', description: 'Platform-wide analytics' },
+        { title: 'System & Ops', href: '/admin/analytics/system-ops', requiredAccess: 'system_admin', description: 'System health and operations' }
       ]
     }
   },
@@ -61,7 +65,8 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'User Management',
       links: [
-        { title: 'All Users', href: '/admin/users', requiredAccess: 'client_admin', description: 'Manage user accounts' }
+        { title: 'All Users', href: '/admin/user-management', requiredAccess: 'client_admin', description: 'Manage user accounts' },
+        { title: 'Roles & Permissions', href: '/admin/user-management/roles', requiredAccess: 'system_admin', description: 'Configure user roles' }
       ]
     }
   },
@@ -73,7 +78,7 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Client Management',
       links: [
-        { title: 'All Clients', href: '/admin/clients', requiredAccess: 'system_admin', description: 'Manage client accounts' }
+        { title: 'All Clients', href: '/admin/client-management', requiredAccess: 'system_admin', description: 'Manage client accounts' }
       ]
     }
   },
@@ -85,7 +90,7 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Audit Logs',
       links: [
-        { title: 'All Logs', href: '/admin/audit', requiredAccess: 'system_admin', description: 'View all audit logs' }
+        { title: 'All Logs', href: '/admin/admin-audit', requiredAccess: 'system_admin', description: 'View all audit logs' }
       ]
     }
   },
@@ -98,7 +103,7 @@ export const mainNavItems: MainNavItem[] = [
       title: 'System',
       links: [
         { title: 'System Status', href: '/admin/system-status', requiredAccess: 'system_admin', description: 'System health monitoring' },
-        { title: 'System Health', href: '/admin/system-health', requiredAccess: 'system_admin', description: 'Detailed system health metrics' }
+        { title: 'System Health', href: '/admin/system-health-monitoring', requiredAccess: 'system_admin', description: 'Detailed system health metrics' }
       ]
     }
   },
@@ -110,7 +115,7 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Settings',
       links: [
-        { title: 'Admin Settings', href: '/admin/settings', requiredAccess: 'system_admin', description: 'General admin settings' }
+        { title: 'Admin Settings', href: '/admin/admin-settings', requiredAccess: 'system_admin', description: 'General admin settings' }
       ]
     }
   }
