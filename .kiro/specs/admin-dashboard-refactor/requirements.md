@@ -2,71 +2,69 @@
 
 ## Introduction
 
-This feature refactors the existing AdminDashboard component into smaller, modular, theme-aware components that use real data from the database instead of mock calculations. The refactored dashboard will follow the Analytics page pattern with tabbed components and implement proper theme support as outlined in the theme system analysis.
+This feature refactors the existing admin interface from a tab-based AdminDashboard and overlapping AdminAnalytics into a hierarchical, sidebar-navigated interface similar to Supabase's admin panel. The new structure will eliminate redundant features, reduce complexity, and create a scalable pattern for future admin features while reusing existing components and services.
 
 ## Requirements
 
-### Requirement 1: Component Architecture Refactor
+### Requirement 1: Hierarchical Sidebar Navigation
 
-**User Story:** As a developer, I want the AdminDashboard to be broken down into smaller, manageable components, so that the codebase is more maintainable and follows React best practices.
-
-#### Acceptance Criteria
-
-1. WHEN the AdminDashboard is loaded THEN it SHALL use a tabbed interface similar to the Analytics page
-2. WHEN each tab is selected THEN it SHALL load its respective component independently
-3. WHEN components are rendered THEN they SHALL be no larger than 200 lines of code each
-4. WHEN the dashboard loads THEN it SHALL maintain the same mobile-responsive behavior with horizontal scrolling tabs
-5. WHEN components are created THEN they SHALL follow the established folder structure pattern
-
-### Requirement 2: Real Data Integration
-
-**User Story:** As an admin, I want the dashboard to show accurate financial and operational metrics calculated from real database data, so that I can make informed business decisions.
+**User Story:** As an admin user, I want a hierarchical sidebar navigation system similar to Supabase, so that I can easily navigate between different admin sections without tab overload.
 
 #### Acceptance Criteria
 
-1. WHEN financial metrics are displayed THEN they SHALL be calculated from actual client billing data in the database
-2. WHEN cost breakdowns are shown THEN they SHALL use real cost data from the calls table (vapi_call_cost_usd, openai_api_cost_usd, etc.)
-3. WHEN client profitability is calculated THEN it SHALL use actual revenue minus actual costs from database records
-4. WHEN user analytics are displayed THEN they SHALL be calculated from real user login and creation data
-5. WHEN call metrics are shown THEN they SHALL be aggregated from the calls table with proper date filtering
-6. WHEN lead conversion rates are calculated THEN they SHALL use actual call-to-lead ratios from the database
-7. WHEN growth trends are displayed THEN they SHALL be calculated from historical data comparisons (month-over-month)
+1. WHEN the admin interface loads THEN it SHALL display a collapsible sidebar with hierarchical navigation
+2. WHEN I click on a main section THEN it SHALL expand to show sub-sections if available
+3. WHEN I navigate to a page THEN the sidebar SHALL highlight the active section and sub-section
+4. WHEN I collapse the sidebar THEN it SHALL show only icons with tooltips
+5. WHEN on mobile THEN the sidebar SHALL overlay or transform into a mobile-friendly navigation
 
-### Requirement 3: Theme System Compliance
+### Requirement 2: Page-Based Architecture
 
-**User Story:** As a user, I want the admin dashboard to properly support light and dark themes, so that I can use the interface in my preferred visual mode.
+**User Story:** As a developer, I want each admin section to be a separate page component, so that the codebase is more modular and easier to maintain.
 
 #### Acceptance Criteria
 
-1. WHEN the dashboard is rendered THEN it SHALL use semantic color tokens (bg-background, text-foreground, etc.) instead of hardcoded colors
-2. WHEN the theme is switched THEN all dashboard components SHALL transition smoothly between light and dark modes
-3. WHEN cards are displayed THEN they SHALL use bg-card text-card-foreground border-border classes
-4. WHEN progress bars and charts are shown THEN they SHALL adapt their colors to the current theme
-5. WHEN badges and status indicators are used THEN they SHALL use the appropriate variant props instead of custom colors
+1. WHEN I create a new admin section THEN it SHALL be a separate page component in its own file
+2. WHEN pages are loaded THEN they SHALL reuse existing components, services, and hooks where possible
+3. WHEN components are created THEN they SHALL be no larger than 200 lines of code each
+4. WHEN pages are accessed THEN they SHALL maintain consistent layout using AdminLayout
+5. WHEN routing is configured THEN it SHALL follow the hierarchical structure defined in the sidebar
 
-### Requirement 4: Performance Optimization
+### Requirement 3: Component Reuse and Service Integration
 
-**User Story:** As an admin, I want the dashboard to load quickly and efficiently, so that I can access critical business metrics without delays.
-
-#### Acceptance Criteria
-
-1. WHEN the dashboard loads THEN it SHALL implement proper loading states for each component
-2. WHEN data is fetched THEN it SHALL use parallel API calls where possible to minimize load time
-3. WHEN components are not visible THEN they SHALL implement lazy loading to improve initial page load
-4. WHEN data is refreshed THEN it SHALL only update the components that need new data
-5. WHEN errors occur THEN they SHALL be handled gracefully with appropriate error boundaries
-
-### Requirement 5: Data Service Layer
-
-**User Story:** As a developer, I want dedicated service functions for dashboard metrics, so that data fetching logic is centralized and reusable.
+**User Story:** As a developer, I want to reuse existing components and services, so that I don't duplicate code and maintain consistency across the application.
 
 #### Acceptance Criteria
 
-1. WHEN dashboard data is needed THEN it SHALL be fetched through dedicated service functions
-2. WHEN financial calculations are performed THEN they SHALL be done in service layer functions with proper error handling
-3. WHEN metrics are aggregated THEN they SHALL use efficient database queries with appropriate indexes
-4. WHEN date ranges are applied THEN they SHALL be handled consistently across all metric calculations
-5. WHEN client-specific data is requested THEN it SHALL respect user permissions and client isolation
+1. WHEN creating new pages THEN they SHALL reuse existing AdminService, MetricsCalculationService, and other established services
+2. WHEN displaying data THEN they SHALL reuse existing components like FinancialOverview, BusinessMetrics, and chart components
+3. WHEN implementing features THEN they SHALL extend existing hooks like useAdminDashboardData
+4. WHEN styling components THEN they SHALL use the established theme system with semantic color tokens
+5. WHEN handling errors THEN they SHALL use existing error handling patterns and components
+
+### Requirement 4: Elimination of Redundant Features
+
+**User Story:** As an admin user, I want a streamlined interface without duplicate features, so that I can efficiently access the information I need without confusion.
+
+#### Acceptance Criteria
+
+1. WHEN the refactor is complete THEN there SHALL be no overlapping features between different admin sections
+2. WHEN I access analytics THEN all analytics features SHALL be consolidated into appropriate hierarchical sections
+3. WHEN I view financial data THEN it SHALL be presented in a single, comprehensive location
+4. WHEN I manage users or clients THEN the functionality SHALL not be duplicated across multiple pages
+5. WHEN I navigate the interface THEN each feature SHALL have a clear, single location
+
+### Requirement 5: Scalable Navigation Configuration
+
+**User Story:** As a developer, I want a centralized navigation configuration, so that adding new admin sections is straightforward and consistent.
+
+#### Acceptance Criteria
+
+1. WHEN I add a new admin section THEN I SHALL only need to update a central navigation configuration file
+2. WHEN navigation items are rendered THEN they SHALL be generated from the configuration automatically
+3. WHEN permissions change THEN the navigation SHALL filter items based on user roles dynamically
+4. WHEN the sidebar is rendered THEN it SHALL support nested navigation items with proper hierarchy
+5. WHEN icons or labels change THEN they SHALL be updated in a single configuration location
 
 ### Requirement 6: Mobile Responsiveness
 

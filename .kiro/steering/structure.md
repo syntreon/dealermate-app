@@ -79,8 +79,10 @@ src/
 │   │   │       ├── UsersTab.tsx # User analytics tab.
 │   │   │       ├── SystemTab.tsx # System health monitoring tab.
 │   │   │       └── OperationsTab.tsx # Operations metrics tab.
-│   │   ├── AdminSidebar.tsx # Admin navigation with role-based filtering.
+│   │   ├── AdminSidebar.tsx # Enhanced dual-sidebar navigation with hierarchical structure, collapsible main sidebar, and mobile-responsive overlay navigation.
 │   │   ├── ProtectedAdminRoute.tsx # Route protection based on user permissions.
+│   │   ├── __tests__/     # Admin component tests.
+│   │   │   └── AdminSidebar.test.tsx # Comprehensive tests for AdminSidebar component.
 │   │   └── ... # Other admin components
 │   ├── optimized/         # Performance-optimized components for large datasets.
 │   │   ├── MemoizedCallLogsTable.tsx # Memoized version of CallLogsTable with intelligent prop comparison.
@@ -111,6 +113,9 @@ src/
 │   │   └── themed-chart-tooltip.tsx # Theme-aware chart tooltip components.
 │   ├── CallLogsTable.tsx  # Mobile-responsive call logs table with advanced filtering.
 │   └── AppSidebar.tsx     # Main application sidebar with role-based navigation.
+├──
+├── config/                # Configuration files for the application.
+│   └── adminNav.ts        # Hierarchical admin navigation configuration with role-based access control.
 ├──
 ├── context/               # React Context providers for global state management.
 │   ├── AuthProvider.tsx   # Manages user authentication state.

@@ -1,352 +1,515 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Building2, 
-  Users, 
-  Settings, 
   LogOut, 
   Shield,
-  Activity,
   ChevronLeft,
-  BarChart3,
+  ChevronRight,
   Menu,
-  X,
-  MoreHorizontal
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { hasSystemWideAccess, canAccessAdminPanel } from '@/utils/clientDataIsolation';
 import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar
-} from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Logo from '@/components/Logo';
-
-const allAdminNavItems = [
-  { 
-    icon: LayoutDashboard, 
-    label: 'Admin Dashboard', 
-    path: '/admin/dashboard',
-    requiredAccess: 'system_admin' // Only for system admins
-  },
-  { 
-    icon: Building2, 
-    label: 'Client Management', 
-    path: '/admin/clients',
-    requiredAccess: 'system_admin' // Only for system admins
-  },
-  { 
-    icon: Users, 
-    label: 'User Management', 
-    path: '/admin/users',
-    requiredAccess: 'client_admin' // Available to client_admin and above
-  },
-  { 
-    icon: BarChart3, 
-    label: 'Analytics', 
-    path: '/admin/analytics',
-    requiredAccess: 'system_admin' // Only for system admins
-  },
-  { 
-    icon: Shield, 
-    label: 'Audit Logs', 
-    path: '/admin/audit',
-    requiredAccess: 'system_admin' // Only for system admins
-  },
-  { 
-    icon: Activity, 
-    label: 'System Status', 
-    path: '/admin/system-status',
-    requiredAccess: 'system_admin' // Only for system admins
-  },
-  { 
-    icon: Settings, 
-    label: 'Admin Settings', 
-    path: '/admin/settings',
-    requiredAccess: 'system_admin' // Only for system admins
-  },
-];
+import { mainNavItems, hasRequiredAccess, type MainNavItem } from '@/config/adminNav';
 
 // Function to filter navigation items based on user role
-const getFilteredNavItems = (user: any) => {
-  const hasSystemAdmin = canAccessAdminPanel(user);
-  const hasSystemWide = hasSystemWideAccess(user);
-  
-  return allAdminNavItems.filter(item => {
-    if (item.requiredAccess === 'system_admin') {
-      return hasSystemAdmin; // Only owner/admin can see these
-    }
-    if (item.requiredAccess === 'client_admin') {
-      return hasSystemWide || user?.role === 'client_admin'; // client_admin and above
-    }
-    return true; // Default: show to everyone with admin access
-  });
+const getFilteredNavItems = (user: unknown): MainNavItem[] => {
+  return mainNavItems.filter(item => hasRequiredAccess(user, item.requiredAccess));
 };
 
-// Get primary items for mobile (first 4 filtered items)
-const getPrimaryNavItems = (user: any) => {
-  return getFilteredNavItems(user).slice(0, 4).map(item => ({
-    icon: item.icon,
-    label: item.label.replace('Admin ', ''), // Shorter labels for mobile
-    path: item.path
-  }));
+// Get active section based on current path
+const getActiveSection = (pathname: string): string => {
+  for (const item of mainNavItems) {
+    for (const link of item.subSidebar.links) {
+      if (pathname.startsWith(link.href)) {
+        return item.id;
+      }
+    }
+  }
+  return mainNavItems[0]?.id || 'dashboard';
 };
 
-// Desktop Admin Sidebar Component
-const DesktopAdminSidebar = () => {
+// Main Sidebar Component (Left sidebar with icons/categories)
+interface MainSidebarProps {
+  activeSection: string;
+  onSectionChange: (sectionId: string) => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  isHovered: boolean;
+  onHoverChange: (hovered: boolean) => void;
+}
+
+const MainSidebar: React.FC<MainSidebarProps> = ({
+  activeSection,
+  onSectionChange,
+  isCollapsed,
+  onToggleCollapse,
+  isHovered,
+  onHoverChange
+}) => {
   const { user, logout } = useAuth();
-  const location = useLocation();
-  
-  // Get filtered navigation items based on user role
-  const adminNavItems = getFilteredNavItems(user);
+
+  // Filter navigation items based on user role
+  const filteredNavItems = getFilteredNavItems(user);
+
+  // Calculate sidebar width based on state
+  const sidebarWidth = isCollapsed ? (isHovered ? 'w-64' : 'w-16') : 'w-64';
+  const isExpanded = !isCollapsed || isHovered;
 
   return (
-    <Sidebar className="border-r border-border bg-card shadow-sm">
-      <SidebarHeader className="p-7">
+    <div 
+      className={cn(
+        "fixed left-0 top-0 h-full bg-card border-r border-border shadow-sm transition-all duration-300 z-50",
+        sidebarWidth,
+        isCollapsed && isHovered && "shadow-lg" // Extra shadow when hovering over collapsed sidebar
+      )}
+      onMouseEnter={() => isCollapsed && onHoverChange(true)}
+      onMouseLeave={() => isCollapsed && onHoverChange(false)}
+    >
+      {/* Header */}
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
-          <Logo />
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Admin</span>
+          {isExpanded && <Logo />}
+          {isExpanded && (
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Admin</span>
+            </div>
+          )}
+          {!isExpanded && (
+            <Shield className="h-6 w-6 text-primary mx-auto" />
+          )}
+        </div>
+      </div>
+
+      {/* Navigation Items */}
+      <div className="flex-1 py-4">
+        {/* Back to Main App - Hidden when collapsed */}
+        {isExpanded && (
+          <div className="px-4 mb-4">
+            <Button variant="outline" size="sm" asChild className="w-full justify-start">
+              <NavLink to="/dashboard">
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Back to Main App
+              </NavLink>
+            </Button>
           </div>
-        </div>
-      </SidebarHeader>
+        )}
 
-      <SidebarContent>
-        {/* Back to Main App */}
-        <div className="px-2 mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="w-full justify-start"
-          >
-            <NavLink to="/dashboard">
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Back to Main App
-            </NavLink>
-          </Button>
-        </div>
-
-        {/* Admin Navigation */}
-        <SidebarMenu className="space-y-2.5 px-2">
-          {adminNavItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
+        {/* Main Navigation */}
+        <nav className="space-y-2 px-2">
+          {filteredNavItems.map((item) => {
+            const isActive = activeSection === item.id;
             return (
-              <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton
-                  asChild
-                  tooltip={item.label}
-                  className="text-base"
-                >
-                  <NavLink
-                    to={item.path}
-                    className={cn(
-                      "flex items-center gap-5 px-6 py-4 font-medium rounded-lg transition-all duration-200",
-                      isActive
-                        ? "bg-primary/10 text-primary border-l-4 border-primary"
-                        : "text-foreground/70 hover:text-foreground hover:bg-secondary active:scale-98 border-l-4 border-transparent"
-                    )}
-                  >
-                    <item.icon className={cn(
-                      "h-5 w-5 transition-colors",
-                      isActive ? "text-primary" : "text-foreground/60 group-hover:text-foreground"
-                    )} />
-                    <span>{item.label}</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <button
+                key={item.id}
+                onClick={() => onSectionChange(item.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
+                  isActive 
+                    ? "bg-primary/10 text-primary border-l-4 border-primary" 
+                    : "text-foreground/70 hover:text-foreground hover:bg-secondary border-l-4 border-transparent",
+                  !isExpanded && "justify-center px-3"
+                )}
+                title={!isExpanded ? item.title : undefined}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                {isExpanded && <span className="font-medium">{item.title}</span>}
+              </button>
             );
           })}
-        </SidebarMenu>
-      </SidebarContent>
+        </nav>
+      </div>
 
-      <SidebarFooter className="p-5 mt-auto border-t border-border">
-        {/* User Info */}
-        <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-          <div className="text-sm font-medium">{user?.full_name || user?.email}</div>
-          <div className="text-xs text-muted-foreground capitalize">{user?.role} Access</div>
-        </div>
+      {/* Footer */}
+      <div className="border-t border-border p-4">
+        {/* User Info - Hidden when collapsed */}
+        {isExpanded && (
+          <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+            <div className="text-sm font-medium">{user?.full_name || user?.email}</div>
+            <div className="text-xs text-muted-foreground capitalize">{user?.role} Access</div>
+          </div>
+        )}
 
         {/* Logout Button */}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={logout}
-              tooltip="Logout"
-              className="flex w-full items-center gap-5 px-6 py-4 text-base font-medium text-foreground/70 hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200 active:scale-98"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+        <button
+          onClick={logout}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-3 text-foreground/70 hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200",
+            !isExpanded && "justify-center"
+          )}
+          title={!isExpanded ? "Logout" : undefined}
+        >
+          <LogOut className="h-5 w-5" />
+          {isExpanded && <span>Logout</span>}
+        </button>
+
+        {/* Collapse Toggle Button - Below Logout */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <button
+            onClick={onToggleCollapse}
+            className={cn(
+              "w-full flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground rounded-lg transition-all duration-200",
+              !isExpanded && "justify-center"
+            )}
+            title={!isExpanded ? (isCollapsed ? "Expand" : "Collapse") : undefined}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+            {isExpanded && (
+              <span className="text-xs">{isCollapsed ? "Expand" : "Collapse"}</span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
-// Mobile Admin Bottom Navigation
-const MobileAdminBottomNav = () => {
-  const { user } = useAuth();
+// Sub-Sidebar Component (Right sidebar with page links)
+interface SubSidebarProps {
+  activeSection: string;
+  mainSidebarWidth: number;
+}
+
+const SubSidebar: React.FC<SubSidebarProps> = ({ activeSection, mainSidebarWidth }) => {
   const location = useLocation();
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { user } = useAuth();
+
+  // Find the active main nav item
+  const activeNavItem = mainNavItems.find(item => item.id === activeSection);
   
-  // Get filtered navigation items based on user role
-  const primaryAdminNavItems = getPrimaryNavItems(user);
-  const adminNavItems = getFilteredNavItems(user);
+  if (!activeNavItem || !hasRequiredAccess(user, activeNavItem.requiredAccess)) {
+    return null;
+  }
+
+  // Filter sub-navigation links based on user role
+  const filteredLinks = activeNavItem.subSidebar.links.filter(link =>
+    hasRequiredAccess(user, link.requiredAccess)
+  );
+
+  return (
+    <div 
+      className="fixed top-0 h-full w-64 bg-muted/30 border-r border-border transition-all duration-300"
+      style={{ left: mainSidebarWidth }}
+    >
+      {/* Sub-sidebar Header */}
+      <div className="p-6 border-b border-border">
+        <h2 className="text-lg font-semibold text-foreground">
+          {activeNavItem.subSidebar.title}
+        </h2>
+      </div>
+
+      {/* Sub-navigation Links */}
+      <nav className="p-4 space-y-2">
+        {filteredLinks.map((link) => {
+          const isActive = location.pathname === link.href || 
+                          location.pathname.startsWith(link.href + '/');
+          
+          return (
+            <NavLink
+              key={link.href}
+              to={link.href}
+              className={cn(
+                "block px-4 py-3 rounded-lg transition-all duration-200",
+                isActive
+                  ? "bg-primary/10 text-primary border-l-4 border-primary"
+                  : "text-foreground/70 hover:text-foreground hover:bg-secondary/50 border-l-4 border-transparent"
+              )}
+            >
+              <div className="font-medium">{link.title}</div>
+              {link.description && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  {link.description}
+                </div>
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
+    </div>
+  );
+};
+
+// Desktop Admin Dual Sidebar Component
+const DesktopAdminSidebar = () => {
+  const location = useLocation();
+  const [activeSection, setActiveSection] = useState(() => getActiveSection(location.pathname));
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem('admin-sidebar-collapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Update active section when location changes
+  useEffect(() => {
+    setActiveSection(getActiveSection(location.pathname));
+  }, [location.pathname]);
+
+  // Save collapse state to localStorage
+  useEffect(() => {
+    localStorage.setItem('admin-sidebar-collapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+    setIsHovered(false); // Reset hover state when toggling
+  };
+
+  const mainSidebarWidth = isCollapsed ? (isHovered ? 256 : 64) : 256; // 256px = w-64, 64px = w-16
 
   return (
     <>
-      {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-4 z-50 shadow-lg">
-        <div className="flex justify-around items-center max-w-md mx-auto">
-          {/* Primary Navigation Items */}
-          {primaryAdminNavItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => 
-                  cn(
-                    "flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200",
-                    isActive 
-                      ? "text-primary bg-primary/10" 
-                      : "text-foreground/70 hover:text-foreground hover:bg-secondary active:scale-95"
-                  )
-                }
-              >
-                <item.icon className={cn(
-                  "h-6 w-6 mb-1",
-                  isActive ? "text-primary" : "text-foreground/60"
-                )} />
-                <span className="text-xs font-medium">{item.label}</span>
-              </NavLink>
-            );
-          })}
-
-          {/* More Menu Button */}
-          <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-            <SheetTrigger asChild>
-              <button
-                className="flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 text-foreground/70 hover:text-foreground hover:bg-secondary active:scale-95"
-              >
-                <MoreHorizontal className="h-6 w-6 mb-1 text-foreground/60" />
-                <span className="text-xs font-medium">More</span>
-              </button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[85%] p-0 bg-card">
-              <div className="flex flex-col h-full">
-                {/* Header */}
-                <div className="p-4 border-b border-border flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <span className="font-semibold text-lg">Admin Menu</span>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setIsDrawerOpen(false)}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-                
-                {/* Back to Main App */}
-                <div className="p-4 border-b border-border">
-                  <Button
-                    variant="outline"
-                    asChild
-                    className="w-full justify-start"
-                    onClick={() => setIsDrawerOpen(false)}
-                  >
-                    <NavLink to="/dashboard">
-                      <ChevronLeft className="h-4 w-4 mr-2" />
-                      Back to Main App
-                    </NavLink>
-                  </Button>
-                </div>
-                
-                {/* All Admin Navigation Items */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                  {adminNavItems.map((item) => {
-                    const isActive = location.pathname.startsWith(item.path);
-                    return (
-                      <NavLink
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setIsDrawerOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 px-4 py-3 font-medium rounded-lg transition-all duration-200",
-                          isActive
-                            ? "bg-primary/10 text-primary border-l-4 border-primary"
-                            : "text-foreground/70 hover:text-foreground hover:bg-secondary active:scale-98 border-l-4 border-transparent"
-                        )}
-                      >
-                        <item.icon className={cn(
-                          "h-5 w-5 transition-colors",
-                          isActive ? "text-primary" : "text-foreground/60"
-                        )} />
-                        <span>{item.label}</span>
-                      </NavLink>
-                    );
-                  })}
-                </div>
-                
-                {/* User Info and Logout */}
-                <div className="p-4 border-t border-border">
-                  <MobileUserInfo />
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
+      <MainSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={handleToggleCollapse}
+        isHovered={isHovered}
+        onHoverChange={setIsHovered}
+      />
+      <SubSidebar
+        activeSection={activeSection}
+        mainSidebarWidth={mainSidebarWidth}
+      />
     </>
   );
 };
 
-// Mobile User Info Component
-const MobileUserInfo = () => {
+// Mobile Admin Navigation (Overlay/Drawer with touch support)
+const MobileAdminNavigation = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(() => getActiveSection(location.pathname));
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   
+  // Get filtered navigation items based on user role
+  const filteredNavItems = getFilteredNavItems(user);
+
+  // Update active section when location changes
+  useEffect(() => {
+    setActiveSection(getActiveSection(location.pathname));
+  }, [location.pathname]);
+
+  // Handle swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    // Close drawer on left swipe
+    if (isLeftSwipe && isDrawerOpen) {
+      setIsDrawerOpen(false);
+    }
+    
+    // Open drawer on right swipe (from left edge)
+    if (isRightSwipe && !isDrawerOpen && touchStart < 50) {
+      setIsDrawerOpen(true);
+    }
+  };
+
+  // Handle tap outside to close
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      setIsDrawerOpen(false);
+    }
+  };
+
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (isDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isDrawerOpen]);
+
   return (
-    <div className="space-y-3">
-      <div className="p-3 bg-muted/50 rounded-lg">
-        <div className="text-sm font-medium">{user?.full_name || user?.email}</div>
-        <div className="text-xs text-muted-foreground capitalize">{user?.role} Access</div>
+    <>
+      {/* Mobile Menu Trigger Button */}
+      <div className="fixed top-4 left-4 z-50 md:hidden">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="bg-card shadow-lg touch-manipulation"
+          onClick={() => setIsDrawerOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
-      <Button 
-        variant="destructive" 
-        className="w-full flex items-center justify-center gap-2"
-        onClick={logout}
-      >
-        <LogOut className="h-4 w-4" />
-        Logout
-      </Button>
-    </div>
+
+      {/* Mobile Drawer Overlay */}
+      {isDrawerOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 md:hidden"
+          onClick={handleOverlayClick}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Drawer Content */}
+          <div 
+            className={cn(
+              "fixed left-0 top-0 h-full w-[85%] max-w-sm bg-card shadow-xl transform transition-transform duration-300 ease-out",
+              isDrawerOpen ? "translate-x-0" : "-translate-x-full"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="p-4 border-b border-border flex items-center justify-between touch-manipulation">
+                <div className="flex items-center gap-2">
+                  <Logo />
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">Admin</span>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="touch-manipulation"
+                  onClick={() => setIsDrawerOpen(false)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              {/* Back to Main App */}
+              <div className="p-4 border-b border-border">
+                <Button
+                  variant="outline"
+                  asChild
+                  className="w-full justify-start touch-manipulation"
+                  onClick={() => setIsDrawerOpen(false)}
+                >
+                  <NavLink to="/dashboard">
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Back to Main App
+                  </NavLink>
+                </Button>
+              </div>
+              
+              {/* Hierarchical Navigation */}
+              <div className="flex-1 overflow-y-auto p-4 overscroll-contain">
+                {filteredNavItems.map((item) => {
+                  const isActiveSection = activeSection === item.id;
+                  const filteredLinks = item.subSidebar.links.filter(link =>
+                    hasRequiredAccess(user, link.requiredAccess)
+                  );
+                  
+                  return (
+                    <div key={item.id} className="mb-6">
+                      {/* Section Header */}
+                      <div className={cn(
+                        "flex items-center gap-3 px-4 py-3 mb-2 rounded-lg font-medium touch-manipulation",
+                        isActiveSection 
+                          ? "bg-primary/10 text-primary" 
+                          : "text-foreground/70"
+                      )}>
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-base">{item.title}</span>
+                      </div>
+                      
+                      {/* Section Links */}
+                      <div className="ml-6 space-y-1">
+                        {filteredLinks.map((link) => {
+                          const isActive = location.pathname === link.href || 
+                                          location.pathname.startsWith(link.href + '/');
+                          
+                          return (
+                            <NavLink
+                              key={link.href}
+                              to={link.href}
+                              onClick={() => setIsDrawerOpen(false)}
+                              className={cn(
+                                "block px-4 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+                                isActive
+                                  ? "bg-primary/10 text-primary border-l-4 border-primary"
+                                  : "text-foreground/60 hover:text-foreground hover:bg-secondary/50 active:bg-secondary border-l-4 border-transparent"
+                              )}
+                            >
+                              <div className="font-medium text-sm">{link.title}</div>
+                              {link.description && (
+                                <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                  {link.description}
+                                </div>
+                              )}
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* User Info and Logout */}
+              <div className="p-4 border-t border-border">
+                <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="text-sm font-medium">{user?.full_name || user?.email}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{user?.role} Access</div>
+                </div>
+                <Button 
+                  variant="destructive" 
+                  className="w-full flex items-center justify-center gap-2 touch-manipulation py-3"
+                  onClick={() => {
+                    logout();
+                    setIsDrawerOpen(false);
+                  }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Swipe area for opening drawer */}
+      <div 
+        className="fixed left-0 top-0 w-4 h-full z-40 md:hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      />
+    </>
   );
 };
 
 // Main AdminSidebar component that decides which version to show
 const AdminSidebar = () => {
-  const { isMobile } = useSidebar();
+  const isMobile = useIsMobile();
 
   return (
     <>
       {!isMobile && <DesktopAdminSidebar />}
-      {isMobile && <MobileAdminBottomNav />}
+      {isMobile && <MobileAdminNavigation />}
     </>
   );
 };
