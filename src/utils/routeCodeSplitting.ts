@@ -108,6 +108,13 @@ export const RouteGroups = {
     AuditLayout: createLazyRoute(() => import('../layouts/admin/AuditLayout')),
   },
 
+  // Error boundary and loading components
+  errorBoundary: {
+    SectionErrorBoundary: createLazyRoute(() => import('../components/admin/layout/SectionErrorBoundary')),
+    SectionLoadingFallback: createLazyRoute(() => import('../components/admin/layout/SectionLoadingFallback')),
+    ErrorFallbackComponents: createLazyRoute(() => import('../components/admin/layout/ErrorFallbackComponents')),
+  },
+
   // Utility components
   common: {
     NotFound: createLazyRoute(() => import('../pages/NotFound')),

@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
+import {
   Shield,
-  ChevronLeft,
   Menu,
   X,
-  MoreVertical,
   Maximize2,
   Minimize2,
   MousePointer,
@@ -55,7 +53,9 @@ const DesktopAdminSidebar = () => {
   const location = useLocation();
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
   // Initialize sidebar state from localStorage
   const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
     const saved = localStorage.getItem('admin-sidebar-state');
@@ -64,7 +64,7 @@ const DesktopAdminSidebar = () => {
       isHovered: false,
       width: 64
     };
-    
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -82,13 +82,13 @@ const DesktopAdminSidebar = () => {
 
   // Get active section based on current path
   const activeSection = getActiveSection(location.pathname);
-  
+
   // Filter navigation items based on user role
   const filteredNavItems = getFilteredNavItems(user);
 
   // Calculate display properties
-  const isExpanded = sidebarState.mode === 'expanded' || 
-                    (sidebarState.mode === 'expand-on-hover' && sidebarState.isHovered);
+  const isExpanded = sidebarState.mode === 'expanded' ||
+    (sidebarState.mode === 'expand-on-hover' && sidebarState.isHovered);
   const showText = isExpanded;
   const currentWidth = sidebarState.mode === 'expanded' ? 256 : 64;
   const isOverlay = sidebarState.mode === 'expand-on-hover' && sidebarState.isHovered;
@@ -103,16 +103,16 @@ const DesktopAdminSidebar = () => {
   // Dispatch width changes to layout (always 64px for collapsed/expand-on-hover)
   useEffect(() => {
     const layoutWidth = sidebarState.mode === 'expanded' ? 256 : 64;
-    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
-      detail: { width: layoutWidth } 
+    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', {
+      detail: { width: layoutWidth }
     }));
   }, [sidebarState.mode]);
 
   // Initial width dispatch on mount to ensure layout adjusts correctly
   useEffect(() => {
     const layoutWidth = sidebarState.mode === 'expanded' ? 256 : 64;
-    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
-      detail: { width: layoutWidth } 
+    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', {
+      detail: { width: layoutWidth }
     }));
   }, []); // Run once on mount
 
@@ -123,7 +123,7 @@ const DesktopAdminSidebar = () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
-      
+
       // Set hover state immediately for responsive feel
       setSidebarState(prev => ({ ...prev, isHovered: true }));
     }
@@ -135,9 +135,46 @@ const DesktopAdminSidebar = () => {
       // Add small delay before collapsing to prevent flickering
       hoverTimeoutRef.current = setTimeout(() => {
         setSidebarState(prev => ({ ...prev, isHovered: false }));
-      }, 150); // Slightly longer delay for better UX
+      }, 150);
     }
   };
+
+  // Handle dropdown state changes
+  const handleDropdownOpenChange = (open: boolean) => {
+    setIsDropdownOpen(open);
+
+    // Clear any pending collapse timeout when dropdown opens
+    if (open && hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+
+    // If dropdown closes and we're in expand-on-hover mode, check if we should collapse
+    if (!open && sidebarState.mode === 'expand-on-hover') {
+      // Small delay to allow user to move mouse back to sidebar if needed
+      hoverTimeoutRef.current = setTimeout(() => {
+        setSidebarState(prev => ({ ...prev, isHovered: false }));
+      }, 300);
+    }
+  };
+
+  // Add global mouse event listener when dropdown is open to prevent collapse
+  useEffect(() => {
+    if (isDropdownOpen && sidebarState.mode === 'expand-on-hover') {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        // Clear any pending timeout while dropdown is open
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
+      };
+
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+      };
+    }
+  }, [isDropdownOpen, sidebarState.mode]);
 
   // Handle sidebar mode change
   const handleModeChange = (mode: SidebarMode) => {
@@ -162,7 +199,8 @@ const DesktopAdminSidebar = () => {
   return (
     <>
       {/* Base sidebar - always 64px when collapsed or expand-on-hover */}
-      <div 
+      <div
+        ref={sidebarRef}
         className={cn(
           "fixed left-0 top-0 h-full bg-card border-r border-border shadow-sm transition-all duration-300 z-40",
           currentWidth === 64 ? "w-16" : "w-64"
@@ -222,8 +260,8 @@ const DesktopAdminSidebar = () => {
                       to={item.href}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
-                        isActive 
-                          ? "bg-primary/10 text-primary border-l-4 border-primary" 
+                        isActive
+                          ? "bg-primary/10 text-primary border-l-4 border-primary"
                           : "text-foreground/70 hover:text-foreground hover:bg-secondary border-l-4 border-transparent",
                         !showText && "justify-center px-3"
                       )}
@@ -240,19 +278,26 @@ const DesktopAdminSidebar = () => {
             {/* Footer with State Control */}
             <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
               <div className="flex justify-center">
-                <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                <DropdownMenu onOpenChange={handleDropdownOpenChange}>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       title="Sidebar Options"
+                      onMouseEnter={() => {
+                        // Ensure sidebar stays expanded when hovering over dropdown trigger
+                        if (sidebarState.mode === 'expand-on-hover' && hoverTimeoutRef.current) {
+                          clearTimeout(hoverTimeoutRef.current);
+                          hoverTimeoutRef.current = null;
+                        }
+                      }}
                     >
                       <PanelLeft className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" side="top" className="w-48">
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleModeChange('expanded')}
                       className={cn(
                         "flex items-center gap-2 cursor-pointer",
@@ -262,7 +307,7 @@ const DesktopAdminSidebar = () => {
                       <Maximize2 className="h-4 w-4" />
                       Expanded
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleModeChange('expand-on-hover')}
                       className={cn(
                         "flex items-center gap-2 cursor-pointer",
@@ -272,7 +317,7 @@ const DesktopAdminSidebar = () => {
                       <MousePointer className="h-4 w-4" />
                       Expand on Hover
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleModeChange('collapsed')}
                       className={cn(
                         "flex items-center gap-2 cursor-pointer",
@@ -292,7 +337,8 @@ const DesktopAdminSidebar = () => {
 
       {/* Overlay sidebar for expand-on-hover */}
       {isOverlay && (
-        <div 
+        <div
+          ref={overlayRef}
           className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-xl z-50 transition-all duration-300"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -330,8 +376,8 @@ const DesktopAdminSidebar = () => {
                     to={item.href}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
-                      isActive 
-                        ? "bg-primary/10 text-primary border-l-4 border-primary" 
+                      isActive
+                        ? "bg-primary/10 text-primary border-l-4 border-primary"
                         : "text-foreground/70 hover:text-foreground hover:bg-secondary border-l-4 border-transparent"
                     )}
                   >
@@ -346,19 +392,26 @@ const DesktopAdminSidebar = () => {
           {/* Footer with State Control */}
           <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
             <div className="flex justify-center">
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={handleDropdownOpenChange}>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     title="Sidebar Options"
+                    onMouseEnter={() => {
+                      // Ensure sidebar stays expanded when hovering over dropdown trigger
+                      if (sidebarState.mode === 'expand-on-hover' && hoverTimeoutRef.current) {
+                        clearTimeout(hoverTimeoutRef.current);
+                        hoverTimeoutRef.current = null;
+                      }
+                    }}
                   >
                     <PanelLeft className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" side="top" className="w-48">
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleModeChange('expanded')}
                     className={cn(
                       "flex items-center gap-2 cursor-pointer",
@@ -368,7 +421,7 @@ const DesktopAdminSidebar = () => {
                     <Maximize2 className="h-4 w-4" />
                     Expanded
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleModeChange('expand-on-hover')}
                     className={cn(
                       "flex items-center gap-2 cursor-pointer",
@@ -378,7 +431,7 @@ const DesktopAdminSidebar = () => {
                     <MousePointer className="h-4 w-4" />
                     Expand on Hover
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleModeChange('collapsed')}
                     className={cn(
                       "flex items-center gap-2 cursor-pointer",
@@ -405,7 +458,7 @@ const MobileAdminNavigation = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  
+
   // Get filtered navigation items based on user role
   const filteredNavItems = getFilteredNavItems(user);
   const activeSection = getActiveSection(location.pathname);
@@ -422,7 +475,7 @@ const MobileAdminNavigation = () => {
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
@@ -431,7 +484,7 @@ const MobileAdminNavigation = () => {
     if (isLeftSwipe && isDrawerOpen) {
       setIsDrawerOpen(false);
     }
-    
+
     // Open drawer on right swipe (from left edge)
     if (isRightSwipe && !isDrawerOpen && touchStart < 50) {
       setIsDrawerOpen(true);
@@ -452,7 +505,7 @@ const MobileAdminNavigation = () => {
     } else {
       document.body.style.overflow = 'unset';
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -462,9 +515,9 @@ const MobileAdminNavigation = () => {
     <>
       {/* Mobile Menu Trigger Button */}
       <div className="fixed top-4 left-4 z-50 md:hidden">
-        <Button 
-          variant="outline" 
-          size="icon" 
+        <Button
+          variant="outline"
+          size="icon"
           className="bg-card shadow-lg touch-manipulation"
           onClick={() => setIsDrawerOpen(true)}
         >
@@ -474,7 +527,7 @@ const MobileAdminNavigation = () => {
 
       {/* Mobile Drawer Overlay */}
       {isDrawerOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-50 md:hidden"
           onClick={handleOverlayClick}
           onTouchStart={handleTouchStart}
@@ -482,7 +535,7 @@ const MobileAdminNavigation = () => {
           onTouchEnd={handleTouchEnd}
         >
           {/* Drawer Content */}
-          <div 
+          <div
             className={cn(
               "fixed left-0 top-0 h-full w-[85%] max-w-sm bg-card shadow-xl transform transition-transform duration-300 ease-out",
               isDrawerOpen ? "translate-x-0" : "-translate-x-full"
@@ -499,16 +552,16 @@ const MobileAdminNavigation = () => {
                     <span className="text-sm font-medium text-primary">Admin</span>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="touch-manipulation"
                   onClick={() => setIsDrawerOpen(false)}
                 >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              
+
               {/* Back to Main App */}
               <div className="p-4 border-b border-border">
                 <Button
@@ -523,13 +576,13 @@ const MobileAdminNavigation = () => {
                   </NavLink>
                 </Button>
               </div>
-              
+
               {/* Simple Navigation */}
               <div className="flex-1 overflow-y-auto p-4 overscroll-contain">
                 <nav className="space-y-2">
                   {filteredNavItems.map((item) => {
                     const isActive = activeSection === item.id;
-                    
+
                     return (
                       <NavLink
                         key={item.id}
@@ -555,7 +608,7 @@ const MobileAdminNavigation = () => {
       )}
 
       {/* Swipe area for opening drawer */}
-      <div 
+      <div
         className="fixed left-0 top-0 w-4 h-full z-40 md:hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

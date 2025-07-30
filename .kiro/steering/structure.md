@@ -79,6 +79,15 @@ src/
 │   │   │       ├── UsersTab.tsx # User analytics tab.
 │   │   │       ├── SystemTab.tsx # System health monitoring tab.
 │   │   │       └── OperationsTab.tsx # Operations metrics tab.
+│   │   ├── layout/        # Admin layout error boundaries and loading states.
+│   │   │   ├── SectionErrorBoundary.tsx # Main error boundary for admin section layouts.
+│   │   │   ├── SectionLoadingFallback.tsx # Loading fallback components for lazy-loaded sections.
+│   │   │   ├── withSectionErrorBoundary.tsx # HOC for wrapping components with error boundaries and loading states.
+│   │   │   ├── ErrorFallbackComponents.tsx # Specialized error fallback components for different error types.
+│   │   │   ├── README.md # Comprehensive documentation for error boundaries and loading states.
+│   │   │   ├── DEVELOPER_GUIDE.md # Developer guide for error handling system.
+│   │   │   ├── DEBUG_CHEATSHEET.md # Quick debugging reference and commands.
+│   │   │   └── TROUBLESHOOTING_FLOW.md # Visual problem-solving guides and decision trees.
 │   │   ├── AdminSidebar.tsx # Enhanced dual-sidebar navigation with hierarchical structure, collapsible main sidebar, and mobile-responsive overlay navigation.
 │   │   ├── ProtectedAdminRoute.tsx # Route protection based on user permissions.
 │   │   ├── __tests__/     # Admin component tests.
@@ -134,7 +143,8 @@ src/
 │   ├── useDashboardMetrics.ts # Basic dashboard metrics hook for client-specific data.
 │   ├── useAdminDashboardData.ts # Extended admin dashboard hook with comprehensive data fetching, auto-refresh, and error handling.
 │   ├── useCachedAdminDashboardData.ts # Cached version of admin dashboard hook with intelligent caching and query optimization.
-│   └── useRoutePreloading.ts # Hook for intelligent route preloading based on user navigation patterns.
+│   ├── useRoutePreloading.ts # Hook for intelligent route preloading based on user navigation patterns.
+│   └── useErrorRecovery.ts # React hook for error recovery functionality and error state management.
 ├──
 ├── layouts/               # Components that define the structure of pages.
 │   └── AdminLayout.tsx    # Admin panel layout with role-based access control - Mobile responsive with overflow handling.
@@ -165,7 +175,8 @@ src/
 │   ├── queryOptimizationService.ts # Database query optimization and performance monitoring.
 │   ├── metricsCalculationService.ts # Financial calculations and client profitability analysis.
 │   ├── makeComAnalyticsService.ts # Make.com operations analytics and cost tracking.
-│   └── makeOperationsService.ts # Make.com scenario-level operations monitoring.
+│   ├── makeOperationsService.ts # Make.com scenario-level operations monitoring.
+│   └── errorRecoveryService.ts # Centralized error handling, recovery mechanisms, and error reporting.
 ├──
 ├── types/                 # TypeScript type definitions and interfaces.
 │   └── supabase.ts        # Auto-generated types from the Supabase schema.
