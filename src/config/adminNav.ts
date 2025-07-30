@@ -103,7 +103,8 @@ export const mainNavItems: MainNavItem[] = [
     subSidebar: {
       title: 'Settings',
       links: [
-        { title: 'Admin Settings', href: '/admin/settings', requiredAccess: 'system_admin', description: 'General admin settings' }
+        { title: 'Admin Settings', href: '/admin/settings', requiredAccess: 'system_admin', description: 'General admin settings' },
+        { title: 'Agent Status', href: '/admin/settings/agent-status', requiredAccess: 'system_admin', description: 'Manage agent status and messaging' }
       ]
     }
   }

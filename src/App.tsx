@@ -206,12 +206,23 @@ const App = () => {
                         </Suspense>
                       } />
                       <Route path="settings" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading admin settings..." />}>
+                        <Suspense fallback={<LoadingSpinner text="Loading settings..." />}>
                           <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
-                            <RouteGroups.admin.AdminSettings />
+                            <RouteGroups.layouts.SettingsLayout />
                           </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
-                      } />
+                      }>
+                        <Route index element={
+                          <Suspense fallback={<LoadingSpinner text="Loading general settings..." />}>
+                            <RouteGroups.admin.AdminSettings />
+                          </Suspense>
+                        } />
+                        <Route path="agent-status" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading agent status..." />}>
+                            <RouteGroups.admin.AgentStatusSettings />
+                          </Suspense>
+                        } />
+                      </Route>
                       
                       {/* Backward Compatibility Redirects */}
                       <Route path="analytics" element={<Navigate to="/admin/analytics/financials" replace />} />

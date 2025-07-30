@@ -1,8 +1,8 @@
 import React from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import AppSidebar from './AppSidebar';
-import TopBar from './TopBar';
+import AppSidebar from '../components/AppSidebar';
+import TopBar from '../components/TopBar';
 import { Toaster } from '@/components/ui/sonner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Wifi, WifiOff, RefreshCw, Menu } from 'lucide-react';

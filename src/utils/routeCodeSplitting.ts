@@ -82,6 +82,7 @@ export const RouteGroups = {
     AdminAudit: createLazyRoute(() => import('../pages/admin/AdminAudit')),
     AdminIndex: createLazyRoute(() => import('../pages/admin/AdminIndex')),
     AdminSystemStatus: createLazyRoute(() => import('../pages/AdminSystemStatus')),
+    AgentStatusSettings: createLazyRoute(() => import('../pages/admin/AgentStatusSettings')),
     // Analytics section pages
     AnalyticsFinancials: createLazyRoute(() => import('../pages/admin/analytics/financials')),
     AnalyticsClients: createLazyRoute(() => import('../pages/admin/analytics/clients')),
@@ -92,9 +93,10 @@ export const RouteGroups = {
 
   // Layout components
   layouts: {
-    AppLayout: createLazyRoute(() => import('../components/AppLayout'), { preload: true }),
-    AdminLayout: createLazyRoute(() => import('../layouts/AdminLayout')),
-    AnalyticsLayout: createLazyRoute(() => import('../layouts/AnalyticsLayout')),
+    AppLayout: createLazyRoute(() => import('../layouts/AppLayout'), { preload: true }),
+    AdminLayout: createLazyRoute(() => import('../layouts/admin/AdminLayout')),
+    AnalyticsLayout: createLazyRoute(() => import('../layouts/admin/AnalyticsLayout')),
+    SettingsLayout: createLazyRoute(() => import('../layouts/admin/SettingsLayout')),
   },
 
   // Utility components
@@ -116,7 +118,7 @@ export const preloadCriticalRoutes = () => {
   // Preload dashboard and layout components as they're most commonly accessed
   const criticalRoutes = [
     () => import('../pages/Dashboard'),
-    () => import('../components/AppLayout'),
+    () => import('../layouts/AppLayout'),
   ];
 
   criticalRoutes.forEach(importFn => {
