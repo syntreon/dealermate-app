@@ -1,8 +1,4 @@
-// NOTE: This file is a duplicate of AdminAudit.tsx and is kept for reference only.
-// The main audit page is now located at AdminAudit.tsx
-// This file can be safely removed after confirming all references have been updated.
-
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

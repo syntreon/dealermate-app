@@ -1,27 +1,21 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { analyticsNavItems } from '@/config/analyticsNav';
+import { auditNavItems } from '@/config/auditNav';
 import { cn } from '@/lib/utils';
 
-/**
- * AnalyticsLayout - Provides layout structure for Analytics section pages
- * 
- * This layout includes a sub-sidebar navigation for analytics sub-pages
- * and follows the same pattern as ManagementLayout and AuditLayout.
- */
-const AnalyticsLayout: React.FC = () => {
+const AuditLayout: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Audit Logs</h2>
         <p className="text-muted-foreground">
-          Comprehensive analytics and insights across all business metrics.
+          Monitor system activities, user actions, and audit trails.
         </p>
       </div>
       <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-8 lg:space-y-0">
         <aside className="lg:w-56 lg:flex-shrink-0">
           <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto lg:overflow-x-visible">
-            {analyticsNavItems.map((item) => (
+            {auditNavItems.map((item) => (
               <NavLink
                 key={item.href}
                 to={item.href}
@@ -52,4 +46,4 @@ const AnalyticsLayout: React.FC = () => {
   );
 };
 
-export default AnalyticsLayout;
+export default AuditLayout;

@@ -14,9 +14,9 @@ const SettingsLayout: React.FC = () => {
           Manage your account settings and application preferences.
         </p>
       </div>
-      <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-        <aside className="-mx-4 lg:w-1/5">
-          <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
+      <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-8 lg:space-y-0">
+        <aside className="lg:w-56 lg:flex-shrink-0">
+          <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto lg:overflow-x-visible">
             {settingsNavItems.map((item) => (
               <NavLink
                 key={item.href}
@@ -26,7 +26,7 @@ const SettingsLayout: React.FC = () => {
                   cn(
                     'inline-flex items-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
                     'hover:bg-accent hover:text-accent-foreground',
-                    'px-4 py-2',
+                    'px-4 py-2 whitespace-nowrap',
                     isActive
                       ? 'bg-muted hover:bg-muted text-foreground'
                       : 'text-muted-foreground hover:text-foreground',
@@ -34,13 +34,13 @@ const SettingsLayout: React.FC = () => {
                   )
                 }
               >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.title}
+                <item.icon className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{item.title}</span>
               </NavLink>
             ))}
           </nav>
         </aside>
-        <div className="flex-1 lg:max-w-4xl">
+        <div className="flex-1 min-w-0">
           <Outlet />
         </div>
       </div>

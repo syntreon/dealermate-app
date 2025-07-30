@@ -64,27 +64,36 @@ const AdminLayout = () => {
     );
   }
 
-  // Redirect client_admin users to User Management if they try to access admin dashboard
+  // Redirect client_admin users to Management section if they try to access admin dashboard
   if (hasClientAdmin && !hasSystemAccess && location.pathname === '/admin/dashboard') {
-    return <Navigate to="/admin/user-management" replace />;
+    return <Navigate to="/admin/management" replace />;
   }
 
-  // Redirect client_admin users to User Management if they access /admin root
+  // Redirect client_admin users to Management section if they access /admin root
   if (hasClientAdmin && !hasSystemAccess && location.pathname === '/admin') {
-    return <Navigate to="/admin/user-management" replace />;
+    return <Navigate to="/admin/management" replace />;
   }
 
-  // Calculate sidebar widths for proper main content positioning
-  const [mainSidebarWidth, setMainSidebarWidth] = useState(256); // Default expanded width
-  const subSidebarWidth = 256; // Sub-sidebar is always 256px when visible
+  // Calculate sidebar width for proper main content positioning
+  const [mainSidebarWidth, setMainSidebarWidth] = useState(() => {
+    // Initialize with correct width based on saved state
+    const saved = localStorage.getItem('admin-sidebar-state');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.mode === 'expanded' ? 256 : 64;
+      } catch {
+        return 64;
+      }
+    }
+    return 64; // Default collapsed width
+  });
   
-  // Determine if SubSidebar should be visible based on current route and user permissions
+  // Determine active section based on current route
   const getActiveSection = (pathname: string): string => {
     for (const item of mainNavItems) {
-      for (const link of item.subSidebar.links) {
-        if (pathname.startsWith(link.href)) {
-          return item.id;
-        }
+      if (pathname.startsWith(item.href)) {
+        return item.id;
       }
     }
     return mainNavItems[0]?.id || 'dashboard';
@@ -92,7 +101,9 @@ const AdminLayout = () => {
   
   const activeSection = getActiveSection(location.pathname);
   const activeNavItem = mainNavItems.find(item => item.id === activeSection);
-  const subSidebarVisible = !!(activeNavItem && hasRequiredAccess(user, activeNavItem.requiredAccess));
+  
+  // No sub-sidebar in the new structure - each section has its own layout
+  const subSidebarVisible = false;
   
   // Listen for sidebar width changes (only for main sidebar width)
   useEffect(() => {
@@ -109,8 +120,8 @@ const AdminLayout = () => {
     };
   }, []);
 
-  // Calculate total left margin for main content
-  const totalLeftMargin = isMobile ? 0 : mainSidebarWidth + (subSidebarVisible ? subSidebarWidth : 0);
+  // Calculate left margin for main content (only main sidebar now)
+  const totalLeftMargin = isMobile ? 0 : mainSidebarWidth;
 
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
@@ -121,18 +132,16 @@ const AdminLayout = () => {
           
           {/* Main content area */}
           <div 
-            className="min-h-screen transition-all duration-300"
+            className="min-h-screen transition-all duration-300 ease-in-out"
             style={{ 
                marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
                width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
             }}
           >
-
-            
             {/* Top Bar - Only show on desktop */}
             {!isMobile && <TopBar />}
             
-            {/* Page content */}
+            {/* Page content with proper responsive behavior */}
             <main className="p-2 pb-24 md:p-6 w-full">
               <div className="w-full max-w-none overflow-x-hidden">
                 <Outlet />

@@ -115,7 +115,11 @@ src/
 │   └── AppSidebar.tsx     # Main application sidebar with role-based navigation.
 ├──
 ├── config/                # Configuration files for the application.
-│   └── adminNav.ts        # Hierarchical admin navigation configuration with role-based access control.
+│   ├── adminNav.ts        # Hierarchical admin navigation configuration with role-based access control.
+│   ├── analyticsNav.ts    # Analytics section navigation configuration with sub-sidebar items.
+│   ├── auditNav.ts        # Audit logs section navigation configuration.
+│   ├── managementNav.ts   # Management section navigation configuration.
+│   └── settingsNav.ts     # Settings section navigation configuration.
 ├──
 ├── context/               # React Context providers for global state management.
 │   ├── AuthProvider.tsx   # Manages user authentication state.
@@ -176,13 +180,15 @@ src/
         ├── themeBackgroundSync.ts # Background synchronization for theme preferences.
         ├── performanceOptimization.ts # Performance optimization utilities and hooks for React components.
         ├── performanceTesting.ts # Performance testing utilities and benchmarking tools.
-        ├── routeCodeSplitting.ts # Route-based code splitting utilities with intelligent preloading.
+        ├── routeCodeSplitting.ts # Route-based code splitting utilities with intelligent preloading and analytics optimization.
         ├── bundleAnalyzer.ts # Bundle size monitoring and optimization utilities.
         └── code-splitting/    # Code splitting implementation documentation and guides.
             ├── README.md      # Comprehensive code splitting implementation guide.
             ├── DEVELOPER_GUIDE.md # Developer guide for working with code splitting.
             ├── DEBUG_CHEATSHEET.md # Quick debugging reference for code splitting issues.
-            └── TROUBLESHOOTING_FLOW.md # Visual problem-solving guide for code splitting.
+            ├── TROUBLESHOOTING_FLOW.md # Visual problem-solving guide for code splitting.
+            ├── ROUTE_CODE_SPLITTING_UPDATE.md # Documentation for route code splitting updates and new layout registration.
+            └── ROUTE_VALIDATION_TEST.md # Validation test results for route code splitting configuration.
 ```
 
 ### Key Directory Explanations

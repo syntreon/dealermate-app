@@ -116,7 +116,8 @@ const App = () => {
                     }>
                       {/* Redirect /admin to /admin/dashboard */}
                       <Route index element={<Navigate to="dashboard" replace />} />
-                      {/* Main Dashboard Route */}
+                      
+                      {/* Dashboard - Single page, no sub-navigation */}
                       <Route path="dashboard" element={
                         <Suspense fallback={<LoadingSpinner text="Loading admin dashboard..." />}>
                           <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
@@ -124,6 +125,53 @@ const App = () => {
                           </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
                       } />
+                      
+                      {/* Management Section with Nested Routes */}
+                      <Route path="management" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading management..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={false}>
+                            <RouteGroups.layouts.ManagementLayout />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      }>
+                        {/* Default redirect for /admin/management */}
+                        <Route index element={<Navigate to="users" replace />} />
+                        
+                        {/* Management sub-pages */}
+                        <Route path="users" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading user management..." />}>
+                            <RouteGroups.admin.UserManagement />
+                          </Suspense>
+                        } />
+                        <Route path="clients" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading client management..." />}>
+                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                              <RouteGroups.admin.ClientManagement />
+                            </RouteGroups.common.ProtectedAdminRoute>
+                          </Suspense>
+                        } />
+                        <Route path="clients/:id" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading client details..." />}>
+                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                              <RouteGroups.admin.ClientDetails />
+                            </RouteGroups.common.ProtectedAdminRoute>
+                          </Suspense>
+                        } />
+                        <Route path="business" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading business management..." />}>
+                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                              <RouteGroups.admin.BusinessManagement />
+                            </RouteGroups.common.ProtectedAdminRoute>
+                          </Suspense>
+                        } />
+                        <Route path="roles" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading roles & permissions..." />}>
+                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                              <RouteGroups.admin.RolesPermissions />
+                            </RouteGroups.common.ProtectedAdminRoute>
+                          </Suspense>
+                        } />
+                      </Route>
                       
                       {/* Analytics Section with Nested Routes */}
                       <Route path="analytics" element={
@@ -164,33 +212,65 @@ const App = () => {
                         } />
                       </Route>
                       
-                      {/* Existing Routes */}
-                      <Route path="clients" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading client management..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
-                            <RouteGroups.admin.ClientManagement />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      } />
-                      <Route path="clients/:id" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading client details..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
-                            <RouteGroups.admin.ClientDetails />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      } />
-                      <Route path="user-management" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading user management..." />}>
-                          <RouteGroups.admin.UserManagement />
-                        </Suspense>
-                      } />
+                      {/* Audit Section with Nested Routes */}
                       <Route path="audit" element={
                         <Suspense fallback={<LoadingSpinner text="Loading audit logs..." />}>
                           <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
-                            <RouteGroups.admin.AdminAudit />
+                            <RouteGroups.layouts.AuditLayout />
                           </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
-                      } />
+                      }>
+                        {/* Default redirect for /admin/audit */}
+                        <Route index element={<Navigate to="all" replace />} />
+                        
+                        {/* Audit sub-pages */}
+                        <Route path="all" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading all audit logs..." />}>
+                            <RouteGroups.admin.AdminAudit />
+                          </Suspense>
+                        } />
+                        <Route path="users" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading user logs..." />}>
+                            <RouteGroups.admin.UserLogs />
+                          </Suspense>
+                        } />
+                        <Route path="clients" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading client logs..." />}>
+                            <RouteGroups.admin.ClientLogs />
+                          </Suspense>
+                        } />
+                        <Route path="system" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading system logs..." />}>
+                            <RouteGroups.admin.SystemLogs />
+                          </Suspense>
+                        } />
+                      </Route>
+                      
+                      {/* Settings Section with Nested Routes */}
+                      <Route path="settings" element={
+                        <Suspense fallback={<LoadingSpinner text="Loading settings..." />}>
+                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.layouts.SettingsLayout />
+                          </RouteGroups.common.ProtectedAdminRoute>
+                        </Suspense>
+                      }>
+                        {/* Default redirect for /admin/settings */}
+                        <Route index element={<Navigate to="general" replace />} />
+                        
+                        {/* Settings sub-pages */}
+                        <Route path="general" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading general settings..." />}>
+                            <RouteGroups.admin.AdminSettings />
+                          </Suspense>
+                        } />
+                        <Route path="agent-status" element={
+                          <Suspense fallback={<LoadingSpinner text="Loading agent status..." />}>
+                            <RouteGroups.admin.AgentStatusSettings />
+                          </Suspense>
+                        } />
+                      </Route>
+                      
+                      {/* Legacy Routes - Keep for backward compatibility */}
                       <Route path="system-status" element={
                         <Suspense fallback={<LoadingSpinner text="Loading system status..." />}>
                           <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
@@ -205,30 +285,10 @@ const App = () => {
                           </RouteGroups.common.ProtectedAdminRoute>
                         </Suspense>
                       } />
-                      <Route path="settings" element={
-                        <Suspense fallback={<LoadingSpinner text="Loading settings..." />}>
-                          <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
-                            <RouteGroups.layouts.SettingsLayout />
-                          </RouteGroups.common.ProtectedAdminRoute>
-                        </Suspense>
-                      }>
-                        <Route index element={
-                          <Suspense fallback={<LoadingSpinner text="Loading general settings..." />}>
-                            <RouteGroups.admin.AdminSettings />
-                          </Suspense>
-                        } />
-                        <Route path="agent-status" element={
-                          <Suspense fallback={<LoadingSpinner text="Loading agent status..." />}>
-                            <RouteGroups.admin.AgentStatusSettings />
-                          </Suspense>
-                        } />
-                      </Route>
                       
                       {/* Backward Compatibility Redirects */}
-                      <Route path="analytics" element={<Navigate to="/admin/analytics/financials" replace />} />
-                      <Route path="users" element={<Navigate to="/admin/user-management" replace />} />
-                      
-                      <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                      <Route path="user-management" element={<Navigate to="/admin/management/users" replace />} />
+                      <Route path="clients" element={<Navigate to="/admin/management/clients" replace />} />
                     </Route>
                     
                     <Route path="*" element={

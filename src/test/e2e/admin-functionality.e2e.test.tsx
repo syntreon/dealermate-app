@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import AdminDashboard from '@/pages/admin/dashboard';
-import UserManagement from '@/pages/admin/user-management';
+import UserManagement from '@/pages/admin/management/user-management';
 import ClientManagement from '@/pages/admin/ClientManagement';
 
 // Mock admin user

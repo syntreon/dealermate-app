@@ -1,373 +1,414 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  LogOut, 
   Shield,
   ChevronLeft,
-  ChevronRight,
   Menu,
-  X
+  X,
+  MoreVertical,
+  Maximize2,
+  Minimize2,
+  MousePointer,
+  PanelLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 import Logo from '@/components/Logo';
-import { mainNavItems, hasRequiredAccess, type MainNavItem } from '@/config/adminNav';
+import { mainNavItems, hasRequiredAccess, backToMainAppItem } from '@/config/adminNav';
+
+// Sidebar state type definition
+type SidebarMode = 'expanded' | 'collapsed' | 'expand-on-hover';
+
+interface SidebarState {
+  mode: SidebarMode;
+  isHovered: boolean;
+  width: number;
+}
 
 // Function to filter navigation items based on user role
-const getFilteredNavItems = (user: unknown): MainNavItem[] => {
+const getFilteredNavItems = (user: unknown) => {
   return mainNavItems.filter(item => hasRequiredAccess(user, item.requiredAccess));
 };
 
 // Get active section based on current path
 const getActiveSection = (pathname: string): string => {
   for (const item of mainNavItems) {
-    for (const link of item.subSidebar.links) {
-      if (pathname.startsWith(link.href)) {
-        return item.id;
-      }
+    if (pathname.startsWith(item.href)) {
+      return item.id;
     }
   }
   return mainNavItems[0]?.id || 'dashboard';
 };
 
-// Main Sidebar Component (Left sidebar with icons/categories)
-interface MainSidebarProps {
-  activeSection: string;
-  onSectionChange: (sectionId: string) => void;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
-  isHovered: boolean;
-  onHoverChange: (hovered: boolean) => void;
-  onWidthChange?: (width: number) => void;
-}
+// Desktop Admin Sidebar Component with 3-state functionality
+const DesktopAdminSidebar = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Initialize sidebar state from localStorage
+  const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
+    const saved = localStorage.getItem('admin-sidebar-state');
+    const defaultState: SidebarState = {
+      mode: 'collapsed', // Default to collapsed
+      isHovered: false,
+      width: 64
+    };
+    
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          mode: parsed.mode || 'collapsed',
+          isHovered: false, // Always start with false
+          width: parsed.mode === 'collapsed' || parsed.mode === 'expand-on-hover' ? 64 : 256
+        };
+      } catch {
+        return defaultState;
+      }
+    }
+    return defaultState;
+  });
 
-const MainSidebar: React.FC<MainSidebarProps> = ({
-  activeSection,
-  onSectionChange,
-  isCollapsed,
-  onToggleCollapse,
-  isHovered,
-  onHoverChange,
-  onWidthChange
-}) => {
-  const { user, logout } = useAuth();
-
+  // Get active section based on current path
+  const activeSection = getActiveSection(location.pathname);
+  
   // Filter navigation items based on user role
   const filteredNavItems = getFilteredNavItems(user);
 
-  // Calculate sidebar width based on state
-  const sidebarWidth = isCollapsed ? (isHovered ? 'w-64' : 'w-16') : 'w-64';
-  const isExpanded = !isCollapsed || isHovered;
-  
-  // Calculate numeric width and notify parent
-  const numericWidth = isCollapsed ? (isHovered ? 256 : 64) : 256;
-  
+  // Calculate display properties
+  const isExpanded = sidebarState.mode === 'expanded' || 
+                    (sidebarState.mode === 'expand-on-hover' && sidebarState.isHovered);
+  const showText = isExpanded;
+  const currentWidth = sidebarState.mode === 'expanded' ? 256 : 64;
+  const isOverlay = sidebarState.mode === 'expand-on-hover' && sidebarState.isHovered;
+
+  // Save state to localStorage when mode changes
   useEffect(() => {
-    onWidthChange?.(numericWidth);
-    // Dispatch custom event for layout to listen to
-    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
-      detail: { width: numericWidth } 
+    localStorage.setItem('admin-sidebar-state', JSON.stringify({
+      mode: sidebarState.mode
     }));
-  }, [numericWidth, onWidthChange]);
+  }, [sidebarState.mode]);
 
-  return (
-    <div 
-      className={cn(
-        "fixed left-0 top-0 h-full bg-card border-r border-border shadow-sm transition-all duration-300 z-50",
-        sidebarWidth,
-        isCollapsed && isHovered && "shadow-lg" // Extra shadow when hovering over collapsed sidebar
-      )}
-      onMouseEnter={() => isCollapsed && onHoverChange(true)}
-      onMouseLeave={() => isCollapsed && onHoverChange(false)}
-    >
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between">
-          {isExpanded && <Logo />}
-          {isExpanded && (
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Admin</span>
-            </div>
-          )}
-          {!isExpanded && (
-            <Shield className="h-6 w-6 text-primary mx-auto" />
-          )}
-        </div>
-      </div>
-
-      {/* Navigation Items */}
-      <div className="flex-1 py-4">
-        {/* Back to Main App - Hidden when collapsed */}
-        {isExpanded && (
-          <div className="px-4 mb-4">
-            <Button variant="outline" size="sm" asChild className="w-full justify-start">
-              <NavLink to="/dashboard">
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Back to Main App
-              </NavLink>
-            </Button>
-          </div>
-        )}
-
-        {/* Main Navigation */}
-        <nav className="space-y-2 px-2">
-          {filteredNavItems.map((item) => {
-            const isActive = activeSection === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onSectionChange(item.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
-                  isActive 
-                    ? "bg-primary/10 text-primary border-l-4 border-primary" 
-                    : "text-foreground/70 hover:text-foreground hover:bg-secondary border-l-4 border-transparent",
-                  !isExpanded && "justify-center px-3"
-                )}
-                title={!isExpanded ? item.title : undefined}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {isExpanded && <span className="font-medium">{item.title}</span>}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-border p-4">
-        {/* User Info - Hidden when collapsed */}
-        {isExpanded && (
-          <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-            <div className="text-sm font-medium">{user?.full_name || user?.email}</div>
-            <div className="text-xs text-muted-foreground capitalize">{user?.role} Access</div>
-          </div>
-        )}
-
-        {/* Logout Button */}
-        <button
-          onClick={logout}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-3 text-foreground/70 hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200",
-            !isExpanded && "justify-center px-3"
-          )}
-          title={!isExpanded ? "Logout" : undefined}
-        >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
-          {isExpanded && <span className="whitespace-nowrap">Logout</span>}
-        </button>
-
-        {/* Collapse Toggle Button - Below Logout */}
-        <div className="mt-4 pt-4 border-t border-border">
-          <button
-            onClick={onToggleCollapse}
-            className={cn(
-              "w-full flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground rounded-lg transition-all duration-200",
-              !isExpanded && "justify-center px-3"
-            )}
-            title={!isExpanded ? (isCollapsed ? "Expand" : "Collapse") : undefined}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4 flex-shrink-0" />
-            ) : (
-              <ChevronLeft className="h-4 w-4 flex-shrink-0" />
-            )}
-            {isExpanded && (
-              <span className="text-xs whitespace-nowrap">{isCollapsed ? "Expand" : "Collapse"}</span>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Sub-Sidebar Component (Right sidebar with page links)
-interface SubSidebarProps {
-  activeSection: string;
-  mainSidebarWidth: number;
-}
-
-const SubSidebar: React.FC<SubSidebarProps> = ({ activeSection, mainSidebarWidth }) => {
-  const location = useLocation();
-  const { user } = useAuth();
-
-  // Find the active main nav item
-  const activeNavItem = mainNavItems.find(item => item.id === activeSection);
-  
-  const isVisible = activeNavItem && hasRequiredAccess(user, activeNavItem.requiredAccess);
-  
-  // Note: SubSidebar visibility is now calculated directly in AdminLayout
-  // No need to communicate visibility via events
-  
-  if (!isVisible) {
-    return null;
-  }
-
-  // Filter sub-navigation links based on user role
-  const filteredLinks = activeNavItem.subSidebar.links.filter(link =>
-    hasRequiredAccess(user, link.requiredAccess)
-  );
-
-  return (
-    <div 
-      className="fixed top-0 h-full w-64 bg-card border-r border-border shadow-sm transition-all duration-300 z-40"
-      style={{ left: mainSidebarWidth }}
-    >
-      {/* Sub-sidebar Header */}
-      <div className="p-6 border-b border-border bg-card">
-        <h2 className="text-lg font-semibold text-foreground">
-          {activeNavItem.subSidebar.title}
-        </h2>
-      </div>
-
-      {/* Sub-navigation Links */}
-      <nav className="p-4 space-y-2 bg-card">
-        {filteredLinks.map((link) => {
-          const isActive = location.pathname === link.href || 
-                          location.pathname.startsWith(link.href + '/');
-          
-          return (
-            <NavLink
-              key={link.href}
-              to={link.href}
-              className={cn(
-                "block px-4 py-3 rounded-lg transition-all duration-200",
-                isActive
-                  ? "bg-primary/10 text-primary border-l-4 border-primary"
-                  : "text-foreground/70 hover:text-foreground hover:bg-secondary/50 border-l-4 border-transparent"
-              )}
-            >
-              <div className="font-medium">{link.title}</div>
-              {link.description && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  {link.description}
-                </div>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
-    </div>
-  );
-};
-
-// Desktop Admin Dual Sidebar Component
-const DesktopAdminSidebar = () => {
-  // Get user context for access checks
-  const { user } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState(() => getActiveSection(location.pathname));
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    const saved = localStorage.getItem('admin-sidebar-collapsed');
-    return saved ? JSON.parse(saved) : false;
-  });
-  const [isHovered, setIsHovered] = useState(false);
-  const [mainSidebarWidth, setMainSidebarWidth] = useState(() => {
-    return isCollapsed ? 64 : 256;
-  });
-
-  // Update active section when location changes
+  // Dispatch width changes to layout (always 64px for collapsed/expand-on-hover)
   useEffect(() => {
-    setActiveSection(getActiveSection(location.pathname));
-  }, [location.pathname]);
+    const layoutWidth = sidebarState.mode === 'expanded' ? 256 : 64;
+    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
+      detail: { width: layoutWidth } 
+    }));
+  }, [sidebarState.mode]);
 
-  // Save collapse state to localStorage
+  // Initial width dispatch on mount to ensure layout adjusts correctly
   useEffect(() => {
-    localStorage.setItem('admin-sidebar-collapsed', JSON.stringify(isCollapsed));
-  }, [isCollapsed]);
+    const layoutWidth = sidebarState.mode === 'expanded' ? 256 : 64;
+    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
+      detail: { width: layoutWidth } 
+    }));
+  }, []); // Run once on mount
 
-  const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-    setIsHovered(false); // Reset hover state when toggling
+  // Handle mouse enter with delay for expand-on-hover mode
+  const handleMouseEnter = () => {
+    if (sidebarState.mode === 'expand-on-hover') {
+      // Clear any existing timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      
+      // Set hover state immediately for responsive feel
+      setSidebarState(prev => ({ ...prev, isHovered: true }));
+    }
   };
 
-  // Automatically navigate to the first sub-sidebar link when a main section is selected
-  useEffect(() => {
-    const activeNavItem = mainNavItems.find(item => item.id === activeSection);
-    if (!activeNavItem) return;
-    const filteredLinks = activeNavItem.subSidebar.links.filter(link => hasRequiredAccess(user, link.requiredAccess));
-    if (filteredLinks.length === 0) return;
-    
-    const currentPath = location.pathname;
-
-    // A section's base path is now defined in the nav item's 'basePath' property.
-    // We should only redirect if the user lands exactly on this base path.
-    if (activeNavItem.basePath && currentPath === activeNavItem.basePath) {
-      // Navigate to the first available link in the sub-sidebar.
-      if (navigate) {
-        navigate(filteredLinks[0].href, { replace: true });
-      }
+  // Handle mouse leave with delay for expand-on-hover mode
+  const handleMouseLeave = () => {
+    if (sidebarState.mode === 'expand-on-hover' && !isDropdownOpen) {
+      // Add small delay before collapsing to prevent flickering
+      hoverTimeoutRef.current = setTimeout(() => {
+        setSidebarState(prev => ({ ...prev, isHovered: false }));
+      }, 150); // Slightly longer delay for better UX
     }
-  }, [activeSection, user, location.pathname, navigate]);
+  };
 
-  const handleWidthChange = (width: number) => {
-    // Update the main sidebar width state
-    setMainSidebarWidth(width);
-    
-    // Also dispatch the event to ensure layout is updated
-    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', { 
-      detail: { 
-        width: width,
-        subSidebarVisible: true // Default to true, SubSidebar will override if needed
-      } 
+  // Handle sidebar mode change
+  const handleModeChange = (mode: SidebarMode) => {
+    setSidebarState(prev => ({
+      ...prev,
+      mode,
+      // Only reset hover state if not in expand-on-hover mode or switching away from it
+      isHovered: mode === 'expand-on-hover' ? prev.isHovered : false,
+      width: mode === 'collapsed' || mode === 'expand-on-hover' ? 64 : 256
     }));
   };
 
-  const handleSectionChange = (sectionId: string) => {
-    setActiveSection(sectionId);
-
-    // Find the selected nav item to navigate to its primary link
-    const navItem = mainNavItems.find(item => item.id === sectionId);
-    if (navItem) {
-      // Navigate to the base path if it exists, otherwise to the first sub-link
-      const targetUrl = navItem.basePath || navItem.subSidebar?.links[0]?.href;
-      if (targetUrl) {
-        navigate(targetUrl);
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
       }
-    }
-  };
+    };
+  }, []);
 
   return (
     <>
-      <MainSidebar
-        activeSection={activeSection}
-        onSectionChange={handleSectionChange}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={handleToggleCollapse}
-        isHovered={isHovered}
-        onHoverChange={setIsHovered}
-        onWidthChange={handleWidthChange}
-      />
-      <SubSidebar
-        activeSection={activeSection}
-        mainSidebarWidth={mainSidebarWidth}
-      />
+      {/* Base sidebar - always 64px when collapsed or expand-on-hover */}
+      <div 
+        className={cn(
+          "fixed left-0 top-0 h-full bg-card border-r border-border shadow-sm transition-all duration-300 z-40",
+          currentWidth === 64 ? "w-16" : "w-64"
+        )}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Content when not expanded or when expanded mode */}
+        {(!isOverlay || sidebarState.mode === 'expanded') && (
+          <>
+            {/* Header */}
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between">
+                {showText ? (
+                  <>
+                    <Logo />
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Admin</span>
+                    </div>
+                  </>
+                ) : (
+                  <Shield className="h-6 w-6 text-primary mx-auto" />
+                )}
+              </div>
+            </div>
+
+            {/* Navigation Items */}
+            <div className="flex-1 py-4">
+              {/* Back to Main App */}
+              {showText ? (
+                <div className="px-4 mb-4">
+                  <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                    <NavLink to={backToMainAppItem.href}>
+                      <backToMainAppItem.icon className="h-4 w-4 mr-2" />
+                      {backToMainAppItem.title}
+                    </NavLink>
+                  </Button>
+                </div>
+              ) : (
+                <div className="px-2 mb-4">
+                  <Button variant="outline" size="icon" asChild className="w-full">
+                    <NavLink to={backToMainAppItem.href} title={backToMainAppItem.title}>
+                      <backToMainAppItem.icon className="h-4 w-4" />
+                    </NavLink>
+                  </Button>
+                </div>
+              )}
+
+              {/* Main Navigation */}
+              <nav className="space-y-2 px-2">
+                {filteredNavItems.map((item) => {
+                  const isActive = activeSection === item.id;
+                  return (
+                    <NavLink
+                      key={item.id}
+                      to={item.href}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
+                        isActive 
+                          ? "bg-primary/10 text-primary border-l-4 border-primary" 
+                          : "text-foreground/70 hover:text-foreground hover:bg-secondary border-l-4 border-transparent",
+                        !showText && "justify-center px-3"
+                      )}
+                      title={!showText ? item.title : undefined}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      {showText && <span className="font-medium">{item.title}</span>}
+                    </NavLink>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Footer with State Control */}
+            <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
+              <div className="flex justify-center">
+                <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      title="Sidebar Options"
+                    >
+                      <PanelLeft className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" side="top" className="w-48">
+                    <DropdownMenuItem 
+                      onClick={() => handleModeChange('expanded')}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        sidebarState.mode === 'expanded' && "bg-primary/10 text-primary"
+                      )}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                      Expanded
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleModeChange('expand-on-hover')}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        sidebarState.mode === 'expand-on-hover' && "bg-primary/10 text-primary"
+                      )}
+                    >
+                      <MousePointer className="h-4 w-4" />
+                      Expand on Hover
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleModeChange('collapsed')}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        sidebarState.mode === 'collapsed' && "bg-primary/10 text-primary"
+                      )}
+                    >
+                      <Minimize2 className="h-4 w-4" />
+                      Collapsed
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Overlay sidebar for expand-on-hover */}
+      {isOverlay && (
+        <div 
+          className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-xl z-50 transition-all duration-300"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Header */}
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center justify-between">
+              <Logo />
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Admin</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Items */}
+          <div className="flex-1 py-4">
+            {/* Back to Main App */}
+            <div className="px-4 mb-4">
+              <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                <NavLink to={backToMainAppItem.href}>
+                  <backToMainAppItem.icon className="h-4 w-4 mr-2" />
+                  {backToMainAppItem.title}
+                </NavLink>
+              </Button>
+            </div>
+
+            {/* Main Navigation */}
+            <nav className="space-y-2 px-2">
+              {filteredNavItems.map((item) => {
+                const isActive = activeSection === item.id;
+                return (
+                  <NavLink
+                    key={item.id}
+                    to={item.href}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
+                      isActive 
+                        ? "bg-primary/10 text-primary border-l-4 border-primary" 
+                        : "text-foreground/70 hover:text-foreground hover:bg-secondary border-l-4 border-transparent"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium">{item.title}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Footer with State Control */}
+          <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
+            <div className="flex justify-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    title="Sidebar Options"
+                  >
+                    <PanelLeft className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" side="top" className="w-48">
+                  <DropdownMenuItem 
+                    onClick={() => handleModeChange('expanded')}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      sidebarState.mode === 'expanded' && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                    Expanded
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleModeChange('expand-on-hover')}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      sidebarState.mode === 'expand-on-hover' && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <MousePointer className="h-4 w-4" />
+                    Expand on Hover
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleModeChange('collapsed')}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      sidebarState.mode === 'collapsed' && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                    Collapsed
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
 
 // Mobile Admin Navigation (Overlay/Drawer with touch support)
 const MobileAdminNavigation = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState(() => getActiveSection(location.pathname));
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   
   // Get filtered navigation items based on user role
   const filteredNavItems = getFilteredNavItems(user);
-
-  // Update active section when location changes
-  useEffect(() => {
-    setActiveSection(getActiveSection(location.pathname));
-  }, [location.pathname]);
+  const activeSection = getActiveSection(location.pathname);
 
   // Handle swipe gestures
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -476,84 +517,37 @@ const MobileAdminNavigation = () => {
                   className="w-full justify-start touch-manipulation"
                   onClick={() => setIsDrawerOpen(false)}
                 >
-                  <NavLink to="/dashboard">
-                    <ChevronLeft className="h-4 w-4 mr-2" />
-                    Back to Main App
+                  <NavLink to={backToMainAppItem.href}>
+                    <backToMainAppItem.icon className="h-4 w-4 mr-2" />
+                    {backToMainAppItem.title}
                   </NavLink>
                 </Button>
               </div>
               
-              {/* Hierarchical Navigation */}
+              {/* Simple Navigation */}
               <div className="flex-1 overflow-y-auto p-4 overscroll-contain">
-                {filteredNavItems.map((item) => {
-                  const isActiveSection = activeSection === item.id;
-                  const filteredLinks = item.subSidebar.links.filter(link =>
-                    hasRequiredAccess(user, link.requiredAccess)
-                  );
-                  
-                  return (
-                    <div key={item.id} className="mb-6">
-                      {/* Section Header */}
-                      <div className={cn(
-                        "flex items-center gap-3 px-4 py-3 mb-2 rounded-lg font-medium touch-manipulation",
-                        isActiveSection 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-foreground/70"
-                      )}>
+                <nav className="space-y-2">
+                  {filteredNavItems.map((item) => {
+                    const isActive = activeSection === item.id;
+                    
+                    return (
+                      <NavLink
+                        key={item.id}
+                        to={item.href}
+                        onClick={() => setIsDrawerOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+                          isActive
+                            ? "bg-primary/10 text-primary border-l-4 border-primary"
+                            : "text-foreground/70 hover:text-foreground hover:bg-secondary/50 active:bg-secondary border-l-4 border-transparent"
+                        )}
+                      >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
-                        <span className="text-base">{item.title}</span>
-                      </div>
-                      
-                      {/* Section Links */}
-                      <div className="ml-6 space-y-1">
-                        {filteredLinks.map((link) => {
-                          const isActive = location.pathname === link.href || 
-                                          location.pathname.startsWith(link.href + '/');
-                          
-                          return (
-                            <NavLink
-                              key={link.href}
-                              to={link.href}
-                              onClick={() => setIsDrawerOpen(false)}
-                              className={cn(
-                                "block px-4 py-3 rounded-lg transition-all duration-200 touch-manipulation",
-                                isActive
-                                  ? "bg-primary/10 text-primary border-l-4 border-primary"
-                                  : "text-foreground/60 hover:text-foreground hover:bg-secondary/50 active:bg-secondary border-l-4 border-transparent"
-                              )}
-                            >
-                              <div className="font-medium text-sm">{link.title}</div>
-                              {link.description && (
-                                <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                                  {link.description}
-                                </div>
-                              )}
-                            </NavLink>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {/* User Info and Logout */}
-              <div className="p-4 border-t border-border">
-                <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                  <div className="text-sm font-medium">{user?.full_name || user?.email}</div>
-                  <div className="text-xs text-muted-foreground capitalize">{user?.role} Access</div>
-                </div>
-                <Button 
-                  variant="destructive" 
-                  className="w-full flex items-center justify-center gap-2 touch-manipulation py-3"
-                  onClick={() => {
-                    logout();
-                    setIsDrawerOpen(false);
-                  }}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </Button>
+                        <span className="font-medium">{item.title}</span>
+                      </NavLink>
+                    );
+                  })}
+                </nav>
               </div>
             </div>
           </div>

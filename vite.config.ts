@@ -38,10 +38,10 @@ export default defineConfig(({ mode }) => ({
           // Feature-based chunks
           'admin-pages': [
             './src/pages/admin/dashboard',
-            './src/pages/admin/ClientManagement',
-            './src/pages/admin/user-management',
-            './src/pages/admin/AdminSettings',
-            './src/pages/admin/AdminAudit',
+            './src/pages/admin/management/client-management',
+            './src/pages/admin/management/user-management',
+            './src/pages/admin/settings/AdminSettings',
+            './src/pages/admin/audit/admin-audit',
             './src/pages/admin/SystemHealthMonitoring',
           ],
           'main-pages': [
