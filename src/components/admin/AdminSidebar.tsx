@@ -22,15 +22,8 @@ import {
 
 import Logo from '@/components/Logo';
 import { mainNavItems, hasRequiredAccess, backToMainAppItem } from '@/config/adminNav';
-
-// Sidebar state type definition
-type SidebarMode = 'expanded' | 'collapsed' | 'expand-on-hover';
-
-interface SidebarState {
-  mode: SidebarMode;
-  isHovered: boolean;
-  width: number;
-}
+import { useSidebarStatePersistence, type SidebarMode } from '@/hooks/useSidebarStatePersistence';
+import { sidebarStateService } from '@/services/sidebarStateService';
 
 // Function to filter navigation items based on user role
 const getFilteredNavItems = (user: unknown) => {
@@ -56,28 +49,19 @@ const DesktopAdminSidebar = () => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Initialize sidebar state from localStorage
-  const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
-    const saved = localStorage.getItem('admin-sidebar-state');
-    const defaultState: SidebarState = {
-      mode: 'collapsed', // Default to collapsed
-      isHovered: false,
-      width: 64
-    };
-
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return {
-          mode: parsed.mode || 'collapsed',
-          isHovered: false, // Always start with false
-          width: parsed.mode === 'collapsed' || parsed.mode === 'expand-on-hover' ? 64 : 256
-        };
-      } catch {
-        return defaultState;
-      }
-    }
-    return defaultState;
+  // Use the enhanced sidebar state persistence hook
+  const {
+    sidebarState,
+    changeSidebarMode,
+    setHoverState,
+    displayProperties,
+    config,
+    storageAvailable,
+  } = useSidebarStatePersistence({
+    persistState: true,
+    defaultMode: 'collapsed',
+    transitionDuration: 300,
+    hoverDelay: 150,
   });
 
   // Get active section based on current path
@@ -86,35 +70,27 @@ const DesktopAdminSidebar = () => {
   // Filter navigation items based on user role
   const filteredNavItems = getFilteredNavItems(user);
 
-  // Calculate display properties
-  const isExpanded = sidebarState.mode === 'expanded' ||
-    (sidebarState.mode === 'expand-on-hover' && sidebarState.isHovered);
-  const showText = isExpanded;
-  const currentWidth = sidebarState.mode === 'expanded' ? 256 : 64;
-  const isOverlay = sidebarState.mode === 'expand-on-hover' && sidebarState.isHovered;
+  // Extract display properties from the hook
+  const { isExpanded, showText, currentWidth, layoutWidth, isOverlay } = displayProperties;
 
-  // Save state to localStorage when mode changes
+  // Dispatch width changes to layout
   useEffect(() => {
-    localStorage.setItem('admin-sidebar-state', JSON.stringify({
-      mode: sidebarState.mode
-    }));
-  }, [sidebarState.mode]);
-
-  // Dispatch width changes to layout (always 64px for collapsed/expand-on-hover)
-  useEffect(() => {
-    const layoutWidth = sidebarState.mode === 'expanded' ? 256 : 64;
     window.dispatchEvent(new CustomEvent('admin-sidebar-resize', {
       detail: { width: layoutWidth }
     }));
-  }, [sidebarState.mode]);
+  }, [layoutWidth]);
 
-  // Initial width dispatch on mount to ensure layout adjusts correctly
+  // Set up cross-tab synchronization
   useEffect(() => {
-    const layoutWidth = sidebarState.mode === 'expanded' ? 256 : 64;
-    window.dispatchEvent(new CustomEvent('admin-sidebar-resize', {
-      detail: { width: layoutWidth }
-    }));
-  }, []); // Run once on mount
+    const cleanup = sidebarStateService.addSyncListener((syncedState) => {
+      // Update local state when other tabs change the sidebar state
+      if (syncedState.mode !== sidebarState.mode) {
+        changeSidebarMode(syncedState.mode);
+      }
+    });
+
+    return cleanup;
+  }, [sidebarState.mode, changeSidebarMode]);
 
   // Handle mouse enter with delay for expand-on-hover mode
   const handleMouseEnter = () => {
@@ -125,7 +101,7 @@ const DesktopAdminSidebar = () => {
       }
 
       // Set hover state immediately for responsive feel
-      setSidebarState(prev => ({ ...prev, isHovered: true }));
+      setHoverState(true);
     }
   };
 
@@ -134,8 +110,8 @@ const DesktopAdminSidebar = () => {
     if (sidebarState.mode === 'expand-on-hover' && !isDropdownOpen) {
       // Add small delay before collapsing to prevent flickering
       hoverTimeoutRef.current = setTimeout(() => {
-        setSidebarState(prev => ({ ...prev, isHovered: false }));
-      }, 150);
+        setHoverState(false);
+      }, config.hoverDelay);
     }
   };
 
@@ -153,7 +129,7 @@ const DesktopAdminSidebar = () => {
     if (!open && sidebarState.mode === 'expand-on-hover') {
       // Small delay to allow user to move mouse back to sidebar if needed
       hoverTimeoutRef.current = setTimeout(() => {
-        setSidebarState(prev => ({ ...prev, isHovered: false }));
+        setHoverState(false);
       }, 300);
     }
   };
@@ -178,13 +154,7 @@ const DesktopAdminSidebar = () => {
 
   // Handle sidebar mode change
   const handleModeChange = (mode: SidebarMode) => {
-    setSidebarState(prev => ({
-      ...prev,
-      mode,
-      // Only reset hover state if not in expand-on-hover mode or switching away from it
-      isHovered: mode === 'expand-on-hover' ? prev.isHovered : false,
-      width: mode === 'collapsed' || mode === 'expand-on-hover' ? 64 : 256
-    }));
+    changeSidebarMode(mode);
   };
 
   // Cleanup timeout on unmount
@@ -458,19 +428,27 @@ const MobileAdminNavigation = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Get filtered navigation items based on user role
   const filteredNavItems = getFilteredNavItems(user);
   const activeSection = getActiveSection(location.pathname);
 
-  // Handle swipe gestures
+  // Enhanced touch gesture handling
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setIsDragging(false);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    const currentTouch = e.targetTouches[0].clientX;
+    setTouchEnd(currentTouch);
+    
+    // Detect if user is dragging
+    if (touchStart !== null && Math.abs(currentTouch - touchStart) > 10) {
+      setIsDragging(true);
+    }
   };
 
   const handleTouchEnd = () => {
@@ -485,30 +463,43 @@ const MobileAdminNavigation = () => {
       setIsDrawerOpen(false);
     }
 
-    // Open drawer on right swipe (from left edge)
+    // Open drawer on right swipe (from left edge only)
     if (isRightSwipe && !isDrawerOpen && touchStart < 50) {
       setIsDrawerOpen(true);
     }
+
+    // Reset dragging state
+    setIsDragging(false);
   };
 
-  // Handle tap outside to close
+  // Handle tap outside to close (only if not dragging)
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !isDragging) {
       setIsDrawerOpen(false);
     }
   };
 
-  // Prevent body scroll when drawer is open
+  // Prevent body scroll when drawer is open and handle escape key
   useEffect(() => {
     if (isDrawerOpen) {
       document.body.style.overflow = 'hidden';
+      
+      // Handle escape key
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsDrawerOpen(false);
+        }
+      };
+      
+      document.addEventListener('keydown', handleEscape);
+      
+      return () => {
+        document.body.style.overflow = 'unset';
+        document.removeEventListener('keydown', handleEscape);
+      };
     } else {
       document.body.style.overflow = 'unset';
     }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
   }, [isDrawerOpen]);
 
   return (
@@ -518,17 +509,18 @@ const MobileAdminNavigation = () => {
         <Button
           variant="outline"
           size="icon"
-          className="bg-card shadow-lg touch-manipulation"
+          className="bg-card/95 backdrop-blur-sm shadow-lg touch-manipulation h-12 w-12 border-2"
           onClick={() => setIsDrawerOpen(true)}
+          aria-label="Open navigation menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-6 w-6" />
         </Button>
       </div>
 
       {/* Mobile Drawer Overlay */}
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 md:hidden"
+          className="fixed inset-0 bg-black/50 z-50 md:hidden backdrop-blur-sm"
           onClick={handleOverlayClick}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -537,14 +529,14 @@ const MobileAdminNavigation = () => {
           {/* Drawer Content */}
           <div
             className={cn(
-              "fixed left-0 top-0 h-full w-[85%] max-w-sm bg-card shadow-xl transform transition-transform duration-300 ease-out",
+              "fixed left-0 top-0 h-full w-[85%] max-w-sm bg-card shadow-xl transform transition-transform duration-300 ease-out border-r border-border",
               isDrawerOpen ? "translate-x-0" : "-translate-x-full"
             )}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="p-4 border-b border-border flex items-center justify-between touch-manipulation">
+              <div className="p-4 border-b border-border flex items-center justify-between touch-manipulation bg-card/95 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <Logo />
                   <div className="flex items-center gap-2">
@@ -555,31 +547,35 @@ const MobileAdminNavigation = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="touch-manipulation"
+                  className="touch-manipulation h-10 w-10"
                   onClick={() => setIsDrawerOpen(false)}
+                  aria-label="Close navigation"
                 >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
 
               {/* Back to Main App */}
-              <div className="p-4 border-b border-border">
+              <div className="p-4 border-b border-border bg-muted/30">
                 <Button
                   variant="outline"
                   asChild
-                  className="w-full justify-start touch-manipulation"
+                  className="w-full justify-start touch-manipulation h-12 text-base"
                   onClick={() => setIsDrawerOpen(false)}
                 >
                   <NavLink to={backToMainAppItem.href}>
-                    <backToMainAppItem.icon className="h-4 w-4 mr-2" />
+                    <backToMainAppItem.icon className="h-5 w-5 mr-3" />
                     {backToMainAppItem.title}
                   </NavLink>
                 </Button>
               </div>
 
-              {/* Simple Navigation */}
+              {/* Simplified Navigation - No sub-sidebars */}
               <div className="flex-1 overflow-y-auto p-4 overscroll-contain">
-                <nav className="space-y-2">
+                <nav className="space-y-3">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-4">
+                    Admin Sections
+                  </div>
                   {filteredNavItems.map((item) => {
                     const isActive = activeSection === item.id;
 
@@ -589,30 +585,40 @@ const MobileAdminNavigation = () => {
                         to={item.href}
                         onClick={() => setIsDrawerOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+                          "flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-200 touch-manipulation text-base font-medium",
                           isActive
-                            ? "bg-primary/10 text-primary border-l-4 border-primary"
-                            : "text-foreground/70 hover:text-foreground hover:bg-secondary/50 active:bg-secondary border-l-4 border-transparent"
+                            ? "bg-primary/15 text-primary border-l-4 border-primary shadow-sm"
+                            : "text-foreground/80 hover:text-foreground hover:bg-secondary/60 active:bg-secondary/80 border-l-4 border-transparent hover:border-l-4 hover:border-primary/30"
                         )}
+                        aria-label={`Navigate to ${item.title}`}
                       >
-                        <item.icon className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium">{item.title}</span>
+                        <item.icon className="h-6 w-6 flex-shrink-0" />
+                        <span>{item.title}</span>
                       </NavLink>
                     );
                   })}
                 </nav>
+              </div>
+
+              {/* Footer with app info */}
+              <div className="p-4 border-t border-border bg-muted/20">
+                <div className="text-center text-xs text-muted-foreground">
+                  Dealermate Admin Panel
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Swipe area for opening drawer */}
+      {/* Enhanced swipe area for opening drawer */}
       <div
-        className="fixed left-0 top-0 w-4 h-full z-40 md:hidden"
+        className="fixed left-0 top-0 w-6 h-full z-40 md:hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        style={{ touchAction: 'pan-x' }}
+        aria-label="Swipe right to open navigation"
       />
     </>
   );

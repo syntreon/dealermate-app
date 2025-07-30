@@ -12,6 +12,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ThemeProvider } from 'next-themes';
 import { mainNavItems, hasRequiredAccess } from '@/config/adminNav';
+import { cn } from '@/lib/utils';
 
 const AdminLayout = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -142,7 +143,10 @@ const AdminLayout = () => {
             {!isMobile && <TopBar />}
             
             {/* Page content with proper responsive behavior */}
-            <main className="p-2 pb-24 md:p-6 w-full">
+            <main className={cn(
+              "w-full transition-all duration-300",
+              isMobile ? "pt-20 px-4 pb-8" : "p-6"
+            )}>
               <div className="w-full max-w-none overflow-x-hidden">
                 <Outlet />
               </div>
