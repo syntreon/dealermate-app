@@ -64,7 +64,7 @@ const AppLayout = () => {
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
       <SidebarProvider defaultOpen={!isMobile}>
-        <div className="min-h-screen bg-background text-foreground flex w-full">
+        <div className="min-h-screen bg-background text-foreground flex w-full pt-14"> {/* pt-14 ensures content/sidebar start below fixed TopBar */}
           {/* Sidebar */}
           <AppSidebar />
           

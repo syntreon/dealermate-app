@@ -172,7 +172,7 @@ const DesktopAdminSidebar = () => {
       <div
         ref={sidebarRef}
         className={cn(
-          "fixed left-0 top-0 h-full bg-card border-r border-border shadow-sm transition-all duration-300 z-40",
+          "fixed left-0 top-14 h-[calc(100vh-56px)] bg-card border-r border-border shadow-sm transition-all duration-300 z-40 overflow-y-auto", // top-14 and calculated height ensures proper positioning below TopBar
           currentWidth === 64 ? "w-16" : "w-64"
         )}
         onMouseEnter={handleMouseEnter}
@@ -181,25 +181,8 @@ const DesktopAdminSidebar = () => {
         {/* Content when not expanded or when expanded mode */}
         {(!isOverlay || sidebarState.mode === 'expanded') && (
           <>
-            {/* Header */}
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center justify-between">
-                {showText ? (
-                  <>
-                    <Logo />
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Admin</span>
-                    </div>
-                  </>
-                ) : (
-                  <Shield className="h-6 w-6 text-primary mx-auto" />
-                )}
-              </div>
-            </div>
-
             {/* Navigation Items */}
-            <div className="flex-1 py-4">
+            <div className="flex-1 py-4 pt-6">
               {/* Back to Main App */}
               {showText ? (
                 <div className="px-4 mb-4">
@@ -309,23 +292,12 @@ const DesktopAdminSidebar = () => {
       {isOverlay && (
         <div
           ref={overlayRef}
-          className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-xl z-50 transition-all duration-300"
+          className="fixed left-0 top-14 h-[calc(100vh-56px)] w-64 bg-card border-r border-border shadow-xl z-50 transition-all duration-300 overflow-y-auto"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Header */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between">
-              <Logo />
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-primary">Admin</span>
-              </div>
-            </div>
-          </div>
-
           {/* Navigation Items */}
-          <div className="flex-1 py-4">
+          <div className="flex-1 py-4 pt-6"> 
             {/* Back to Main App */}
             <div className="px-4 mb-4">
               <Button variant="outline" size="sm" asChild className="w-full justify-start">
@@ -538,7 +510,7 @@ const MobileAdminNavigation = () => {
               {/* Header */}
               <div className="p-4 border-b border-border flex items-center justify-between touch-manipulation bg-card/95 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
-                  <Logo />
+                  {/* Removed Logo - now in TopBar */}
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-primary">Admin</span>

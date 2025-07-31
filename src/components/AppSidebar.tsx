@@ -51,13 +51,8 @@ const DesktopSidebar = () => {
   );
 
   return (
-    <Sidebar className="border-r border-border bg-card shadow-sm">
-      <SidebarHeader className="p-7">
-        {/* Using the Logo component for consistent branding */}
-        <Logo />
-      </SidebarHeader>
-
-      <SidebarContent>
+    <Sidebar className="border-r border-border bg-card shadow-sm fixed top-14 h-[calc(100vh-56px)] overflow-y-auto"> {/* top-14 and calculated height ensures proper positioning below TopBar */}
+      <SidebarContent className="pt-3"> {/* Added top padding to prevent first item obstruction */}
         {/* Increased spacing between menu items */}
         <SidebarMenu className="space-y-2.5 px-2">
           {navItems.map((item) => {
