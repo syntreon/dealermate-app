@@ -5,3 +5,8 @@
 2. Remove console logs from all pages and components
     * Aduit logs page
     * dashboard page
+
+3. acccount manager role
+4. use Dashboard Header component in main pages similar to admin pages
+5. add topbar to mobile view 
+

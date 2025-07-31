@@ -13,6 +13,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ThemeProvider } from 'next-themes';
 import { mainNavItems, hasRequiredAccess } from '@/config/adminNav';
 import { cn } from '@/lib/utils';
+import { ClientProvider } from '@/context/ClientContext';
 
 const AdminLayout = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -126,36 +127,38 @@ const AdminLayout = () => {
 
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
-      <SidebarProvider defaultOpen={!isMobile}>
-        <div className="min-h-screen bg-background text-foreground relative pt-14">   {/* pt-14 ensures content/sidebar start below fixed TopBar */}
-          {/* Sidebar */}
-          <AdminSidebar />
-          
-          {/* Main content area */}
-          <div 
-            className="min-h-screen transition-all duration-300 ease-in-out"
-            style={{ 
-               marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
-               width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
-            }}
-          >
-            {/* Top Bar - Only show on desktop */}
-            {!isMobile && <TopBar />}
+      <ClientProvider>
+        <SidebarProvider defaultOpen={!isMobile}>
+          <div className="min-h-screen bg-background text-foreground relative pt-14">   {/* pt-14 ensures content/sidebar start below fixed TopBar */}
+            {/* Sidebar */}
+            <AdminSidebar />
             
-            {/* Page content with proper responsive behavior */}
-            <main className={cn(
-              "w-full transition-all duration-300",
-              isMobile ? "pt-20 px-4 pb-8" : "" // Remove p-6 here for desktop
-            )}>
-              <div className="w-full max-w-none overflow-x-auto"> {/* Add px-6 here for desktop */}
-                <Outlet />
-              </div>
-            </main>
+            {/* Main content area */}
+            <div 
+              className="min-h-screen transition-all duration-300 ease-in-out"
+              style={{ 
+                marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
+                width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
+              }}
+            >
+              {/* Top Bar - Only show on desktop */}
+              {!isMobile && <TopBar />}
+              
+              {/* Page content with proper responsive behavior */}
+              <main className={cn(
+                "w-full transition-all duration-300",
+                isMobile ? "pt-20 px-4 pb-8" : "" // Remove p-6 here for desktop
+              )}>
+                <div className="w-full max-w-none overflow-x-auto"> {/* Add px-6 here for desktop */}
+                  <Outlet />
+                </div>
+              </main>
+            </div>
+            
+            <Toaster position="top-right" />
           </div>
-          
-          <Toaster position="top-right" />
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </ClientProvider>
     </ThemeProvider>
   );
 };
