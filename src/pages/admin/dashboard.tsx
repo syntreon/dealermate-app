@@ -119,7 +119,7 @@ const AdminDashboardError: React.FC<AdminDashboardErrorProps> = ({ onRetry }) =>
 
 // Loading skeleton component
 const AdminDashboardSkeleton: React.FC = () => (
-  <div className="space-y-6">
+  <div className="min-h-[calc(100vh-56px)] p-4 space-y-6 overflow-y-auto">
     {/* Header skeleton */}
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div className="space-y-2">
@@ -240,7 +240,7 @@ const AdminDashboardPage: React.FC = () => {
   } : null;
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-[calc(100vh-56px)] p-4 space-y-6 overflow-y-auto">
       {/* Dashboard Header */}
       <DashboardHeader 
         title="Admin Dashboard"

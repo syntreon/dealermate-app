@@ -145,9 +145,9 @@ const AdminLayout = () => {
             {/* Page content with proper responsive behavior */}
             <main className={cn(
               "w-full transition-all duration-300",
-              isMobile ? "pt-20 px-4 pb-8" : "p-6"
+              isMobile ? "pt-20 px-4 pb-8" : "" // Remove p-6 here for desktop
             )}>
-              <div className="w-full max-w-none overflow-x-hidden">
+              <div className="w-full max-w-none overflow-x-auto"> {/* Add px-6 here for desktop */}
                 <Outlet />
               </div>
             </main>

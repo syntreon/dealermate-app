@@ -9,15 +9,25 @@ const ManagementLayout: React.FC = () => {
   return (
     <SectionErrorBoundary sectionName="Management">
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Management</h2>
-          <p className="text-muted-foreground">
-            Manage users, clients, business settings, and permissions.
-          </p>
-        </div>
-        <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-8 lg:space-y-0">
-          <aside className="lg:w-56 lg:flex-shrink-0">
-            <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto lg:overflow-x-visible">
+        <div className="flex flex-col lg:flex-row lg:space-x-8 lg:h-[calc(100vh-56px)]">
+          {/*
+            Sub-sidebar: sticky and separated on desktop/tablet only.
+            - Sticks below the top bar (h-14 = 56px)
+            - Adds right border for clear separation
+            - No width or nav logic changes
+          */}
+          <aside
+  className="lg:w-56 lg:flex-shrink-0 lg:border-r lg:border-border"
+>
+  {/* Section heading and description, minimal style */}
+  <div className="py-3">
+    <div className="px-6">
+      <h2 className="text-lg font-bold text-foreground">Management</h2>
+      <p className="text-xs text-muted-foreground mt-1">Manage users, clients, business settings, and permissions.</p>
+    </div>
+    <div className="border-b border-border my-3" />
+  </div>
+  <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto lg:overflow-x-visible px-2">
               {managementNavItems.map((item) => (
                 <NavLink
                   key={item.href}
@@ -26,11 +36,11 @@ const ManagementLayout: React.FC = () => {
                   className={({ isActive }) =>
                     cn(
                       'inline-flex items-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-                      'hover:bg-accent hover:text-accent-foreground',
+                      'hover:bg-secondary hover:text-secondary-foreground',
                       'px-4 py-2 whitespace-nowrap',
                       isActive
-                        ? 'bg-muted hover:bg-muted text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
+                        ? 'bg-secondary hover:bg-secondary text-secondary-foreground'
+                        : 'text-secondary-foreground hover:text-secondary-foreground',
                       'justify-start'
                     )
                   }
@@ -41,11 +51,11 @@ const ManagementLayout: React.FC = () => {
               ))}
             </nav>
           </aside>
-          <div className="flex-1 min-w-0">
-            <Suspense fallback={<MinimalSectionLoading sectionName="Management Page" />}>
-              <Outlet />
-            </Suspense>
-          </div>
+          <div className="flex-1 min-w-0 space-y-6 p-4 h-full overflow-y-auto">
+  <Suspense fallback={<MinimalSectionLoading sectionName="Management Page" />}>
+    <Outlet />
+  </Suspense>
+</div>
         </div>
       </div>
     </SectionErrorBoundary>
