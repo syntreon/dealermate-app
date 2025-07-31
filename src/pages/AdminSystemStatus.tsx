@@ -1,49 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useClient } from '@/context/ClientContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, AlertTriangle } from 'lucide-react';
 import SystemMessageManager from '@/components/admin/SystemMessageManager';
 import AgentStatusControl from '@/components/admin/AgentStatusControl';
-import ClientSelector from '@/components/admin/ClientSelector';
 import { SystemStatusService } from '@/services/systemStatusService';
-import { AdminService } from '@/services/adminService';
 import { SystemMessage, AgentStatus } from '@/types/dashboard';
-import { Client } from '@/types/admin';
 import { toast } from 'sonner';
 
 const AdminSystemStatus = () => {
   const { user } = useAuth();
+  const { clients, selectedClientId, loading: clientsLoading } = useClient();
   const [systemMessages, setSystemMessages] = useState<SystemMessage[]>([]);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [clients, setClients] = useState<Client[]>([]);
+  // Using 'all' as default for system status page to show platform-wide status
   const [selectedClient, setSelectedClient] = useState<string | 'all'>('all');
-  const [clientsLoading, setClientsLoading] = useState(true);
 
   // Check if user has admin privileges
   const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.is_admin;
-
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    // Load clients first
-    const loadClients = async () => {
-      setClientsLoading(true);
-      try {
-        const clientsData = await AdminService.getClients();
-        setClients(clientsData);
-      } catch (error) {
-        console.error('Failed to load clients:', error);
-        toast.error('Failed to load clients');
-      } finally {
-        setClientsLoading(false);
-      }
-    };
-
-    loadClients();
-  }, [isAdmin]);
 
   // Load system status data when selected client changes
   useEffect(() => {
@@ -141,14 +119,8 @@ const AdminSystemStatus = () => {
         </p>
       </div>
 
-      {/* Client Selector */}
+      {/* Client Selection Info */}
       <div className="mb-6">
-        <ClientSelector
-          clients={clients}
-          selectedClient={selectedClient}
-          onClientChange={setSelectedClient}
-          isLoading={clientsLoading}
-        />
         <p className="text-sm text-muted-foreground mt-2">
           {selectedClient === 'all' 
             ? 'Managing platform-wide status and messages (visible to all clients)' 

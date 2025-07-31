@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Clock, MessageSquare, Phone, Calendar, Globe, RefreshCw, Search, UserCheck, ArrowRightLeft, Zap, BarChart, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useClient } from '@/context/ClientContext';
 import { canViewSensitiveInfo, hasClientAdminAccess } from '@/utils/clientDataIsolation';
-import ClientSelector from '@/components/ClientSelector';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useSystemStatus } from '@/hooks/use-system-status';
@@ -28,7 +28,7 @@ interface Agent {
 const Agents: React.FC = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const { selectedClientId } = useClient();
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [selectedAgentName, setSelectedAgentName] = useState<string>('');
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
@@ -307,13 +307,7 @@ const Agents: React.FC = () => {
         </div>
         
         <div className="flex gap-2 self-start">
-          {/* Client selector for admin users */}
-          {canViewAllClients && (
-            <ClientSelector
-              selectedClientId={selectedClientId}
-              onClientChange={handleClientChange}
-            />
-          )}
+          {/* Client selection is now handled by the global client selector in TopBar */}
         </div>
       </div>
 

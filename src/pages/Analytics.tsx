@@ -7,10 +7,10 @@ import CallAnalytics from '@/components/analytics/CallAnalytics';
 import QualityAnalytics from '@/components/analytics/QualityAnalytics';
 import SimpleAIAnalytics from '@/components/analytics/SimpleAIAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
-import ClientSelector from '@/components/ClientSelector';
 import { useDateRange } from '@/hooks/useDateRange';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/context/AuthContext';
+import { useClient } from '@/context/ClientContext';
 import { canViewSensitiveInfo, canAccessAnalytics } from '@/utils/clientDataIsolation';
 import { Navigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,10 +18,10 @@ import { cn } from '@/lib/utils';
 
 const Analytics = () => {
   const { user } = useAuth();
+  const { selectedClientId } = useClient();
   const [activeTab, setActiveTab] = useState('calls');
   const { dateRange, setDateRange, startDate, endDate } = useDateRange();
   const [dateFilters, setDateFilters] = useState<{ start?: string; end?: string }>({});
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const tabsRef = useRef<HTMLDivElement>(null);
   
@@ -45,10 +45,7 @@ const Analytics = () => {
 
   const tabOptions = allTabOptions.filter(tab => !tab.adminOnly || canViewAllClients);
   
-  // Handle client selection change
-  const handleClientChange = useCallback((clientId: string | null) => {
-    setSelectedClientId(clientId);
-  }, []);
+  // Client selection is now handled by the global ClientContext
   
   // Handle tab scrolling on mobile
   const scrollToTab = (direction: 'left' | 'right') => {
@@ -70,15 +67,6 @@ const Analytics = () => {
       
       {/* Filters section - separate row on mobile */}
       <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
-        {/* Client selector for admin users */}
-        {canViewAllClients && (
-          <ClientSelector
-            selectedClientId={selectedClientId}
-            onClientChange={handleClientChange}
-            className="w-full sm:w-auto max-w-xs"
-          />
-        )}
-        
         {/* Date filter */}
         <DateRangeFilter
           className="w-full sm:w-auto max-w-xs"

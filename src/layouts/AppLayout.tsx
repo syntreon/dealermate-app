@@ -12,6 +12,7 @@ import { SidebarTrigger, SidebarInset, SidebarProvider } from '@/components/ui/s
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
+import { ClientProvider } from '@/context/ClientContext';
 
 const AppLayout = () => {
   const {
@@ -62,28 +63,30 @@ const AppLayout = () => {
     );
   }
   return (
-    <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
-      <SidebarProvider defaultOpen={!isMobile}>
-        <div className="min-h-screen bg-background text-foreground flex w-full pt-14"> {/* pt-14 ensures content/sidebar start below fixed TopBar */}
-          {/* Sidebar */}
-          <AppSidebar />
-          
-          {/* Main content area */}
-          <div className="flex flex-col flex-1">
-            {/* Top Bar - Only show on desktop */}
-            {!isMobile && <TopBar />}
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ClientProvider>
+        <SidebarProvider defaultOpen={!isMobile}>
+          <div className="min-h-screen bg-background text-foreground flex w-full pt-14"> {/* pt-14 ensures content/sidebar start below fixed TopBar */}
+            {/* Sidebar */}
+            <AppSidebar />
             
-            {/* Page content */}
-            <SidebarInset className="flex-1 overflow-auto p-2 pb-24 md:p-3">
-              <div className="w-full animate-in">
-                <Outlet />
-              </div>
-            </SidebarInset>
+            {/* Main content area */}
+            <div className="flex flex-col flex-1">
+              {/* Top Bar - Only show on desktop */}
+              {!isMobile && <TopBar />}
+              
+              {/* Page content */}
+              <SidebarInset className="flex-1 overflow-auto p-2 pb-24 md:p-3">
+                <div className="w-full animate-in">
+                  <Outlet />
+                </div>
+              </SidebarInset>
+            </div>
+            
+            <Toaster position="top-right" />
           </div>
-          
-          <Toaster position="top-right" />
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </ClientProvider>
     </ThemeProvider>
   );
 };

@@ -6,9 +6,9 @@ import { PotentialEarnings } from '@/components/dashboard/PotentialEarnings';
 import { Phone, Clock, Calendar, MessageSquare, CheckCircle, XCircle, SendHorizontal, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { useClient } from '@/context/ClientContext';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import { useNavigate } from 'react-router-dom';
-import ClientSelector from '@/components/ClientSelector';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
 import MetricsSummaryCards from '@/components/dashboard/MetricsSummaryCards';
@@ -20,13 +20,13 @@ import { callLogsService } from '@/integrations/supabase/call-logs-service';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { selectedClientId } = useClient();
   const navigate = useNavigate();
 
   // State for real data
   const [calls, setCalls] = useState<Call[]>([]);
   const [stats, setStats] = useState<CallStats>({ totalCalls: 0, sent: 0, answered: 0, failed: 0 });
   const [loadingCalls, setLoadingCalls] = useState(true);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
 
   // State for call details popup
@@ -150,11 +150,7 @@ const Dashboard = () => {
     navigate('/call');
   };
 
-  // Handle client selection change
-  const handleClientChange = (clientId: string | null) => {
-    console.log('Dashboard - Client selection changed to:', clientId);
-    setSelectedClientId(clientId);
-  };
+  // Client selection is now handled by the global ClientContext
 
   // Handle opening call details popup
   const handleOpenCallDetails = async (callId: string) => {
@@ -203,14 +199,6 @@ const Dashboard = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0"> {/* Increased button spacing and added top margin on mobile */}
-          {/* Client selector for admin users */}
-          {canViewAllClients && (
-            <ClientSelector
-              selectedClientId={selectedClientId}
-              onClientChange={handleClientChange}
-              className="w-full sm:w-auto"
-            />
-          )}
           <Button
             onClick={handleNewCall}
             className="bg-primary hover:bg-primary/90 text-white px-4 py-2" /* Added more padding */

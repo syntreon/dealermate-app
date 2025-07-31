@@ -21,6 +21,7 @@ import { AdminService } from '@/services/adminService';
 import { Badge } from '@/components/ui/badge';
 import { useSystemStatus, MessageType } from '@/hooks/use-system-status';
 import { AgentStatus } from '@/types/dashboard';
+import GlobalClientSelector from './GlobalClientSelector';
 
 const TopBar = () => {
   const { user, logout } = useAuth();
@@ -185,6 +186,9 @@ const TopBar = () => {
       {/* Removed: Call Facilitation Dashboard heading */}
       
       <div className="flex items-center space-x-3">
+        {/* Global Client Selector - Only visible for admin users */}
+        <GlobalClientSelector />
+        
         {/* Agent Status Indicator - Using the original component with real-time status data */}
         {!isLoading && (
           <AgentStatusIndicator agentStatus={agentStatus} />

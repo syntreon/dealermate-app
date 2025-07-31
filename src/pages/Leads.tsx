@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw, User } from 'lucide-react';
 import LeadsTable from '@/components/leads/LeadsTable';
 import LeadDetailsView from '@/components/leads/LeadDetailsView';
 import LeadExportDialog, { LeadExportOptions } from '@/components/leads/LeadExportDialog';
-import ClientSelector from '@/components/ClientSelector';
 import { useLeadService } from '@/hooks/useLeadService';
 import { downloadFile, generateExportFilename } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 import { Lead } from '@/integrations/supabase/lead-service';
 import { useAuth } from '@/context/AuthContext';
+import { useClient } from '@/context/ClientContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
 
@@ -20,7 +20,7 @@ import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
  */
 const Leads: React.FC = () => {
   const { user } = useAuth();
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const { selectedClientId } = useClient();
   
   const { 
     leads, 
@@ -34,6 +34,11 @@ const Leads: React.FC = () => {
     exportLeadsToCSV,
     exportLeadsToExcel
   } = useLeadService();
+  
+  // Refetch leads when selectedClientId changes
+  useEffect(() => {
+    refetch({ clientId: selectedClientId });
+  }, [selectedClientId, refetch]);
   
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -138,19 +143,7 @@ const Leads: React.FC = () => {
         </div>
       </div>
 
-      {/* Client selector for admin users - separate row on mobile */}
-      {user && canViewSensitiveInfo(user) && (
-        <div className="flex justify-end">
-          <ClientSelector
-            selectedClientId={selectedClientId}
-            onClientChange={(clientId) => {
-              setSelectedClientId(clientId);
-              refetch({ clientId });
-            }}
-            className="w-full sm:w-auto max-w-xs"
-          />
-        </div>
-      )}
+      {/* Client selection is now handled by the global client selector in TopBar */}
 
       <Card className="bg-card border-border shadow-sm">
         <CardContent className="p-0">

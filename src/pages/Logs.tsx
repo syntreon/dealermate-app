@@ -5,8 +5,8 @@ import { FileText, RefreshCw, Filter } from 'lucide-react';
 import { useCallLogs } from '@/hooks/useCallLogs';
 import { leadService } from '@/integrations/supabase/lead-service';
 import CallLogsTable, { ExtendedCallLog } from '@/components/CallLogsTable';
-import ClientSelector from '@/components/ClientSelector';
 import { useAuth } from '@/context/AuthContext';
+import { useClient } from '@/context/ClientContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 import { CachedAdminService } from '@/services/cachedAdminService';
 
@@ -20,17 +20,17 @@ const Logs: React.FC = () => {
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [leadsError, setLeadsError] = useState<string | null>(null);
   const { user } = useAuth();
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const { selectedClientId, clients } = useClient();
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const { callLogs, loading, error, forceRefresh, refetch } = useCallLogs();
   const [clientsMap, setClientsMap] = useState<Record<string, string>>({});
 
-  // Handle client selection change
-  const handleClientChange = (clientId: string | null) => {
-    setSelectedClientId(clientId);
-    // Refetch call logs with the selected client ID
-    refetch({ clientId });
-  };
+  // Client selection is now handled by the global ClientContext
+  
+  // Refetch logs when selectedClientId changes
+  useEffect(() => {
+    refetch({ clientId: selectedClientId });
+  }, [selectedClientId, refetch]);
   
   // Get selected client name when client ID changes
   useEffect(() => {
@@ -40,13 +40,12 @@ const Logs: React.FC = () => {
       return;
     }
     
-    // Find the selected client name from the ClientSelector
-    const clientSelectorElement = document.querySelector('[role="combobox"] span.truncate');
-    if (clientSelectorElement) {
-      const clientName = clientSelectorElement.textContent?.trim();
-      setSelectedClientName(clientName !== 'Premier Chevrolet' && clientName !== 'All Clients' ? clientName : null);
+    // Find selected client name from clients array
+    const selectedClient = clients?.find(client => client.id === selectedClientId);
+    if (selectedClient) {
+      setSelectedClientName(selectedClient.name);
     }
-  }, [selectedClientId]);
+  }, [selectedClientId, clients]);
   
   // Fetch all clients data for admin users to map client_id to client_name
   useEffect(() => {
@@ -148,16 +147,7 @@ const Logs: React.FC = () => {
         </Button>
       </div>
 
-      {/* Client selector for admin users - separate row on mobile */}
-      {canViewSensitiveInfo(user) && (
-        <div className="flex justify-end">
-          <ClientSelector
-            selectedClientId={selectedClientId}
-            onClientChange={handleClientChange}
-            className="w-full sm:w-auto max-w-xs"
-          />
-        </div>
-      )}
+      {/* Client selection is now handled by the global client selector in TopBar */}
 
       <Card className="bg-card border-border shadow-sm">
         <CardContent className="p-0">

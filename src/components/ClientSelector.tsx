@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Check, ChevronsUpDown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -15,69 +15,30 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useAuth } from '@/context/AuthContext';
-import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Client {
-  id: string;
-  name: string;
-  status?: 'active' | 'inactive' | 'trial' | 'churned';
-}
+import { Client } from '@/types';
 
 interface ClientSelectorProps {
   onClientChange: (clientId: string | null) => void;
   selectedClientId: string | null;
+  clients: Client[];
+  loading: boolean;
+  error: Error | null;
   className?: string;
 }
 
 /**
- * ClientSelector component for admin users to filter data by client
- * Only visible to admin users, automatically hidden for regular users
+ * ClientSelector component for selecting a client from a dropdown
+ * This is a presentational component that receives clients and state as props
  */
 const ClientSelector: React.FC<ClientSelectorProps> = ({
   onClientChange,
   selectedClientId,
+  clients,
+  loading,
+  error,
   className,
 }) => {
-  const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Only admin users can see all clients
-  const canViewAllClients = canViewSensitiveInfo(user);
-
-  // Fetch clients from Supabase
-  useEffect(() => {
-    const fetchClients = async () => {
-      if (!canViewAllClients) return;
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('id, name, status')
-          .order('name');
-        
-        if (error) {
-          console.error('Error fetching clients:', error);
-          return;
-        }
-        
-        setClients(data || []);
-      } catch (err) {
-        console.error('Error in fetchClients:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchClients();
-  }, [canViewAllClients]);
-
-  // If user is not an admin, don't render the component
-  if (!canViewAllClients) return null;
 
   // Find the selected client name
   const selectedClient = clients.find(client => client.id === selectedClientId);
