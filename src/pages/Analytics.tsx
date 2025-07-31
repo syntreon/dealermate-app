@@ -62,9 +62,9 @@ const Analytics = () => {
     <div className="space-y-4 pb-8">
       {/* Mobile-first compact header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-2xl font-bold">Analytics</h1>
-          <p className="text-sm text-muted-foreground mt-1">Detailed analytics and insights for your call system</p>
+          <p className="text-sm text-muted-foreground">Detailed analytics and insights for your call system</p>
         </div>
       </div>
       

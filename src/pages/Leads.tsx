@@ -112,9 +112,9 @@ const Leads: React.FC = () => {
     <div className="space-y-4 pb-8">
       {/* Mobile-first compact header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-2xl font-bold">Leads</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage and track leads generated from calls</p>
+          <p className="text-sm text-muted-foreground">Manage and track leads generated from calls</p>
         </div>
         
         <div className="flex gap-2">

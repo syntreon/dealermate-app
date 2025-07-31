@@ -301,9 +301,9 @@ const Agents: React.FC = () => {
       <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-3xl font-bold text-foreground">Agents</h1>
+            <h1 className="text-2xl font-bold text-foreground">Agents</h1>
           </div>
-          <p className="text-muted-foreground">Manage your AI agents and their availability</p>
+          <p className="text-sm text-muted-foreground">Manage your AI agents and their availability</p>
         </div>
         
         <div className="flex gap-2 self-start">

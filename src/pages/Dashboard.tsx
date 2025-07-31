@@ -194,12 +194,12 @@ const Dashboard = () => {
       />
       {/* Enhanced responsive header layout with improved spacing */}
       <div className="flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center">
-        <div className="space-y-3"> {/* Increased vertical spacing */}
+        <div className="space-y-2"> {/* Increased vertical spacing */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3"> {/* Stack vertically on mobile */}
-            <h1 className="text-3xl font-bold text-card-foreground mb-2 sm:mb-0">Dashboard</h1>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
             {/* Coming Soon badge hidden as requested */}
           </div>
-          <p className="text-muted-foreground">Overview of your AI call system performance.</p> {/* Theme-aware text */}
+          <p className="text-sm text-muted-foreground">Overview of your AI call system performance.</p> {/* Theme-aware text */}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0"> {/* Increased button spacing and added top margin on mobile */}

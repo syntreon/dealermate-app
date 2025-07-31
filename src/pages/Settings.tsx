@@ -76,9 +76,9 @@ const Settings = () => {
   return (
     <div className="space-y-6 pb-8 px-0">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-gray-500 mt-1">Manage your account and preferences</p>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
         </div>
         
         {canViewSensitiveInfo(user) && (
