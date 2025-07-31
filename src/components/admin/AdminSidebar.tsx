@@ -230,59 +230,56 @@ const DesktopAdminSidebar = () => {
 
             {/* Footer with State Control */}
             <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
-              <div className="flex justify-center">
-                <DropdownMenu onOpenChange={handleDropdownOpenChange}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      title="Sidebar Options"
-                      onMouseEnter={() => {
-                        // Ensure sidebar stays expanded when hovering over dropdown trigger
-                        if (sidebarState.mode === 'expand-on-hover' && hoverTimeoutRef.current) {
-                          clearTimeout(hoverTimeoutRef.current);
-                          hoverTimeoutRef.current = null;
-                        }
-                      }}
-                    >
-                      <PanelLeft className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" side="top" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => handleModeChange('expanded')}
-                      className={cn(
-                        "flex items-center gap-2 cursor-pointer",
-                        sidebarState.mode === 'expanded' && "bg-primary/10 text-primary"
-                      )}
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                      Expanded
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleModeChange('expand-on-hover')}
-                      className={cn(
-                        "flex items-center gap-2 cursor-pointer",
-                        sidebarState.mode === 'expand-on-hover' && "bg-primary/10 text-primary"
-                      )}
-                    >
-                      <MousePointer className="h-4 w-4" />
-                      Expand on Hover
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleModeChange('collapsed')}
-                      className={cn(
-                        "flex items-center gap-2 cursor-pointer",
-                        sidebarState.mode === 'collapsed' && "bg-primary/10 text-primary"
-                      )}
-                    >
-                      <Minimize2 className="h-4 w-4" />
-                      Collapsed
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <DropdownMenu onOpenChange={handleDropdownOpenChange}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    title="Sidebar Options"
+                    onMouseEnter={() => {
+                      // Ensure sidebar stays expanded when hovering over dropdown trigger
+                      if (sidebarState.mode === 'expand-on-hover' && hoverTimeoutRef.current) {
+                        clearTimeout(hoverTimeoutRef.current);
+                      }
+                    }}
+                  >
+                    <PanelLeft className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" side="top" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => handleModeChange('expanded')}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      sidebarState.mode === 'expanded' && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                    Expanded
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleModeChange('expand-on-hover')}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      sidebarState.mode === 'expand-on-hover' && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <MousePointer className="h-4 w-4" />
+                    Expand on Hover
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleModeChange('collapsed')}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      sidebarState.mode === 'collapsed' && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                    Collapsed
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </>
         )}
@@ -333,59 +330,57 @@ const DesktopAdminSidebar = () => {
 
           {/* Footer with State Control */}
           <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
-            <div className="flex justify-center">
-              <DropdownMenu onOpenChange={handleDropdownOpenChange}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    title="Sidebar Options"
-                    onMouseEnter={() => {
-                      // Ensure sidebar stays expanded when hovering over dropdown trigger
-                      if (sidebarState.mode === 'expand-on-hover' && hoverTimeoutRef.current) {
-                        clearTimeout(hoverTimeoutRef.current);
-                        hoverTimeoutRef.current = null;
-                      }
-                    }}
-                  >
-                    <PanelLeft className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" side="top" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => handleModeChange('expanded')}
-                    className={cn(
-                      "flex items-center gap-2 cursor-pointer",
-                      sidebarState.mode === 'expanded' && "bg-primary/10 text-primary"
-                    )}
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                    Expanded
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleModeChange('expand-on-hover')}
-                    className={cn(
-                      "flex items-center gap-2 cursor-pointer",
-                      sidebarState.mode === 'expand-on-hover' && "bg-primary/10 text-primary"
-                    )}
-                  >
-                    <MousePointer className="h-4 w-4" />
-                    Expand on Hover
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleModeChange('collapsed')}
-                    className={cn(
-                      "flex items-center gap-2 cursor-pointer",
-                      sidebarState.mode === 'collapsed' && "bg-primary/10 text-primary"
-                    )}
-                  >
-                    <Minimize2 className="h-4 w-4" />
-                    Collapsed
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <DropdownMenu onOpenChange={handleDropdownOpenChange}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  title="Sidebar Options"
+                  onMouseEnter={() => {
+                    // Ensure sidebar stays expanded when hovering over dropdown trigger
+                    if (sidebarState.mode === 'expand-on-hover' && hoverTimeoutRef.current) {
+                      clearTimeout(hoverTimeoutRef.current);
+                      hoverTimeoutRef.current = null;
+                    }
+                  }}
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" side="top" className="w-48">
+                <DropdownMenuItem
+                  onClick={() => handleModeChange('expanded')}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    sidebarState.mode === 'expanded' && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                  Expanded
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleModeChange('expand-on-hover')}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    sidebarState.mode === 'expand-on-hover' && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <MousePointer className="h-4 w-4" />
+                  Expand on Hover
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleModeChange('collapsed')}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    sidebarState.mode === 'collapsed' && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <Minimize2 className="h-4 w-4" />
+                  Collapsed
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       )}
