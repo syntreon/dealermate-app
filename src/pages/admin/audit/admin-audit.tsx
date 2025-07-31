@@ -33,6 +33,8 @@ import {
   Info,
   XCircle
 } from 'lucide-react';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { AuditService } from '@/services/auditService';
 import { AuditLog, AuditFilters, AuditAction } from '@/types/admin';
 import { useToast } from '@/hooks/use-toast';
@@ -206,29 +208,36 @@ const AdminAudit = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Use the admin dashboard data hook for header props
+  const { lastUpdated, refresh, isLoading: refreshLoading } = useAdminDashboardData({
+    autoRefresh: false,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    enableToasts: false
+  });
+
+  // Combine refresh functions to update both dashboard data and audit logs
+  const handleRefresh = useCallback(() => {
+    refresh();
+    loadAuditLogs(currentPage);
+  }, [refresh, loadAuditLogs, currentPage]);
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Shield className="h-8 w-8" />
-            Audit Logs
-          </h1>
-          <p className="text-muted-foreground">
-            Track all administrative actions and system events
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={() => loadAuditLogs(currentPage)} disabled={isLoading} className="flex items-center gap-2">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
+      {/* Standardized Dashboard Header */}
+      <DashboardHeader
+        title="All Logs"
+        subtitle="Track all administrative actions and system events"
+        lastUpdated={lastUpdated || new Date()}
+        isLoading={refreshLoading || isLoading}
+        onRefresh={handleRefresh}
+      />
+      
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Export Logs
+        </Button>
       </div>
 
       {/* Filters */}

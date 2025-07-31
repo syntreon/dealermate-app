@@ -1,4 +1,5 @@
 import React from 'react';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
@@ -6,7 +7,9 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { AlertCircle, BarChart3, TrendingUp, Users, Building2, Activity, Globe, RefreshCw } from 'lucide-react';
 import { formatNumber, formatCurrency } from '@/utils/formatting';
 
-// Platform-wide analytics overview component
+// Platform-wide analytics overview page
+// Follows same minimal, modular pattern as financials.tsx
+
 const PlatformOverviewCards: React.FC<{ data: any }> = ({ data }) => {
   const platformMetrics = data.platformMetrics;
   const financialMetrics = data.financialMetrics;
@@ -204,33 +207,6 @@ const PlatformAnalyticsCharts: React.FC<{ data: any }> = ({ data }) => {
   );
 };
 
-// Custom header component for platform analytics
-const PlatformAnalyticsHeader: React.FC<{ lastUpdated: Date; isLoading: boolean; onRefresh: () => void }> = ({
-  lastUpdated,
-  isLoading,
-  onRefresh
-}) => {
-  return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Platform Analytics</h1>
-        <p className="text-muted-foreground">
-          Platform-wide metrics and insights • Last updated: {lastUpdated.toLocaleTimeString()}
-        </p>
-      </div>
-      <Button
-        onClick={onRefresh}
-        disabled={isLoading}
-        className="flex items-center gap-2"
-        variant="outline"
-      >
-        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-        Refresh
-      </Button>
-    </div>
-  );
-};
-
 // Error fallback component
 const PlatformAnalyticsError: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
   <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
@@ -249,17 +225,20 @@ const PlatformAnalyticsError: React.FC<{ onRetry: () => void }> = ({ onRetry }) 
 
 // Main platform analytics page component
 const AdminPlatformPage: React.FC = () => {
-  const { data, isLoading, error, lastUpdated, refresh } = useAdminDashboardData({
+  // Use the admin dashboard data hook for header props
+  const { data, lastUpdated, refresh, isLoading, error } = useAdminDashboardData({
     autoRefresh: true,
     refreshInterval: 5 * 60 * 1000, // 5 minutes
-    enableToasts: false // Disable toasts to avoid duplicate notifications
+    enableToasts: false
   });
 
   // Show loading state on initial load
   if (isLoading && !data.platformMetrics) {
     return (
       <div className="space-y-6">
-        <PlatformAnalyticsHeader
+        <DashboardHeader
+          title="Platform Analytics Overview"
+          subtitle="Key metrics and trends across the entire platform"
           lastUpdated={new Date()}
           isLoading={true}
           onRefresh={refresh}
@@ -275,7 +254,9 @@ const AdminPlatformPage: React.FC = () => {
   if (error && !data.platformMetrics) {
     return (
       <div className="space-y-6">
-        <PlatformAnalyticsHeader
+        <DashboardHeader
+          title="Platform Analytics Overview"
+          subtitle="Key metrics and trends across the entire platform"
           lastUpdated={lastUpdated || new Date()}
           isLoading={isLoading}
           onRefresh={refresh}
@@ -287,7 +268,9 @@ const AdminPlatformPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PlatformAnalyticsHeader
+      <DashboardHeader
+        title="Platform Analytics Overview"
+        subtitle="Key metrics and trends across the entire platform"
         lastUpdated={lastUpdated || new Date()}
         isLoading={isLoading}
         onRefresh={refresh}

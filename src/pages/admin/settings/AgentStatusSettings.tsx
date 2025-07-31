@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { MessageSquare } from 'lucide-react';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import ClientSelector from '@/components/admin/ClientSelector';
 import { AdminService } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
@@ -83,16 +85,23 @@ const AgentStatusSettings: React.FC = () => {
     }
   };
 
+  // Use the admin dashboard data hook for header props
+  const { lastUpdated, refresh, isLoading: refreshLoading } = useAdminDashboardData({
+    autoRefresh: false, // No auto-refresh for settings page
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    enableToasts: false
+  });
+
   return (
-    <div className="space-y-6 p-6 pb-8">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-          Agent Status & Messaging
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Update the agent status and send system-wide messages to users.
-        </p>
-      </div>
+    <div className="space-y-6 pb-8">
+      {/* Standardized Dashboard Header */}
+      <DashboardHeader
+        title="Agent Status & Messaging"
+        subtitle="Update the agent status and send system-wide messages to users"
+        lastUpdated={lastUpdated || new Date()}
+        isLoading={refreshLoading}
+        onRefresh={refresh}
+      />
 
       <Card className="bg-card text-card-foreground border-border">
         <CardHeader>

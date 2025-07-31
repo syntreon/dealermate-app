@@ -32,6 +32,8 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -100,6 +102,7 @@ interface SystemSettings {
 }
 
 const AdminSettings = () => {
+  // Minimal, modular header for system settings
   const [settings, setSettings] = useState<SystemSettings>({
     // Default values
     systemName: 'AI Call System',
@@ -266,39 +269,44 @@ const AdminSettings = () => {
     }
   }, []);
 
+  // Use the admin dashboard data hook for header props
+  const { lastUpdated, refresh, isLoading: refreshLoading } = useAdminDashboardData({
+    autoRefresh: false, // No auto-refresh for settings page
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    enableToasts: false
+  });
+
   return (
     <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Settings className="h-8 w-8" />
-            Admin Settings
-          </h1>
-          <p className="text-muted-foreground">
-            Configure system-wide settings and preferences
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {hasChanges && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3" />
-              Unsaved Changes
-            </Badge>
+      {/* Standardized Dashboard Header */}
+      <DashboardHeader
+        title="Admin Settings"
+        subtitle="Configure system-wide settings and preferences"
+        lastUpdated={lastUpdated || new Date()}
+        isLoading={refreshLoading}
+        onRefresh={refresh}
+      />
+      
+      {/* Save/Reset Controls */}
+      <div className="flex justify-end items-center gap-2">
+        {hasChanges && (
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            Unsaved Changes
+          </Badge>
+        )}
+        <Button onClick={handleResetSettings} variant="outline" disabled={!hasChanges}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Reset
+        </Button>
+        <Button onClick={handleSaveSettings} disabled={isLoading || !hasChanges}>
+          {isLoading ? (
+            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
           )}
-          <Button onClick={handleResetSettings} variant="outline" disabled={!hasChanges}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Reset
-          </Button>
-          <Button onClick={handleSaveSettings} disabled={isLoading || !hasChanges}>
-            {isLoading ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            Save Changes
-          </Button>
-        </div>
+          Save Changes
+        </Button>
       </div>
 
       {/* Settings Tabs */}

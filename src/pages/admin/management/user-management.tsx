@@ -11,8 +11,17 @@ import { AdminService } from '@/services/adminService';
 import { User, Client, UserFilters as UserFiltersType, CreateUserData, UpdateUserData } from '@/types/admin';
 import { useAuth } from '@/context/AuthContext';
 import { hasSystemWideAccess, getClientIdFilter } from '@/utils/clientDataIsolation';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 
 const UserManagement = () => {
+  // Use the admin dashboard data hook for header props
+  const { lastUpdated, refresh, isLoading: headerLoading } = useAdminDashboardData({
+    autoRefresh: false,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    enableToasts: false
+  });
+
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -23,11 +32,11 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  
+
   // Check if current user has system-wide access
   const hasSystemAccess = hasSystemWideAccess(currentUser);
   const clientIdFilter = getClientIdFilter(currentUser);
-  
+
   const [filters, setFilters] = useState<UserFiltersType>({
     sortBy: 'full_name',
     sortDirection: 'asc',
@@ -145,13 +154,16 @@ const UserManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">
-            Manage users across all clients and assign roles
-          </p>
-        </div>
+      {/* Standardized Dashboard Header */}
+      <DashboardHeader
+        title="User Management"
+        subtitle="Manage users across all clients and assign roles"
+        lastUpdated={lastUpdated || new Date()}
+        isLoading={headerLoading}
+        onRefresh={refresh}
+      />
+
+      <div className="flex justify-end">
         <Button onClick={handleAddUser}>
           <Plus className="h-4 w-4 mr-2" />
           Add User

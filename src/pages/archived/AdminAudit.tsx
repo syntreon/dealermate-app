@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,7 +49,17 @@ import {
 } from '@/components/ui/pagination';
 import { AuditLogDetailsDialog } from '@/components/admin/audit/AuditLogDetailsDialog';
 
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
+
 const AdminAudit = () => {
+  // Admin dashboard header state
+  const { lastUpdated, isLoading: headerLoading, refresh } = useAdminDashboardData({
+    autoRefresh: true,
+    refreshInterval: 5 * 60 * 1000,
+    enableToasts: false
+  });
+
+  // Audit logs state and logic
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -56,6 +67,8 @@ const AdminAudit = () => {
   const [pageSize, setPageSize] = useState(20);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
   const { toast } = useToast();
 
   const [filters, setFilters] = useState<AuditFilters>({
@@ -66,7 +79,6 @@ const AdminAudit = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState<AuditAction | 'all'>('all');
   const [selectedTable, setSelectedTable] = useState<string>('all');
-  const [isExporting, setIsExporting] = useState(false);
 
   const loadAuditLogs = useCallback(async (page: number, size: number = pageSize, customFilters = filters) => {
     try {
@@ -208,28 +220,14 @@ const AdminAudit = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Shield className="h-8 w-8" />
-            Audit Logs
-          </h1>
-          <p className="text-muted-foreground">
-            Track all administrative actions and system events
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={() => loadAuditLogs(currentPage)} disabled={isLoading} className="flex items-center gap-2">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
+      {/* Minimal, modular dashboard header */}
+      <DashboardHeader
+        title="Audit Logs"
+        subtitle="System activity and security audit trail"
+        lastUpdated={lastUpdated || new Date()}
+        isLoading={headerLoading}
+        onRefresh={refresh}
+      />
 
       {/* Filters */}
       <Card>

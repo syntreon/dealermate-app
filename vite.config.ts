@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => ({
             './src/pages/admin/management/user-management',
             './src/pages/admin/settings/AdminSettings',
             './src/pages/admin/audit/admin-audit',
-            './src/pages/admin/SystemHealthMonitoring',
+            './src/pages/archived/SystemHealthMonitoring',
           ],
           'main-pages': [
             './src/pages/Dashboard',

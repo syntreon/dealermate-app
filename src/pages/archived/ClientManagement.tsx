@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Building2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ClientsTable from '@/components/admin/clients/ClientsTable';
 import ClientForm from '@/components/admin/clients/ClientForm';
@@ -10,9 +11,15 @@ import ClientFilters from '@/components/admin/clients/ClientFilters';
 import { AdminService } from '@/services/adminService';
 import { Client, ClientFilters as ClientFiltersType, CreateClientData, UpdateClientData, SavedFilter } from '@/types/admin';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 
-const ClientManagement = () => {
+const ClientManagement: React.FC = () => {
   const { toast } = useToast();
+  const { lastUpdated, isLoading: headerLoading, refresh } = useAdminDashboardData({
+    autoRefresh: false,
+    enableToasts: false
+  });
+  
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -229,30 +236,6 @@ const ClientManagement = () => {
       toast({
         title: 'Error',
         description: 'Failed to delete filter. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Client Management</h1>
-          <p className="text-muted-foreground">
-            Manage all clients, their settings, and configurations
-          </p>
-        </div>
-        <Button onClick={handleAddClient}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Client
-        </Button>
-      </div>
-
-      <ClientFilters
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={resetFilters}
         savedFilters={savedFilters}
         onSaveFilter={handleSaveFilter}
         onLoadFilter={handleLoadFilter}

@@ -55,6 +55,22 @@ interface SystemSettings {
 }
 
 const AdminSettings = () => {
+  // Minimal, modular header for system settings
+  return (
+    <>
+      <DashboardHeader
+        title="System Settings"
+        subtitle="Configure global system preferences and notifications"
+        lastUpdated={new Date()}
+      />
+      {/* Existing content follows */}
+      {/* TODO: Move rest of the page content below this header */}
+    </>
+  );
+}
+
+// Existing AdminSettings implementation continues below
+// ...
   const [settings, setSettings] = useState<SystemSettings>({
     // Default values
     systemName: 'AI Call System',

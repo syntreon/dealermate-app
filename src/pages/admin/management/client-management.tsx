@@ -10,8 +10,17 @@ import ClientFilters from '@/components/admin/clients/ClientFilters';
 import { AdminService } from '@/services/adminService';
 import { Client, ClientFilters as ClientFiltersType, CreateClientData, UpdateClientData, SavedFilter } from '@/types/admin';
 import { supabase } from '@/integrations/supabase/client';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 
 const ClientManagement = () => {
+  // Use admin dashboard data hook for header props
+  const { lastUpdated, refresh, isLoading: dashboardLoading } = useAdminDashboardData({
+    autoRefresh: true,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    enableToasts: false // Disable toasts to avoid duplicate notifications
+  });
+
   const { toast } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -236,13 +245,15 @@ const ClientManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Client Management</h1>
-          <p className="text-muted-foreground">
-            Manage all clients, their settings, and configurations
-          </p>
-        </div>
+      <DashboardHeader 
+        title="Client Management"
+        subtitle="Manage all client organizations and accounts"
+        lastUpdated={lastUpdated || new Date()}
+        isLoading={dashboardLoading}
+        onRefresh={refresh}
+      />
+      
+      <div className="flex justify-end">
         <Button onClick={handleAddClient}>
           <Plus className="h-4 w-4 mr-2" />
           Add Client

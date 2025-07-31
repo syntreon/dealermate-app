@@ -1,16 +1,27 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Clock } from 'lucide-react';
+import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 
 const UserLogs: React.FC = () => {
+  // Use the admin dashboard data hook for header props
+  const { lastUpdated, refresh, isLoading } = useAdminDashboardData({
+    autoRefresh: false,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    enableToasts: false
+  });
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">User Logs</h1>
-        <p className="text-muted-foreground">
-          Monitor user activities, login sessions, and user-specific audit trails.
-        </p>
-      </div>
+      {/* Standardized Dashboard Header */}
+      <DashboardHeader
+        title="User Logs"
+        subtitle="Monitor user activities, login sessions, and user-specific audit trails"
+        lastUpdated={lastUpdated || new Date()}
+        isLoading={isLoading}
+        onRefresh={refresh}
+      />
 
       <Card className="max-w-2xl">
         <CardHeader className="text-center">
