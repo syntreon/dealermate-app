@@ -80,16 +80,6 @@ const Settings = () => {
           <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
         </div>
-        
-        {canViewSensitiveInfo(user) && (
-          <Button 
-            onClick={() => setAddUserDialogOpen(true)} 
-            className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            Add New User
-          </Button>
-        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
@@ -190,26 +180,7 @@ const Settings = () => {
             </div>
           )}
           
-          {/* Admin options - only shown for admin users */}
-          {canViewSensitiveInfo(user) && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-800">Admin Settings</h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="justify-start bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-800 text-gray-800" 
-                      onClick={() => setAddUserDialogOpen(true)}
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Add New User
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        
         </div>
       </div>
 
