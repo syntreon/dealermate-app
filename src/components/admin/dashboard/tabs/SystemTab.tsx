@@ -288,7 +288,11 @@ export const SystemTab: React.FC<SystemTabProps> = () => {
                 </div>
                 <Progress 
                   value={systemMetrics.cpu.usage} 
-                  className="h-2" 
+                  className={`h-2 ${getProgressColor(systemMetrics.cpu.usage)}`} 
+                  aria-valuenow={systemMetrics.cpu.usage} 
+                  aria-valuemin={0} 
+                  aria-valuemax={100} 
+                  role="progressbar"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{systemMetrics.cpu.usage}%</span>
@@ -304,7 +308,11 @@ export const SystemTab: React.FC<SystemTabProps> = () => {
                 </div>
                 <Progress 
                   value={systemMetrics.memory.percentage} 
-                  className="h-2" 
+                  className={`h-2 ${getProgressColor(systemMetrics.memory.percentage)}`} 
+                  aria-valuenow={systemMetrics.memory.percentage} 
+                  aria-valuemin={0} 
+                  aria-valuemax={100} 
+                  role="progressbar"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{systemMetrics.memory.percentage}%</span>
@@ -320,7 +328,11 @@ export const SystemTab: React.FC<SystemTabProps> = () => {
                 </div>
                 <Progress 
                   value={systemMetrics.storage.percentage} 
-                  className="h-2" 
+                  className={`h-2 ${getProgressColor(systemMetrics.storage.percentage)}`} 
+                  aria-valuenow={systemMetrics.storage.percentage} 
+                  aria-valuemin={0} 
+                  aria-valuemax={100} 
+                  role="progressbar"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{systemMetrics.storage.percentage}%</span>
@@ -400,7 +412,12 @@ export const SystemTab: React.FC<SystemTabProps> = () => {
                     <Server className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium text-card-foreground">Vercel</span>
                   </div>
-                  <Badge variant={getStatusVariant(serviceHealth.vercel.status)}>
+                  <Badge
+                    variant={getStatusVariant(serviceHealth.vercel.status)}
+                    className="capitalize flex items-center gap-1"
+                    aria-label={`Status: ${serviceHealth.vercel.status}`}
+                    role="status"
+                  >
                     {getStatusIcon(serviceHealth.vercel.status)}
                     <span className="ml-1 capitalize">{serviceHealth.vercel.status}</span>
                   </Badge>

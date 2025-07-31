@@ -548,3 +548,38 @@ describe('Error Handling Integration', () => {
 ```
 
 This developer guide provides comprehensive coverage for working with the error boundary and loading state system. Use it as your primary reference for debugging, optimization, and best practices.
+
+---
+
+## ErrorFallbackComponents: Default Export for Code Splitting
+
+- `src/components/admin/layout/ErrorFallbackComponents.tsx` now provides a `default` export: `ApplicationErrorFallback`.
+- This enables compatibility with React.lazy and dynamic route code splitting systems (e.g., createLazyRoute).
+- Usage example for lazy loading:
+  ```tsx
+  const ErrorFallback = React.lazy(() => import('./ErrorFallbackComponents'));
+  // or
+  ErrorFallbackComponents: createLazyRoute(() => import('./ErrorFallbackComponents')),
+  ```
+
+### Named Exports
+- The following named exports are available for direct use:
+  - `NetworkErrorFallback`
+  - `DatabaseErrorFallback`
+  - `PermissionErrorFallback`
+  - `ApplicationErrorFallback`
+  - `getErrorFallbackComponent`
+- Usage example:
+  ```tsx
+  import { NetworkErrorFallback } from './ErrorFallbackComponents';
+  ```
+
+### Backwards Compatibility
+- Existing imports of named exports are unaffected.
+- Only dynamic/lazy loading now uses the default export.
+
+### When to Use Which
+- Use the default export for generic error fallback in code-splitting/dynamic contexts.
+- Use the named exports when you need a specific error UI for network, database, or permission errors.
+
+_Last updated: 2025-07-30_

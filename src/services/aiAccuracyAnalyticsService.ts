@@ -186,7 +186,7 @@ export class AIAccuracyAnalyticsService {
         performanceComparison
       };
     } catch (error) {
-      console.error('Error fetching model performance metrics:', error);
+      console.error('[AIAccuracyAnalyticsService][getModelPerformanceMetrics] Error fetching model performance metrics:', error);
       throw error;
     }
   }

@@ -158,7 +158,8 @@ export const ClientsTab: React.FC<ClientsTabProps> = () => {
   };
 
   // Helper function to get plan colors using theme-aware classes
-  const getPlanColor = (plan: string): string => {
+  // Returns the theme-aware color class for a given subscription plan
+const getPlanColor = (plan: string): string => {
     switch (plan.toLowerCase()) {
       case 'free trial':
         return 'text-amber-600 dark:text-amber-400';
@@ -176,7 +177,8 @@ export const ClientsTab: React.FC<ClientsTabProps> = () => {
   };
 
   // Helper function to get status badge variant
-  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  // Returns the badge variant for a given client status for consistent theming
+const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status.toLowerCase()) {
       case 'active':
         return 'default';
