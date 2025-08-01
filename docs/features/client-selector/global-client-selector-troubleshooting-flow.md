@@ -153,6 +153,13 @@ useEffect(() => {
 - Check for excessive re-renders
 - Verify client list fetching performance
 
+### If Client Name is Missing for Non-Admin
+- Check if the client is present in the ClientContext
+- If not found, verify that AdminService.getClients() is being called as a fallback
+- Check if the user object includes a valid `client_id`
+- Check for errors in the AdminService call
+- Confirm network access to retrieve client list
+
 ### Data Refetching Impact
 - Monitor network requests when changing clients
 - Check for redundant API calls

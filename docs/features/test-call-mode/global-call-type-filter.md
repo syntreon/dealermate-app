@@ -17,6 +17,10 @@ This document describes the implementation, architecture, and extension plan for
 ## How It Works
 - **Context**: The `CallTypeProvider` wraps the app in `App.tsx`. The context exposes `selectedCallType` and a setter. The default is `'live'` (Live Calls).
 - **Usage**: Any component/page can call `const { selectedCallType } = useCallType()` to access the current filter.
+- **Role-Based UI Logic**:
+  - **Admin/Owner**: Fully interactive dropdown to select All Calls, Live Calls, or Test Calls
+  - **Client Admin**: Fully interactive dropdown (same as admin/owner)
+  - **Client User**: Non-interactive UI, always displays "Live Calls" (cannot change)
 - **Filtering Logic**:
   - `'all'`: No filter on `is_test_call`
   - `'live'`: Only records with `is_test_call = false`

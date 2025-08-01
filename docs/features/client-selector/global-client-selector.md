@@ -32,6 +32,9 @@ The Global Client Selector is a centralized mechanism for filtering data by clie
 1. The `ClientProvider` wraps the admin interface in `AdminLayout.tsx`
 2. It fetches the list of available clients and maintains selection state
 3. The `GlobalClientSelector` in the TopBar shows the current selection
+   - **Admin users** see a fully interactive dropdown (ClientSelector)
+   - **Non-admin users** see their client name only (non-interactive)
+   - For non-admins, the component first tries to find the client in context, and if not found, fetches it directly using `AdminService.getClients()` as a fallback for robust client name display
 4. Admin pages use the `useClient` hook to access the selected client ID
 5. When the selected client changes, pages refetch their data
 

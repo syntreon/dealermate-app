@@ -6,8 +6,8 @@ import { CallType } from '@/context/CallTypeContext';
 
 /**
  * GlobalCallTypeFilter component for the TopBar
- * Allows admin users to filter calls by type: All Calls, Live Calls, Test Calls
- * Future-proof for rollout to other roles
+ * Allows admin/owner/client_admin users to filter calls by type: All Calls, Live Calls, Test Calls
+ * For client_user, displays "Live Calls" as a non-interactive UI element
  */
 const CALL_TYPE_OPTIONS = [
   { value: 'all', label: 'All Calls' },
@@ -22,23 +22,41 @@ interface GlobalCallTypeFilterProps {
 
 const GlobalCallTypeFilter: React.FC<GlobalCallTypeFilterProps> = ({ selectedCallType, onCallTypeChange }) => {
   const { user } = useAuth();
-  // Only admin users can see this filter for now
-  const canView = useMemo(() => canViewSensitiveInfo(user), [user]);
-  if (!canView) return null;
+  
+  // Check if user is admin/owner (can view sensitive info)
+  const isAdmin = useMemo(() => canViewSensitiveInfo(user), [user]);
+  
+  // Check if user is client_admin
+  const isClientAdmin = useMemo(() => {
+    return user?.role === 'client_admin';
+  }, [user]);
+  
+  // Determine if user can interact with the filter (admin/owner/client_admin)
+  const canInteract = isAdmin || isClientAdmin;
+  
+  // Show component for all roles, but with different functionality
   return (
     <div className="hidden md:block min-w-[120px]">
-      <Select value={selectedCallType} onValueChange={onCallTypeChange}>
-        <SelectTrigger className="w-full h-8 text-sm bg-background border-border focus:ring-0 focus:border-primary hover:bg-muted">
-          <SelectValue placeholder="Call Type" />
-        </SelectTrigger>
-        <SelectContent>
-          {CALL_TYPE_OPTIONS.map(opt => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {canInteract ? (
+        // Interactive selector for admin/owner/client_admin
+        <Select value={selectedCallType} onValueChange={onCallTypeChange}>
+          <SelectTrigger className="w-full h-8 text-sm bg-background border-border focus:ring-0 focus:border-primary hover:bg-muted">
+            <SelectValue placeholder="Call Type" />
+          </SelectTrigger>
+          <SelectContent>
+            {CALL_TYPE_OPTIONS.map(opt => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        // Non-interactive display for client_user (always shows "Live Calls")
+        <div className="flex items-center px-3 h-8 text-sm bg-background border border-border rounded-md">
+          <span className="text-card-foreground">Live Calls</span>
+        </div>
+      )}
     </div>
   );
 };
