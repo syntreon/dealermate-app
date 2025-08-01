@@ -32,6 +32,8 @@ The root directory contains configuration files, documentation, and the main sou
 │   │   ├── debug-cheatsheet.md # Quick debugging reference and solutions
 │   │   ├── troubleshooting-flow.md # Visual problem-solving guides and decision trees
 │   │   └── testing-strategy.md # Comprehensive testing approach and implementation
+│   ├── production-deployment/ # Production deployment documentation and plans.
+│   │   └── 1-week-deployment-plan.md # Detailed 7-day deployment plan with tasks and priorities
 │   ├── status-messages/ # System status and messaging documentation.
 │   └── comprehensive-bug-analysis.md # Main bug analysis document (also available in bug-analysis/ folder)
 ├── node_modules/      # Project dependencies.

@@ -3,22 +3,9 @@ inclusion: always
 ---
 
 This are your main rules and instructions for this project
-Alwasy build clean and minimal code.
+Alwasy build clean and minimal code which is ready for enterprise grade deployment
 make sure the code is not long per file.
-After each spec or feature implementation always create 4 file
-    1. Readme
-    2. Developer Guide: (For New Developers
-            * Instant onboarding: Complete system understanding in one document
-* Self-service debugging: Solve 90% of issues without help
-* Best practices: Learn the right way to work with the system
-* Emergency procedures: Handle critical issues independently
-For Experienced Developers
-* Quick reference: Fast access to debug commands and solutions
-* Performance optimization: Systematic approach to optimization
-* Troubleshooting: Visual guides for complex problems
-* Monitoring: Comprehensive system health tracking)
-    3. Debug_Cheatsheet: Comprehensive debugging strategies
-    4. Troubleshooting_flow: Visual problem-solving guides
+
 ## Project Rules
 1. Whenver you create a new folder make sure to update the project structure.md file
 2. Whenver you create a new file make sure to update the project structure.md file
