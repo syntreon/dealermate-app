@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { MessageSquare } from 'lucide-react';
 import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
-import ClientSelector from '@/components/admin/ClientSelector';
+import ClientSelector from '@/components/admin/archived/ClientSelector';
 import { AdminService } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';

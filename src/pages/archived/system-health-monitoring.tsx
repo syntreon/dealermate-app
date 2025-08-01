@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import SystemHealthDashboard from '@/components/admin/SystemHealthDashboard';
-import ClientSelector from '@/components/admin/ClientSelector';
+import ClientSelector from '@/components/admin/archived/ClientSelector';
 import { AdminService } from '@/services/adminService';
 import { SystemHealth, SystemMetrics, Client } from '@/types/admin';
 
