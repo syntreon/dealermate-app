@@ -16,12 +16,26 @@ const AuthCallback: React.FC = () => {
   const [message, setMessage] = useState('Processing authentication...');
 
   useEffect(() => {
+    // --- PATCH: Persist and recover hash fragment for Supabase auth ---
+    let hashFragment = window.location.hash;
+    if (!hashFragment || hashFragment.length <= 1) {
+      // Try to recover from sessionStorage if missing
+      const storedHash = sessionStorage.getItem('supabase_auth_hash');
+      if (storedHash) {
+        hashFragment = storedHash;
+        // Optionally restore to URL for debugging:
+        // window.location.hash = storedHash;
+      }
+    } else {
+      // On first load, store the hash for recovery on refresh
+      sessionStorage.setItem('supabase_auth_hash', hashFragment);
+    }
+    // --- END PATCH ---
     // Main function to handle the auth callback
     const handleAuthCallback = async () => {
       try {
         // First check if we're handling a callback with tokens in the URL hash
-        const hashFragment = window.location.hash;
-        
+        // Use the patched hashFragment variable
         if (hashFragment && hashFragment.length > 1) {
           // Get the hash fragment from URL (Supabase puts tokens here)
           const hashParams = new URLSearchParams(hashFragment.substring(1));
@@ -96,7 +110,9 @@ const AuthCallback: React.FC = () => {
         access_token: accessToken,
         refresh_token: refreshToken,
       });
-
+      // --- PATCH: Clear the stored hash after successful authentication ---
+      sessionStorage.removeItem('supabase_auth_hash');
+      // --- END PATCH ---
       if (error) {
         throw error;
       }
