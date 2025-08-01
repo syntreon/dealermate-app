@@ -184,6 +184,11 @@ const UserManagement = () => {
         isLoading={isLoading}
         onEdit={handleEditUser}
         onDelete={handleDeleteUser}
+        // Make row clickable: open edit modal for selected user
+        onRowClick={(user) => {
+          setSelectedUser(user);
+          setIsFormOpen(true);
+        }}
       />
 
       {/* User Form Dialog */}

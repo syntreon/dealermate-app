@@ -33,6 +33,10 @@ interface UsersTableProps {
   isLoading: boolean;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  /**
+   * Optional row click handler. If provided, rows become clickable and accessible.
+   */
+  onRowClick?: (user: User) => void;
 }
 
 const UsersTable: React.FC<UsersTableProps> = ({
@@ -41,22 +45,26 @@ const UsersTable: React.FC<UsersTableProps> = ({
   isLoading,
   onEdit,
   onDelete,
+  onRowClick,
 }) => {
+  // Get appropriate badge for user role
+  // Get appropriate badge for user role with theme-aware styling
   const getRoleBadge = (role: User['role']) => {
     switch (role) {
       case 'owner':
-        return <Badge className="bg-purple-100 text-purple-800">Owner</Badge>;
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Owner</Badge>;
       case 'admin':
-        return <Badge className="bg-blue-100 text-blue-800">Admin</Badge>;
+        return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">Admin</Badge>;
       case 'client_admin':
-        return <Badge className="bg-green-100 text-green-800">Client Admin</Badge>;
+        return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Client Admin</Badge>;
       case 'client_user':
-        return <Badge className="bg-gray-100 text-gray-800">Client User</Badge>;
+        return <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">Client User</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">User</Badge>;
+        return <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">User</Badge>;
     }
   };
 
+  // Get client name display
   const getClientName = (clientId: string | null) => {
     if (clientId === null) {
       return <Badge variant="outline">All Clients</Badge>;
@@ -73,19 +81,21 @@ const UsersTable: React.FC<UsersTableProps> = ({
     );
   };
 
+  // Loading state with theme-aware styling
   if (isLoading) {
     return (
       <div className="w-full">
         <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-gray-200 rounded w-full"></div>
+          <div className="h-10 bg-muted rounded w-full"></div>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded w-full"></div>
+            <div key={i} className="h-16 bg-muted rounded w-full"></div>
           ))}
         </div>
       </div>
     );
   }
 
+  // Empty state
   if (users.length === 0) {
     return (
       <div className="text-center py-8">
@@ -108,51 +118,65 @@ const UsersTable: React.FC<UsersTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.full_name}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${user.email}`} className="hover:underline">
-                    {user.email}
-                  </a>
-                </div>
-              </TableCell>
-              <TableCell>{getRoleBadge(user.role)}</TableCell>
-              <TableCell>{getClientName(user.client_id)}</TableCell>
-              <TableCell>
-                {user.last_login_at
-                  ? formatDate(user.last_login_at, { dateStyle: 'medium' })
-                  : 'Never'}
-              </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Open menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => onEdit(user)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit User
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onDelete(user)}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+          {users.map((user) => {
+            // If onRowClick is provided, make the row clickable and accessible
+            const clickableProps = onRowClick
+              ? {
+                  onClick: () => onRowClick(user),
+                  role: 'button',
+                  tabIndex: 0,
+                  onKeyDown: (e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') onRowClick(user);
+                  },
+                  className: 'cursor-pointer',
+                }
+              : {};
+            return (
+              <TableRow key={user.id} {...clickableProps}>
+                <TableCell className="font-medium">{user.full_name}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a href={`mailto:${user.email}`} className="hover:underline">
+                      {user.email}
+                    </a>
+                  </div>
+                </TableCell>
+                <TableCell>{getRoleBadge(user.role)}</TableCell>
+                <TableCell>{getClientName(user.client_id)}</TableCell>
+                <TableCell>
+                  {user.last_login_at
+                    ? formatDate(user.last_login_at)
+                    : 'Never'}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => onEdit(user)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit User
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onDelete(user)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete User
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

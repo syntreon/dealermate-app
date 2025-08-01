@@ -278,6 +278,11 @@ const ClientManagement = () => {
         onDelete={handleDeleteClient}
         onActivate={handleActivateClient}
         onDeactivate={handleDeactivateClient}
+        // Make row clickable: open edit modal for selected client
+        onRowClick={(client) => {
+          setSelectedClient(client);
+          setIsFormOpen(true);
+        }}
       />
 
       {/* Client Form Dialog */}

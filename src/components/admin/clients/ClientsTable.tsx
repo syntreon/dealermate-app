@@ -36,6 +36,10 @@ interface ClientsTableProps {
   onDelete: (client: Client) => void;
   onActivate: (client: Client) => void;
   onDeactivate: (client: Client) => void;
+  /**
+   * Optional row click handler. If provided, rows become clickable and accessible.
+   */
+  onRowClick?: (client: Client) => void;
 }
 
 const ClientsTable: React.FC<ClientsTableProps> = ({
@@ -45,31 +49,34 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
   onDelete,
   onActivate,
   onDeactivate,
+  onRowClick,
 }) => {
   const navigate = useNavigate();
 
+  // Get appropriate badge for client status with theme-aware styling
   const getStatusBadge = (status: Client['status']) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+        return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Active</Badge>;
       case 'inactive':
-        return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Inactive</Badge>;
       case 'trial':
-        return <Badge className="bg-blue-100 text-blue-800">Trial</Badge>;
+        return <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">Trial</Badge>;
       case 'churned':
-        return <Badge className="bg-gray-100 text-gray-800">Churned</Badge>;
+        return <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">Churned</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
+        return <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">Unknown</Badge>;
     }
   };
 
+  // Loading state with theme-aware styling
   if (isLoading) {
     return (
       <div className="w-full">
         <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-gray-200 rounded w-full"></div>
+          <div className="h-10 bg-muted rounded w-full"></div>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded w-full"></div>
+            <div key={i} className="h-16 bg-muted rounded w-full"></div>
           ))}
         </div>
       </div>
@@ -99,58 +106,72 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {clients.map((client) => (
-            <TableRow key={client.id}>
-              <TableCell className="font-medium">{client.name}</TableCell>
-              <TableCell>{client.type}</TableCell>
-              <TableCell>{getStatusBadge(client.status)}</TableCell>
-              <TableCell>{client.subscription_plan}</TableCell>
-              <TableCell>{formatCurrency(client.monthly_billing_amount_cad, 'CAD')}</TableCell>
-              <TableCell>{formatDate(client.joined_at)}</TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Open menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => navigate(`/admin/clients/${client.id}`)}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit(client)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Client
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {client.status !== 'active' && (
-                      <DropdownMenuItem onClick={() => onActivate(client)}>
-                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                        Activate Client
+          {clients.map((client) => {
+            // If onRowClick is provided, make the row clickable and accessible
+            const clickableProps = onRowClick
+              ? {
+                  onClick: () => onRowClick(client),
+                  role: 'button',
+                  tabIndex: 0,
+                  onKeyDown: (e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') onRowClick(client);
+                  },
+                  className: 'cursor-pointer',
+                }
+              : {};
+            return (
+              <TableRow key={client.id} {...clickableProps}>
+                <TableCell className="font-medium">{client.name}</TableCell>
+                <TableCell>{client.type}</TableCell>
+                <TableCell>{getStatusBadge(client.status)}</TableCell>
+                <TableCell>{client.subscription_plan}</TableCell>
+                <TableCell>{formatCurrency(client.monthly_billing_amount_cad, 'CAD')}</TableCell>
+                <TableCell>{formatDate(client.joined_at)}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => navigate(`/admin/clients/${client.id}`)}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Details
                       </DropdownMenuItem>
-                    )}
-                    {client.status !== 'inactive' && (
-                      <DropdownMenuItem onClick={() => onDeactivate(client)}>
-                        <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                        Deactivate Client
+                      <DropdownMenuItem onClick={() => onEdit(client)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Client
                       </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onDelete(client)}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Client
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                      <DropdownMenuSeparator />
+                      {client.status !== 'active' && (
+                        <DropdownMenuItem onClick={() => onActivate(client)}>
+                          <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                          Activate Client
+                        </DropdownMenuItem>
+                      )}
+                      {client.status !== 'inactive' && (
+                        <DropdownMenuItem onClick={() => onDeactivate(client)}>
+                          <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                          Deactivate Client
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onDelete(client)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Client
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
