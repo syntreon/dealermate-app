@@ -26,17 +26,26 @@ export interface MakeComAnalyticsData {
 
 export async function getMakeComAnalyticsData(
   startDate: string,
-  endDate: string
+  endDate: string,
+  callType: 'all' | 'live' | 'test' = 'live'
 ): Promise<MakeComAnalyticsData> {
   const supabase = adminSupabase;
 
-  const { data: calls, error } = await supabase
+  let query = supabase
     .from('calls')
     .select('*')
     .gte('call_start_time', startDate)
     .lte('call_start_time', endDate)
     .not('make_com_operations', 'is', null)
     .gt('make_com_operations', 0);
+
+  if (callType === 'live') {
+    query = query.eq('is_test_call', false);
+  } else if (callType === 'test') {
+    query = query.eq('is_test_call', true);
+  }
+
+  const { data: calls, error } = await query;
 
   if (error) {
     console.error('Error fetching call data for Make.com analytics:', error);
@@ -50,6 +59,7 @@ export async function getMakeComAnalyticsData(
       averageOperationsPerCall: 0,
       operationsByDay: [],
       topCallsByOperations: [],
+      topClientsByOperations: [],
     };
   }
 

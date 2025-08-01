@@ -12,11 +12,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getMakeComAnalyticsData, MakeComAnalyticsData, CallWithOperationCost } from '@/services/makeComAnalyticsService';
+import { useCallType } from '@/context/CallTypeContext';
 import { makeOperationsService, type MakeOperationsMetrics, type ScenarioMetrics } from '@/services/makeOperationsService';
 import { format, subDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 const OperationsTab = () => {
+  const { selectedCallType } = useCallType();
   const [callData, setCallData] = useState<MakeComAnalyticsData | null>(null);
   const [scenarioMetrics, setScenarioMetrics] = useState<MakeOperationsMetrics | null>(null);
   const [scenarioDetails, setScenarioDetails] = useState<ScenarioMetrics[]>([]);
@@ -56,7 +58,7 @@ const OperationsTab = () => {
       const { start, end } = getDateRange(dateRange);
       
       // Fetch call-level operations data (existing functionality)
-      const callAnalyticsData = await getMakeComAnalyticsData(start, end);
+      const callAnalyticsData = await getMakeComAnalyticsData(start, end, selectedCallType);
       setCallData(callAnalyticsData);
 
       // Fetch scenario-level operations data (new functionality)

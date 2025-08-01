@@ -37,11 +37,12 @@ interface QualityAnalyticsProps {
   startDate?: string;
   endDate?: string;
   clientId?: string | null;
+  callType?: 'all' | 'live' | 'test';
 }
 
 // QualityAnalyticsData interface is now imported from the service
 
-const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate, clientId }) => {
+const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate, clientId, callType = 'live' }) => {
   const { user } = useAuth();
   const [data, setData] = useState<QualityAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,8 +56,12 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
     const fetchQualityAnalytics = async () => {
       if (!user) return;
 
+      // Determine effective client ID based on user role and clientId prop (same logic as CallAnalytics)
+      const isAdminUser = user.client_id === null && (user.role === 'admin' || user.role === 'owner');
+      const effectiveClientId = isAdminUser ? clientId || undefined : user.client_id || undefined;
+
       // Create cache key
-      const cacheKey = `quality_${user.id}_${clientId || 'all'}_${startDate || 'no_start'}_${endDate || 'no_end'}`;
+      const cacheKey = `${user.id}_${effectiveClientId || 'all'}_${startDate || 'no_start'}_${endDate || 'no_end'}_${callType}`;
       
       // Check cache first
       const cached = cacheRef.current.get(cacheKey);
@@ -81,7 +86,8 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
         const qualityData = await QualityAnalyticsService.getQualityAnalyticsData({
           clientId: effectiveClientId,
           startDate,
-          endDate
+          endDate,
+          callType
         });
 
         console.log('Quality analytics data fetched:', qualityData);
@@ -102,7 +108,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
     };
 
     fetchQualityAnalytics();
-  }, [user?.id, user?.role, user?.client_id, startDate, endDate, clientId]); // Only depend on specific user properties
+  }, [user?.id, user?.role, user?.client_id, startDate, endDate, clientId, callType]); // Only depend on specific user properties
 
   if (loading) {
     return (

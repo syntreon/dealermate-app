@@ -15,6 +15,7 @@ export interface AnalyticsFilters {
   endDate?: string;
   clientId?: string;
   timeframe?: 'day' | 'week' | 'month';
+  callType?: 'all' | 'live' | 'test';
 }
 
 export const AnalyticsService = {
@@ -23,7 +24,7 @@ export const AnalyticsService = {
    */
   getAnalyticsData: async (filters?: AnalyticsFilters): Promise<AnalyticsMetrics> => {
     try {
-      const { startDate, endDate, clientId, timeframe = 'month' } = filters || {};
+      const { startDate, endDate, clientId, timeframe = 'month', callType = 'live' } = filters || {};
       
       // Calculate date range if not provided
       const now = new Date();
@@ -60,6 +61,13 @@ export const AnalyticsService = {
       if (clientId) {
         callsQuery = callsQuery.eq('client_id', clientId);
         leadsQuery = leadsQuery.eq('client_id', clientId);
+      }
+
+      // Apply call type filter
+      if (callType === 'live') {
+        callsQuery = callsQuery.eq('is_test_call', false);
+      } else if (callType === 'test') {
+        callsQuery = callsQuery.eq('is_test_call', true);
       }
 
       // Fetch data

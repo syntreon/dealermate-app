@@ -51,6 +51,9 @@ const getCurrentUserId = async (): Promise<string | null> => {
 export class SystemStatusService {
   // System Messages CRUD operations
   
+  // Monitoring interval reference
+  private static checkInterval: NodeJS.Timeout | null = null;
+  
   // Enhanced paginated method with joins for publisher and client info
   static async getSystemMessagesPaginated(
     page: number = 1,
@@ -290,15 +293,29 @@ export class SystemStatusService {
     clientId?: string | null,
     updatedBy?: string
   ): Promise<AgentStatus> {
-    const userId = updatedBy || await getCurrentUserId();
+    // Try to get user ID with retries if not provided
+    let userId = updatedBy;
+    if (!userId) {
+      // Retry mechanism for getting user ID
+      for (let i = 0; i < 3; i++) {
+        userId = await getCurrentUserId();
+        if (userId) break;
+        // Wait 100ms before retrying
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
     if (!userId) {
       throw new Error('User authentication required');
     }
 
+    // For the default platform-wide status, we need to ensure we have a valid user ID
+    const effectiveClientId = clientId || null;
+    
     const { data, error } = await supabase
       .from('agent_status')
       .upsert({
-        client_id: clientId || null,
+        client_id: effectiveClientId,
         status: status.status,
         message: status.message,
         updated_by: userId,
@@ -318,49 +335,132 @@ export class SystemStatusService {
     };
   }
 
-  // Real-time subscriptions
-  static subscribeToSystemMessages(callback: (messages: SystemMessage[]) => void) {
-    const subscription = supabase
-      .channel('system_messages_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'system_messages' },
-        async () => {
-          // Refetch messages when changes occur
-          try {
-            const messages = await this.getSystemMessages();
-            callback(messages);
-          } catch (error) {
-            console.error('Error fetching updated system messages:', error);
-          }
-        }
-      )
-      .subscribe();
+  // Get agent status history from audit logs
+  static async getAgentStatusHistory(
+    clientId?: string | null,
+    limit: number = 20
+  ): Promise<Array<{
+    id: string;
+    clientId: string | null;
+    status: string;
+    message: string | null;
+    changedAt: Date;
+    changedBy: string;
+    changedByName: string | null;
+    changedByEmail: string | null;
+    previousStatus: string | null;
+    previousMessage: string | null;
+  }>> {
+    // Query audit logs for agent_status changes
+    let query = supabase
+      .from('audit_logs')
+      .select(`
+        id,
+        client_id,
+        new_values,
+        old_values,
+        created_at,
+        user_id,
+        users!audit_logs_user_id_fkey (name, email)
+      `)
+      .eq('table_name', 'agent_status')
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    // Filter by client_id if specified
+    if (clientId !== undefined) {
+      query = query.eq('client_id', clientId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Transform audit log entries into status history format
+    return data.map(item => {
+      // Extract status and message from new_values
+      const newValues = item.new_values || {};
+      const oldValues = item.old_values || {};
+      
+      return {
+        id: item.id,
+        clientId: item.client_id,
+        status: newValues.status || '',
+        message: newValues.message || null,
+        changedAt: new Date(item.created_at),
+        changedBy: item.user_id,
+        changedByName: (item.users && Array.isArray(item.users) && item.users.length > 0) ? item.users[0].name : null,
+        changedByEmail: (item.users && Array.isArray(item.users) && item.users.length > 0) ? item.users[0].email : null,
+        previousStatus: oldValues.status || null,
+        previousMessage: oldValues.message || null
+      };
+    });
   }
 
-  static subscribeToAgentStatus(callback: (status: AgentStatus) => void) {
-    const subscription = supabase
-      .channel('agent_status_changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'agent_status' },
-        async () => {
-          // Refetch status when changes occur
-          try {
-            const status = await this.getAgentStatus();
-            callback(status);
-          } catch (error) {
-            console.error('Error fetching updated agent status:', error);
-          }
-        }
-      )
-      .subscribe();
+  static startMonitoring() {
+    // Check system health every 30 seconds
+    this.checkInterval = setInterval(async () => {
+      try {
+        await this.performHealthCheck();
+      } catch (error) {
+        console.error('Health check failed:', error);
+      }
+    }, 30000);
+  }
 
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+  static stopMonitoring() {
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+  }
+
+  private static async performHealthCheck() {
+    try {
+      // Example health checks
+      const checks = await Promise.allSettled([
+        this.checkDatabaseConnection(),
+        this.checkAPIEndpoints(),
+        this.checkExternalServices()
+      ]);
+
+      const failedChecks = checks.filter(check => check.status === 'rejected');
+      
+      if (failedChecks.length > 0) {
+        // Update status to inactive if critical services are down
+        await SystemStatusService.updateAgentStatus({
+          status: 'inactive',
+          message: `${failedChecks.length} critical service(s) are down`
+        });
+      } else {
+        // Update status to active if all checks pass
+        const currentStatus = await SystemStatusService.getAgentStatus();
+        if (currentStatus.status !== 'maintenance') {
+          await SystemStatusService.updateAgentStatus({
+            status: 'active',
+            message: 'All systems operational'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Health check error:', error);
+    }
+  }
+
+  private static async checkDatabaseConnection(): Promise<boolean> {
+    const { error } = await supabase.from('users').select('id').limit(1);
+    if (error) throw new Error('Database connection failed');
+    return true;
+  }
+
+  private static async checkAPIEndpoints(): Promise<boolean> {
+    // Add your API endpoint checks here
+    return true;
+  }
+
+  private static async checkExternalServices(): Promise<boolean> {
+    // Add external service checks (VAPI, OpenAI, etc.)
+    return true;
   }
 }
 

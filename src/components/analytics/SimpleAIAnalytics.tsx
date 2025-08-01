@@ -2,18 +2,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { SimpleAIAnalyticsService, SimpleAIAnalytics, SimpleModelMetrics } from '@/services/simpleAIAnalyticsService';
+import { SimpleAIAnalyticsService, type SimpleAIAnalytics, SimpleModelMetrics } from '@/services/simpleAIAnalyticsService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface SimpleAIAnalyticsProps {
   startDate?: string;
   endDate?: string;
   clientId?: string | null;
+  callType?: 'all' | 'live' | 'test';
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-export default function SimpleAIAnalytics({ startDate, endDate, clientId }: SimpleAIAnalyticsProps) {
+export default function SimpleAIAnalytics({ startDate, endDate, clientId, callType = 'all' }: SimpleAIAnalyticsProps) {
   const [data, setData] = useState<SimpleAIAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,8 @@ export default function SimpleAIAnalytics({ startDate, endDate, clientId }: Simp
       const result = await SimpleAIAnalyticsService.getSimpleAnalytics(
         startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         endDate || new Date().toISOString(),
-        clientId
+        clientId,
+        callType
       );
       
       setData(result);
@@ -36,7 +38,7 @@ export default function SimpleAIAnalytics({ startDate, endDate, clientId }: Simp
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, clientId]);
+  }, [startDate, endDate, clientId, callType]);
 
   useEffect(() => {
     fetchData();

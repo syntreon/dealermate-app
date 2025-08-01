@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Clock } from 'lucide-react';
 import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import ClientSelector from '@/components/admin/archived/ClientSelector';
@@ -14,7 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import SystemMessagesTable from '@/components/admin/SystemMessagesTable';
 import SystemUpdatePopup from '@/components/admin/SystemUpdatePopup';
 import { useSystemMessages } from '@/hooks/useSystemMessages';
-import { EnhancedSystemMessage } from '@/services/systemStatusService';
+import { EnhancedSystemMessage, SystemStatusService } from '@/services/systemStatusService';
 
 const AgentStatusSettings: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -30,6 +30,22 @@ const AgentStatusSettings: React.FC = () => {
   // System messages table state
   const [selectedMessage, setSelectedMessage] = useState<EnhancedSystemMessage | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  
+  // Agent status history state
+  const [statusHistory, setStatusHistory] = useState<Array<{
+    id: string;
+    clientId: string | null;
+    status: string;
+    message: string | null;
+    changedAt: Date;
+    changedBy: string;
+    changedByName: string | null;
+    changedByEmail: string | null;
+    previousStatus: string | null;
+    previousMessage: string | null;
+  }>>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   
   // System messages hook with pagination and caching
   const {
@@ -52,9 +68,13 @@ const AgentStatusSettings: React.FC = () => {
       try {
         const clientData = await AdminService.getClients();
         setClients(clientData);
-      } catch (error) {
-        console.error('Failed to fetch clients:', error);
-        toast({ title: 'Error', description: 'Failed to load client list.', variant: 'destructive' });
+      } catch (err) {
+        console.error('Failed to fetch clients:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to load clients',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoadingClients(false);
       }
@@ -62,6 +82,25 @@ const AgentStatusSettings: React.FC = () => {
 
     fetchClients();
   }, [toast]);
+
+  // Fetch agent status history
+  useEffect(() => {
+    const fetchStatusHistory = async () => {
+      try {
+        setIsLoadingHistory(true);
+        setHistoryError(null);
+        const history = await SystemStatusService.getAgentStatusHistory(selectedClientId, 10);
+        setStatusHistory(history);
+      } catch (err) {
+        console.error('Failed to fetch status history:', err);
+        setHistoryError('Failed to load status history');
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    fetchStatusHistory();
+  }, [selectedClientId]);
   
   // Handle row click to open popup
   const handleMessageClick = (message: EnhancedSystemMessage) => {
@@ -177,86 +216,138 @@ const AgentStatusSettings: React.FC = () => {
 
       <Card className="bg-card text-card-foreground border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-card-foreground">
-            <MessageSquare className="h-5 w-5" />
-            Global Status Control
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Set system-wide or client-specific agent status and broadcast messages.
-          </CardDescription>
+          <CardTitle>Agent Status</CardTitle>
+          <CardDescription>Manage the operational status of agents</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="client-selector">Target Client</Label>
-              {/* Wrap client change to normalize 'all' to null for global */}
-              <ClientSelector
-                clients={clients}
-                selectedClient={selectedClientId === null ? 'all' : selectedClientId}
-                onClientChange={(clientId) => setSelectedClientId(clientId === 'all' ? null : clientId)}
-                isLoading={isLoadingClients}
-/>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status-selector">Agent Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as any)}>
-                <SelectTrigger id="status-selector">
-                  <SelectValue placeholder="Select a status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="message-textarea">Broadcast Message (Optional)</Label>
-            <Textarea
-              id="message-textarea"
-              placeholder="Enter a message to display to users..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
+            <Label htmlFor="client">Client</Label>
+            <ClientSelector
+              clients={clients}
+              selectedClient={selectedClientId === null ? 'all' : selectedClientId}
+              onClientChange={(clientId) => handleClientChange(clientId === 'all' ? null : clientId)}
+              isLoading={isLoadingClients}
             />
           </div>
-          <div className="flex items-center justify-between">
-             <div className="space-y-2">
-                <Label htmlFor="message-type-selector">Message Type</Label>
-                <Select value={messageType} onValueChange={(value) => setMessageType(value as any)} disabled={!message}>
-                    <SelectTrigger id="message-type-selector" className="w-[180px]">
-                        <SelectValue placeholder="Select a type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="info">Info</SelectItem>
-                        <SelectItem value="warning">Warning</SelectItem>
-                        <SelectItem value="error">Error</SelectItem>
-                        <SelectItem value="success">Success</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <Button onClick={handlePublish} disabled={isSubmitting}>
-              {isSubmitting ? 'Publishing...' : 'Publish Changes'}
-            </Button>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={(value: any) => setStatus(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="message">Status Message</Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Enter status message..."
+            />
+          </div>
+
+          <Button 
+            onClick={handleStatusUpdate}
+            disabled={isSubmitting}
+            className="w-full"
+          >
+            {isSubmitting ? 'Updating...' : 'Update Status'}
+          </Button>
         </CardContent>
       </Card>
       
-      {/* Active System Messages Table */}
-      <SystemMessagesTable
+      {/* Agent Status History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Status History
+          </CardTitle>
+          <CardDescription>Recent changes to agent status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingHistory ? (
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-3 border rounded-lg animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                  </div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                </div>
+              ))}
+            </div>
+          ) : historyError ? (
+            <div className="text-center py-4 text-destructive">
+              {historyError}
+            </div>
+          ) : statusHistory.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              No status history found
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {statusHistory.map((entry) => (
+                <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        ${entry.status === 'active' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100' : 
+                          entry.status === 'inactive' ? 'bg-destructive/10 text-destructive dark:bg-destructive/20' : 
+                          'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100'}`}>
+                        {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                      </span>
+                      {entry.previousStatus && entry.previousStatus !== entry.status && (
+                        <span className="text-muted-foreground text-sm">
+                          from <span className="font-medium">{entry.previousStatus}</span>
+                        </span>
+                      )}
+                    </div>
+                    {entry.message && (
+                      <p className="text-sm text-muted-foreground truncate">
+                        {entry.message}
+                      </p>
+                    )}
+                    {entry.previousMessage && entry.previousMessage !== entry.message && (
+                      <p className="text-xs text-muted-foreground/70 line-through truncate">
+                        {entry.previousMessage}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-2 sm:mt-0 sm:text-right flex-shrink-0">
+                    <div className="text-sm font-medium">
+                      {entry.changedByName || entry.changedByEmail?.split('@')[0] || 'Unknown User'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {entry.changedAt.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* System Messages Table */}
+      <SystemMessagesTable 
         messages={messages}
-        totalCount={totalCount}
+        loading={isLoadingMessages}
+        error={messagesError}
+        onMessageClick={handleMessageClick}
+        onRefresh={refreshMessages}
         currentPage={currentPage}
         totalPages={totalPages}
-        hasNextPage={hasNextPage}
-        hasPrevPage={hasPrevPage}
-        isLoading={isLoadingMessages}
-        error={messagesError}
-        onRefresh={refreshMessages}
-        onNextPage={nextPage}
-        onPrevPage={prevPage}
-        onRowClick={handleMessageClick}
+        onPageChange={(page) => nextPage(page)}
       />
       
       {/* System Message Details Popup */}

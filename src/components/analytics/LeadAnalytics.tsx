@@ -30,9 +30,10 @@ const SOURCE_COLORS: Record<string, string> = {
 
 interface LeadAnalyticsProps {
   clientId?: string;
+  callType?: 'all' | 'live' | 'test';
 }
 
-const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ clientId }) => {
+const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ clientId, callType = 'live' }) => {
   const isMobile = useIsMobile();
   const { leads, stats } = useLeads();
   const { calls } = useCalls();

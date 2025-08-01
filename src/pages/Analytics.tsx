@@ -7,10 +7,12 @@ import CallAnalytics from '@/components/analytics/CallAnalytics';
 import QualityAnalytics from '@/components/analytics/QualityAnalytics';
 import SimpleAIAnalytics from '@/components/analytics/SimpleAIAnalytics';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
+import GlobalCallTypeFilter from '@/components/GlobalCallTypeFilter';
 import { useDateRange } from '@/hooks/useDateRange';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/context/AuthContext';
 import { useClient } from '@/context/ClientContext';
+import { useCallType } from '@/context/CallTypeContext';
 import { canViewSensitiveInfo, canAccessAnalytics } from '@/utils/clientDataIsolation';
 import { Navigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -19,6 +21,7 @@ import { cn } from '@/lib/utils';
 const Analytics = () => {
   const { user } = useAuth();
   const { selectedClientId } = useClient();
+  const { selectedCallType, setSelectedCallType } = useCallType();
   const [activeTab, setActiveTab] = useState('calls');
   
   // Handle tab change
@@ -72,6 +75,11 @@ const Analytics = () => {
       
       {/* Filters section - separate row on mobile */}
       <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+        {/* Call type filter */}
+        <GlobalCallTypeFilter 
+          selectedCallType={selectedCallType}
+          onCallTypeChange={(type) => setSelectedCallType(type)}
+        />
         {/* Date filter */}
         <DateRangeFilter
           className="w-full sm:w-auto max-w-xs"
@@ -136,6 +144,7 @@ const Analytics = () => {
             startDate={dateFilters.start} 
             endDate={dateFilters.end}
             clientId={selectedClientId}
+            callType={selectedCallType}
           />
         </TabsContent>
 
@@ -149,6 +158,7 @@ const Analytics = () => {
             startDate={dateFilters.start} 
             endDate={dateFilters.end}
             clientId={selectedClientId}
+            callType={selectedCallType}
           />
         </TabsContent>
 
@@ -158,6 +168,7 @@ const Analytics = () => {
               startDate={dateFilters.start} 
               endDate={dateFilters.end}
               clientId={selectedClientId}
+              callType={selectedCallType}
             />
           </TabsContent>
         )}

@@ -24,12 +24,14 @@ interface AIAccuracyAnalyticsProps {
   startDate?: string;
   endDate?: string;
   clientId?: string | null;
+  callType?: 'all' | 'live' | 'test';
 }
 
 const AIAccuracyAnalytics: React.FC<AIAccuracyAnalyticsProps> = ({ 
   startDate, 
   endDate, 
-  clientId 
+  clientId,
+  callType = 'live'
 }) => {
   const { user } = useAuth();
   const [data, setData] = useState<AIAccuracyAnalyticsData | null>(null);
@@ -50,13 +52,65 @@ const AIAccuracyAnalytics: React.FC<AIAccuracyAnalyticsProps> = ({
 
         // Prepare filters
         const filters: AIAccuracyFilters = {
-          startDate,
-          endDate,
+          startDate: startDate || '2022-01-01',
+          endDate: endDate || '2022-12-31',
           clientId: effectiveClientId
         };
 
-        // Fetch AI accuracy analytics data
-        const analyticsData = await AIAccuracyAnalyticsService.getAnalyticsData(filters);
+        // Fetch AI accuracy analytics data using individual service methods
+        const [modelPerformance, accuracyTrends, failurePatterns, keywordAnalysis, conversationQuality, technicalMetrics] = await Promise.all([
+          AIAccuracyAnalyticsService.getModelPerformanceMetrics(
+            startDate || '2022-01-01',
+            endDate || '2022-12-31',
+            effectiveClientId,
+            undefined, // modelType
+            callType
+          ),
+          AIAccuracyAnalyticsService.getAccuracyTrends(
+            startDate || '2022-01-01',
+            endDate || '2022-12-31',
+            effectiveClientId,
+            undefined, // modelType
+            callType
+          ),
+          AIAccuracyAnalyticsService.getFailurePatterns(
+            startDate || '2022-01-01',
+            endDate || '2022-12-31',
+            effectiveClientId,
+            undefined, // modelType
+            callType
+          ),
+          AIAccuracyAnalyticsService.getKeywordAnalysis(
+            startDate || '2022-01-01',
+            endDate || '2022-12-31',
+            effectiveClientId,
+            undefined, // modelType
+            callType
+          ),
+          AIAccuracyAnalyticsService.getConversationQualityMetrics(
+            startDate || '2022-01-01',
+            endDate || '2022-12-31',
+            effectiveClientId,
+            undefined, // modelType
+            callType
+          ),
+          AIAccuracyAnalyticsService.getTechnicalMetrics(
+            startDate || '2022-01-01',
+            endDate || '2022-12-31',
+            effectiveClientId,
+            undefined, // modelType
+            callType
+          )
+        ]);
+
+        const analyticsData: AIAccuracyAnalyticsData = {
+          modelPerformance,
+          accuracyTrends,
+          failurePatterns,
+          keywordAnalysis,
+          conversationQuality,
+          technicalMetrics
+        };
         
         console.log('AI Accuracy analytics data fetched:', analyticsData);
         setData(analyticsData);

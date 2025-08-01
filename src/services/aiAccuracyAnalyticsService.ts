@@ -36,7 +36,13 @@ import {
 
 export class AIAccuracyAnalyticsService {
 
-  private static async _getFilteredCallsData(startDate: string, endDate: string, clientId?: string, modelType?: string) {
+  private static async _getFilteredCallsData(
+    startDate: string,
+    endDate: string,
+    clientId?: string,
+    modelType?: string,
+    callType?: 'all' | 'live' | 'test'
+  ) {
     let query = supabase
       .from('calls')
       .select(`
@@ -61,6 +67,12 @@ export class AIAccuracyAnalyticsService {
       query = query.eq('call_llm_model', modelType);
     }
 
+    if (callType === 'live') {
+      query = query.eq('is_test_call', false);
+    } else if (callType === 'test') {
+      query = query.eq('is_test_call', true);
+    }
+
     const { data, error } = await query;
 
     if (error) {
@@ -78,10 +90,11 @@ export class AIAccuracyAnalyticsService {
     startDate: string,
     endDate: string,
     clientId?: string,
-    modelType?: string
+    modelType?: string,
+    callType?: 'all' | 'live' | 'test'
   ): Promise<ModelPerformanceMetrics> {
     try {
-      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType, callType);
       const totalCalls = calls.length;
 
       // Group calls by model
@@ -198,10 +211,11 @@ export class AIAccuracyAnalyticsService {
     startDate: string,
     endDate: string,
     clientId?: string,
-    modelType?: string
+    modelType?: string,
+    callType?: 'all' | 'live' | 'test'
   ): Promise<AccuracyTrendData[]> {
     try {
-      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
+      const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType, callType);
 
       // Group calls by date
       const dateGroups: { [date: string]: any[] } = {};
@@ -280,7 +294,8 @@ export class AIAccuracyAnalyticsService {
     startDate: string,
     endDate: string,
     clientId?: string,
-    modelType?: string
+    modelType?: string,
+    callType?: 'all' | 'live' | 'test'
   ): Promise<FailurePatternData> {
     try {
       const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
@@ -416,7 +431,8 @@ export class AIAccuracyAnalyticsService {
     startDate: string,
     endDate: string,
     clientId?: string,
-    modelType?: string
+    modelType?: string,
+    callType?: 'all' | 'live' | 'test'
   ): Promise<KeywordAnalysisData> {
     try {
       const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
@@ -513,7 +529,8 @@ export class AIAccuracyAnalyticsService {
     startDate: string,
     endDate: string,
     clientId?: string,
-    modelType?: string
+    modelType?: string,
+    callType?: 'all' | 'live' | 'test'
   ): Promise<ConversationQualityMetrics> {
     try {
       const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
@@ -547,7 +564,8 @@ export class AIAccuracyAnalyticsService {
     startDate: string,
     endDate: string,
     clientId?: string,
-    modelType?: string
+    modelType?: string,
+    callType?: 'all' | 'live' | 'test'
   ): Promise<TechnicalMetricsData> {
     try {
       const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
@@ -1118,9 +1136,27 @@ export class AIAccuracyAnalyticsService {
       averageResponseTime: 0,
       responseTimeStats: { avg: 0, median: 0, p95: 0, p99: 0 },
       responseTimeTrend: [],
-      tokenUsageStats: { total_tokens: 0, average_tokens_per_call: 0, max_tokens_in_single_call: 0 },
+      tokenUsageStats: { 
+        totalTokensUsed: 0, 
+        averageInputTokens: 0, 
+        averageOutputTokens: 0, 
+        totalTokens: 0, 
+        avgInputTokens: 0, 
+        avgOutputTokens: 0, 
+        input: 0, 
+        output: 0, 
+        tokensByModel: {} 
+      },
       tokenDistributionByModel: [],
-      costEfficiencyMetrics: { avgCostPerCall: 0, costPerToken: 0, avgCostPerSuccessfulCall: 0 },
+      costEfficiencyMetrics: { 
+        averageCostPerCall: 0, 
+        avgCostPerCall: 0, 
+        avgCostPer1kTokens: 0, 
+        costAccuracyRatio: 0, 
+        costByModel: {}, 
+        costTrends: [], 
+        costVsAccuracyCorrelation: 0 
+      },
       costTrend: [],
       costByModel: [],
       costAccuracyCorrelation: [],
@@ -1193,12 +1229,28 @@ export class AIAccuracyAnalyticsService {
    */
   private static calculateTokenUsageStats(calls: any[]): TokenUsageStats {
     const tokens = calls.map(c => c.total_tokens).filter(t => typeof t === 'number');
-    if (tokens.length === 0) return { total_tokens: 0, average_tokens_per_call: 0, max_tokens_in_single_call: 0 };
+    if (tokens.length === 0) return { 
+      totalTokensUsed: 0, 
+      averageInputTokens: 0, 
+      averageOutputTokens: 0, 
+      totalTokens: 0, 
+      avgInputTokens: 0, 
+      avgOutputTokens: 0, 
+      input: 0, 
+      output: 0, 
+      tokensByModel: {} 
+    };
     const totalTokens = tokens.reduce((sum, t) => sum + t, 0);
     return {
-      total_tokens: totalTokens,
-      average_tokens_per_call: totalTokens / tokens.length,
-      max_tokens_in_single_call: Math.max(...tokens),
+      totalTokensUsed: totalTokens,
+      averageInputTokens: totalTokens / tokens.length,
+      averageOutputTokens: totalTokens / tokens.length,
+      totalTokens: totalTokens,
+      avgInputTokens: totalTokens / tokens.length,
+      avgOutputTokens: totalTokens / tokens.length,
+      input: totalTokens,
+      output: totalTokens,
+      tokensByModel: {}
     };
   }
 
@@ -1213,13 +1265,21 @@ export class AIAccuracyAnalyticsService {
    * Calculate cost efficiency metrics
    */
   private static calculateCostEfficiencyMetrics(calls: any[]): CostEfficiencyMetrics {
-    return { avgCostPerCall: 0, costPerToken: 0, avgCostPerSuccessfulCall: 0 }; // Placeholder
+    return { 
+      averageCostPerCall: 0, 
+      avgCostPerCall: 0, 
+      avgCostPer1kTokens: 0, 
+      costAccuracyRatio: 0, 
+      costByModel: {}, 
+      costTrends: [], 
+      costVsAccuracyCorrelation: 0 
+    }; // Placeholder
   }
 
   /**
    * Calculate cost trends over time
    */
-  private static calculateCostTrends(calls: any[]): CostTrend[] {
+  private static calculateCostTrends(calls: any[]): CostTrendData[] {
     return []; // Placeholder
   }
 
@@ -1340,5 +1400,75 @@ export class AIAccuracyAnalyticsService {
     }
 
     return insights;
+  }
+
+  /**
+   * Calculate standard deviation of an array of numbers
+   */
+  private static calculateStandardDeviation(values: number[]): number {
+    if (values.length === 0) return 0;
+    
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const squaredDifferences = values.map(value => Math.pow(value - mean, 2));
+    const meanSquaredDifference = squaredDifferences.reduce((sum, value) => sum + value, 0) / values.length;
+    return Math.sqrt(meanSquaredDifference);
+  }
+
+  /**
+   * Calculate 95% confidence interval for an array of numbers
+   */
+  private static calculateConfidenceInterval(values: number[]): { lower: number; upper: number } {
+    if (values.length === 0) return { lower: 0, upper: 0 };
+    
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const standardDeviation = this.calculateStandardDeviation(values);
+    const standardError = standardDeviation / Math.sqrt(values.length);
+    const marginOfError = 1.96 * standardError; // 95% confidence interval
+    
+    return { lower: mean - marginOfError, upper: mean + marginOfError };
+  }
+
+  /**
+   * Calculate quality consistency score based on variance of scores
+   */
+  private static calculateQualityConsistency(dataPoints: QualityDataPoint[]): number {
+    if (dataPoints.length === 0) return 0;
+    
+    const scores = dataPoints.map(p => p.overallScore);
+    const standardDeviation = this.calculateStandardDeviation(scores);
+    
+    // Convert to consistency score (0-100, where lower standard deviation = higher consistency)
+    // Using inverse relationship: consistency = 100 / (1 + standardDeviation)
+    return Math.min(100, 100 / (1 + standardDeviation));
+  }
+
+  /**
+   * Identify strength areas based on quality dimensions
+   */
+  private static identifyStrengthAreas(dimensions: QualityDimensions): string[] {
+    const strengths: string[] = [];
+    
+    if (dimensions.accuracy >= 4.0) strengths.push('Accuracy');
+    if (dimensions.completeness >= 4.0) strengths.push('Completeness');
+    if (dimensions.relevance >= 4.0) strengths.push('Relevance');
+    if (dimensions.clarity >= 4.0) strengths.push('Clarity');
+    if (dimensions.professionalism >= 4.0) strengths.push('Professionalism');
+    
+    return strengths;
+  }
+
+  /**
+   * Identify improvement areas based on quality dimensions
+   */
+  private static identifyImprovementAreas(dimensions: QualityDimensions): string[] {
+    const improvements: string[] = [];
+    
+    if (dimensions.accuracy < 4.0) improvements.push('Accuracy');
+    if (dimensions.completeness < 4.0) improvements.push('Completeness');
+    if (dimensions.relevance < 4.0) improvements.push('Relevance');
+    if (dimensions.clarity < 4.0) improvements.push('Clarity');
+    if (dimensions.professionalism < 4.0) improvements.push('Professionalism');
+    
+    return improvements;
   }
 }

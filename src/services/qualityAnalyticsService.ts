@@ -28,6 +28,7 @@ export interface QualityAnalyticsFilters {
   startDate?: string;
   endDate?: string;
   clientId?: string;
+  callType?: 'all' | 'live' | 'test';
 }
 
 export const QualityAnalyticsService = {
@@ -36,7 +37,7 @@ export const QualityAnalyticsService = {
    */
   getQualityAnalyticsData: async (filters?: QualityAnalyticsFilters): Promise<QualityAnalyticsData> => {
     try {
-      const { startDate, endDate, clientId } = filters || {};
+      const { startDate, endDate, clientId, callType = 'live' } = filters || {};
       
       // Calculate default date range (last 30 days) if not provided
       const now = new Date();
@@ -73,7 +74,8 @@ export const QualityAnalyticsService = {
           human_review_required,
           review_reason,
           evaluated_at,
-          overall_evaluation_score
+          overall_evaluation_score,
+          calls!inner(is_test_call)
         `)
         .gte('evaluated_at', effectiveStartDate)
         .lte('evaluated_at', effectiveEndDate);
@@ -81,6 +83,13 @@ export const QualityAnalyticsService = {
       // Apply client filtering
       if (clientId) {
         query = query.eq('client_id', clientId);
+      }
+
+      // Apply call type filtering
+      if (callType === 'live') {
+        query = query.eq('calls.is_test_call', false);
+      } else if (callType === 'test') {
+        query = query.eq('calls.is_test_call', true);
       }
 
       // Fetch data

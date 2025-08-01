@@ -17,6 +17,7 @@ export interface Client {
   config_json: any;
   joined_at: Date;
   last_active_at: Date | null;
+  is_in_test_mode: boolean | null;
 
   // Computed metrics
   metrics?: {
@@ -40,10 +41,12 @@ export interface CreateClientData {
   finders_fee_cad: number;
   slug: string;
   config_json?: any;
+  is_in_test_mode?: boolean;
 }
 
 export interface UpdateClientData extends Partial<CreateClientData> {
-  status?: 'active' | 'inactive' | 'trial' | 'churned';
+  status?: 'active' | 'inactive' | 'trial' | 'churned' | 'pending';
+  is_in_test_mode?: boolean;
 }
 
 export interface ClientFilters {

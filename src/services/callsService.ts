@@ -104,12 +104,19 @@ export const CallsService = {
   /**
    * Get call statistics
    */
-  getCallStats: async (clientId?: string): Promise<CallStats> => {
+  getCallStats: async (clientId?: string, callType: 'all' | 'live' | 'test' = 'live'): Promise<CallStats> => {
     try {
       let query = supabase.from('calls').select('*');
 
       if (clientId) {
         query = query.eq('client_id', clientId);
+      }
+
+      // Apply call type filter
+      if (callType === 'live') {
+        query = query.eq('is_test_call', false);
+      } else if (callType === 'test') {
+        query = query.eq('is_test_call', true);
       }
 
       const { data, error } = await query;
@@ -148,7 +155,7 @@ export const CallsService = {
   /**
    * Get recent calls for dashboard activity feed
    */
-  getRecentCalls: async (limit: number = 5, clientId?: string): Promise<Call[]> => {
+  getRecentCalls: async (limit: number = 5, clientId?: string, callType: 'all' | 'live' | 'test' = 'live'): Promise<Call[]> => {
     try {
       let query = supabase
         .from('calls')
@@ -161,6 +168,13 @@ export const CallsService = {
 
       if (clientId) {
         query = query.eq('client_id', clientId);
+      }
+
+      // Apply call type filter
+      if (callType === 'live') {
+        query = query.eq('is_test_call', false);
+      } else if (callType === 'test') {
+        query = query.eq('is_test_call', true);
       }
 
       const { data, error } = await query;
@@ -198,7 +212,7 @@ export const CallsService = {
 /**
  * Determine call status based on database record
  */
-function determineCallStatus(record: any): 'sent' | 'answered' | 'failed' | 'in-progress' {
+function determineCallStatus(record: any): 'initiated' | 'sent' | 'answered' | 'failed' {
   if (record.hangup_reason && record.hangup_reason.includes('failed')) {
     return 'failed';
   }
@@ -208,7 +222,7 @@ function determineCallStatus(record: any): 'sent' | 'answered' | 'failed' | 'in-
   if (record.call_start_time) {
     return 'sent';
   }
-  return 'in-progress';
+  return 'initiated';
 }
 
 /**
