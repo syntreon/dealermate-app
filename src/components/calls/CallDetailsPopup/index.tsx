@@ -15,7 +15,7 @@ import { CallDetailsTab } from './CallDetailsTab';
 import { CallRecordingTab } from './CallRecordingTab';
 import { CallTranscriptTab } from './CallTranscriptTab';
 import { CallEvaluationTab } from './CallEvaluationTab';
-import { getCallTypeBadge } from './utils';
+import { getCallTypeBadge, getTestCallBadge } from './utils';
 
 interface CallDetailsPopupProps {
     call: CallLog | null;
@@ -42,7 +42,10 @@ const CallDetailsPopup: React.FC<CallDetailsPopupProps> = ({
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                         <Phone className="h-5 w-5" />
                         Call Details
-                        {call && getCallTypeBadge(call.call_type)}
+                        <div className="flex items-center gap-2">
+                            {call && getCallTypeBadge(call.call_type)}
+                            {call?.is_test_call && getTestCallBadge()}
+                        </div>
                     </DialogTitle>
                     <DialogDescription>
                         View call details, listen to recording, and read transcript

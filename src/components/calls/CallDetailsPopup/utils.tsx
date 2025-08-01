@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Phone } from 'lucide-react';
+import { Phone, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const getCallTypeBadge = (callType: string | null) => {
@@ -43,4 +43,23 @@ export const formatTime = (time: number) => {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+/**
+ * Returns a badge indicating that a call is a test call
+ * Uses destructive (red) color with white text for high visibility
+ */
+export const getTestCallBadge = () => {
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        'px-3 py-1 text-xs font-medium flex items-center gap-1.5',
+        'bg-destructive text-destructive-foreground border-destructive/20'
+      )}
+    >
+      <AlertCircle className="h-3.5 w-3.5" />
+      Test Call
+    </Badge>
+  );
 };
