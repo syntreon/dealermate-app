@@ -221,7 +221,7 @@ export const DashboardService = {
   /**
    * Get comprehensive dashboard metrics for a client or all clients (admin)
    */
-  getDashboardMetrics: async (clientId?: string | null): Promise<DashboardMetrics> => {
+  getDashboardMetrics: async (clientId?: string | null, callType: 'all' | 'live' | 'test' = 'live'): Promise<DashboardMetrics> => {
     try {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -237,6 +237,13 @@ export const DashboardService = {
       if (clientId) {
         callsQuery = callsQuery.eq('client_id', clientId);
         leadsQuery = leadsQuery.eq('client_id', clientId);
+      }
+
+      // Apply call type filter
+      if (callType === 'live') {
+        callsQuery = callsQuery.eq('is_test_call', false);
+      } else if (callType === 'test') {
+        callsQuery = callsQuery.eq('is_test_call', true);
       }
 
       // Fetch all data

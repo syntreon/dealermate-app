@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { DashboardMetrics } from '@/types/dashboard';
 import { DashboardService } from '@/services/dashboardService';
+import { CallType } from '@/context/CallTypeContext';
 
 // Simple cache to prevent multiple calls
 const metricsCache = new Map<string, { data: DashboardMetrics; timestamp: number }>();
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
-export const useDashboardMetrics = (clientId?: string) => {
+export const useDashboardMetrics = (clientId?: string, callType: CallType = 'live') => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -15,7 +16,7 @@ export const useDashboardMetrics = (clientId?: string) => {
   const lastFetchRef = useRef<string>('');
 
   useEffect(() => {
-    console.log('useDashboardMetrics useEffect triggered - user?.id:', user?.id, 'user?.role:', user?.role, 'user?.client_id:', user?.client_id, 'clientId:', clientId, 'isAuthLoading:', isAuthLoading);
+    console.log('useDashboardMetrics useEffect triggered - user?.id:', user?.id, 'user?.role:', user?.role, 'user?.client_id:', user?.client_id, 'clientId:', clientId, 'callType:', callType, 'isAuthLoading:', isAuthLoading);
     
     const fetchMetrics = async () => {
       if (!user?.id) return;
@@ -26,7 +27,7 @@ export const useDashboardMetrics = (clientId?: string) => {
         (user.role === 'admin' || user.role === 'owner')
       );
       const effectiveClientId = isAdminUser ? clientId : (user?.client_id || null);
-      const cacheKey = `${user.id}_${effectiveClientId || 'null'}_${user.role}`;
+      const cacheKey = `${user.id}_${effectiveClientId || 'null'}_${user.role}_${callType}`;
       
       // Prevent duplicate calls
       if (lastFetchRef.current === cacheKey) {
@@ -48,10 +49,10 @@ export const useDashboardMetrics = (clientId?: string) => {
       setError(null);
       
       try {
-        console.log('Dashboard Metrics - User Role:', user?.role, 'Client ID:', user?.client_id, 'Is Admin:', isAdminUser, 'Passed Client ID:', clientId, 'Effective Client ID:', effectiveClientId);
+        console.log('Dashboard Metrics - User Role:', user?.role, 'Client ID:', user?.client_id, 'Is Admin:', isAdminUser, 'Passed Client ID:', clientId, 'Effective Client ID:', effectiveClientId, 'Call Type:', callType);
         
         // Fetch real metrics from database
-        const dashboardMetrics = await DashboardService.getDashboardMetrics(effectiveClientId);
+        const dashboardMetrics = await DashboardService.getDashboardMetrics(effectiveClientId, callType);
         
         console.log('Fetched metrics:', dashboardMetrics);
         
@@ -81,7 +82,7 @@ export const useDashboardMetrics = (clientId?: string) => {
       setIsLoading(false);
     }
     
-  }, [user?.id, user?.role, user?.client_id, clientId, isAuthLoading]); // Only depend on specific user properties, not the whole user object
+  }, [user?.id, user?.role, user?.client_id, clientId, callType, isAuthLoading]); // Only depend on specific user properties, not the whole user object
 
   return { metrics, isLoading, error };
 };

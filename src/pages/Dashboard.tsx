@@ -55,35 +55,33 @@ const Dashboard = () => {
   const effectiveClientId = getEffectiveClientId();
 
   // Use our custom hook to fetch dashboard metrics
-  // Pass selectedCallType to dashboard metrics hook
-  const { metrics, isLoading, error } = useDashboardMetrics(effectiveClientId, selectedCallType);
+  const { metrics, isLoading: metricsLoading, error: metricsError } = useDashboardMetrics(effectiveClientId, selectedCallType);
 
-  // Fetch calls and stats
   useEffect(() => {
-    const fetchCallsData = async () => {
-      if (!user) return;
+    const fetchCallsAndStats = async () => {
+      if (!effectiveClientId && !canViewAllClients && user?.client_id) return;
 
       setLoadingCalls(true);
-      try {
-        // Get effective client ID for data fetching
-        const effectiveClientId = canViewAllClients ? selectedClientId : (user?.client_id || undefined);
 
-        const [recentCalls, callStats] = await Promise.all([
-          CallsService.getRecentCalls(5, effectiveClientId, selectedCallType),
-          CallsService.getCallStats(effectiveClientId, selectedCallType)
-        ]);
+      try {
+        // Fetch recent calls
+        const recentCalls = await CallsService.getRecentCalls(5, effectiveClientId, selectedCallType);
+
+        // Fetch call stats
+        const callStats = await CallsService.getCallStats(effectiveClientId, selectedCallType);
 
         setCalls(recentCalls);
         setStats(callStats);
-      } catch (error) {
-        console.error('Error fetching calls data:', error);
+      } catch (err) {
+        console.error('Error fetching calls and stats:', err);
+        toast.error('Failed to load call data');
       } finally {
         setLoadingCalls(false);
       }
     };
 
-    fetchCallsData();
-  }, [user?.id, user?.role, user?.client_id, selectedClientId, canViewAllClients, selectedCallType]); // Only depend on specific user properties
+    fetchCallsAndStats();
+  }, [effectiveClientId, canViewAllClients, user?.client_id, selectedCallType]);
 
   // Updated chart colors to be theme-aware
   const chartData = [
@@ -241,7 +239,7 @@ const Dashboard = () => {
           agentsAvailable: 1,
           callsInQueue: 0
         }}
-        isLoading={isLoading}
+        isLoading={metricsLoading}
       />
 
       {/* Call Activity Timeline */}
@@ -251,7 +249,7 @@ const Dashboard = () => {
         <PotentialEarnings
           totalCalls={metrics?.totalCalls || 0}
           totalLeads={metrics?.totalLeads || 0}
-          isLoading={isLoading}
+          isLoading={metricsLoading}
         />
 
         <Card className="bg-card shadow-sm hover:border-primary/20 transition-all duration-300">
