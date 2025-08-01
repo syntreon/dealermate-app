@@ -8,6 +8,7 @@ import UsersTable from '@/components/admin/users/UsersTable';
 import UserForm from '@/components/admin/users/UserForm';
 import UserFilters from '@/components/admin/users/UserFilters';
 import { AdminService } from '@/services/adminService';
+import { getRoleLabel } from '@/utils/roleLabels'; // Centralized role label mapping
 import { User, Client, UserFilters as UserFiltersType, CreateUserData, UpdateUserData } from '@/types/admin';
 import { useAuth } from '@/context/AuthContext';
 import { hasSystemWideAccess, getClientIdFilter } from '@/utils/clientDataIsolation';

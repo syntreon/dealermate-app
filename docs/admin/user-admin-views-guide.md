@@ -20,13 +20,19 @@ The application uses Supabase for authentication, with a custom implementation t
 
 ### User Roles
 
+> **Note:** Role display names have been updated for clarity. The new labels are:
+> - `client_admin` → **Business Manager**
+> - `user` → **Account Manager**
+> - `client_user` → **User**
+> - `admin` and `owner` remain unchanged
+
 The system supports five distinct user roles with hierarchical permissions:
 
 - **owner** (Level 5): Super admin with full system access
 - **admin** (Level 4): Administrative user with access to admin panel  
-- **user** (Level 3): Internal staff with system-wide access to multiple clients
-- **client_admin** (Level 2): Client administrator with enhanced client-specific access
-- **client_user** (Level 1): Basic client user with minimal access
+- **user** (Level 3): **Account Manager** (internal staff, system-wide access to multiple clients)
+- **client_admin** (Level 2): **Business Manager** (enhanced client-specific access)
+- **client_user** (Level 1): **User** (basic client user with minimal access)
 
 ### Role Hierarchy and Access Patterns
 

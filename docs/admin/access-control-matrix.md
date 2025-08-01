@@ -4,13 +4,19 @@ This document provides a comprehensive overview of access permissions across the
 
 ## 📋 **Role Definitions**
 
+> **Note:** Role display names have been updated for clarity. The new labels are:
+> - `client_admin` → **Business Manager**
+> - `user` → **Account Manager**
+> - `client_user` → **User**
+> - `admin` and `owner` remain unchanged
+
 | Role | Level | Description | Scope |
 |------|-------|-------------|-------|
 | `owner` | 5 | Super admin with full system access | System-wide |
 | `admin` | 4 | Administrative user with access to admin panel | System-wide |
-| `user` | 3 | Internal staff with system-wide access to multiple clients | System-wide |
-| `client_admin` | 2 | Client administrator with enhanced client-specific access | Client-specific |
-| `client_user` | 1 | Basic client user with minimal access | Client-specific |
+| `user` | 3 | **Account Manager** (internal staff, system-wide access to multiple clients) | System-wide |
+| `client_admin` | 2 | **Business Manager** (enhanced client-specific access) | Client-specific |
+| `client_user` | 1 | **User** (basic client user with minimal access) | Client-specific |
 
 **Legend**: ✅ Full Access | 🔒 Limited Access | ❌ No Access | 📱 Desktop Only
 

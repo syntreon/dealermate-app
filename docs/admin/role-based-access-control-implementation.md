@@ -24,6 +24,12 @@ The DealerMate application implements a hierarchical role-based access control s
 
 ## Role Hierarchy
 
+> **Note:** Role display names have been updated for clarity. The new labels are:
+> - `client_admin` → **Business Manager**
+> - `user` → **Account Manager**
+> - `client_user` → **User**
+> - `admin` and `owner` remain unchanged
+
 The system supports five user roles with hierarchical permissions:
 
 ```
@@ -44,9 +50,9 @@ client_user (Level 1)
 |------|-------|-------------|--------------|
 | `owner` | 5 | Super admin with full system access | System-wide |
 | `admin` | 4 | Administrative user with access to admin panel | System-wide |
-| `user` | 3 | Internal staff with system-wide access to multiple clients | System-wide |
-| `client_admin` | 2 | Client administrator with enhanced client-specific access | Client-specific |
-| `client_user` | 1 | Basic client user with minimal access | Client-specific |
+| `user` | 3 | **Account Manager** (internal staff, system-wide access to multiple clients) | System-wide |
+| `client_admin` | 2 | **Business Manager** (enhanced client-specific access) | Client-specific |
+| `client_user` | 1 | **User** (basic client user with minimal access) | Client-specific |
 
 ### Access Patterns
 

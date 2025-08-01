@@ -1,4 +1,5 @@
 import React from 'react';
+import { getRoleLabel } from '@/utils/roleLabels'; // Centralized role label mapping
 import {
   Table,
   TableBody,
@@ -49,19 +50,27 @@ const UsersTable: React.FC<UsersTableProps> = ({
 }) => {
   // Get appropriate badge for user role
   // Get appropriate badge for user role with theme-aware styling
+  // Returns a themed badge for the user's role using the centralized role label mapping
+  // Use centralized role label mapping
+// (imported at top)
+
   const getRoleBadge = (role: User['role']) => {
+    let badgeClass = '';
     switch (role) {
       case 'owner':
-        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Owner</Badge>;
+        badgeClass = 'bg-primary/10 text-primary border-primary/20'; break;
       case 'admin':
-        return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">Admin</Badge>;
+        badgeClass = 'bg-blue-500/10 text-blue-500 border-blue-500/20'; break;
       case 'client_admin':
-        return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Client Admin</Badge>;
-      case 'client_user':
-        return <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">Client User</Badge>;
+        badgeClass = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'; break;
       default:
-        return <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">User</Badge>;
+        badgeClass = 'bg-muted/50 text-muted-foreground border-muted'; break;
     }
+    return (
+      <Badge variant="outline" className={badgeClass}>
+        {getRoleLabel(role)}
+      </Badge>
+    );
   };
 
   // Get client name display

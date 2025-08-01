@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Client, CreateUserData, UpdateUserData } from '@/types/admin';
+import { getRoleLabel } from '@/utils/roleLabels'; // Centralized role label mapping
 
 // --- User Form Validation Schema ---
 // - client_id is required for client_user and client_admin roles
@@ -168,15 +169,16 @@ const UserForm: React.FC<UserFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        {/* Use centralized role label mapping for dropdown options */}
                         {hasSystemAccess && (
                           <>
-                            <SelectItem value="owner">Owner</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="owner">{getRoleLabel('owner')}</SelectItem>
+                            <SelectItem value="admin">{getRoleLabel('admin')}</SelectItem>
+                            <SelectItem value="user">{getRoleLabel('user')}</SelectItem>
                           </>
                         )}
-                        <SelectItem value="client_admin">Client Admin</SelectItem>
-                        <SelectItem value="client_user">Client User</SelectItem>
+                        <SelectItem value="client_admin">{getRoleLabel('client_admin')}</SelectItem>
+                        <SelectItem value="client_user">{getRoleLabel('client_user')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>

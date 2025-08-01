@@ -1,5 +1,12 @@
 # Audit Logs Access Control
 
+> **Note:** Role display names have been updated for clarity. The new labels are:
+> - `client_admin` → **Business Manager**
+> - `user` → **Account Manager**
+> - `client_user` → **User**
+> - `admin` and `owner` remain unchanged
+
+
 ## Row Level Security (RLS) and Admin Access
 
 ### Issue Resolved
