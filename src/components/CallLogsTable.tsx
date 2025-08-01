@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Calendar, ChevronDown, ChevronUp, Clock, Filter, Phone, PhoneCall, PhoneOutgoing, Search, User, VoicemailIcon, Eye } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Clock, Filter, Phone, PhoneCall, PhoneOutgoing, Search, User, VoicemailIcon, Eye, Info } from 'lucide-react';
 import { CallLog, CallType } from '@/integrations/supabase/call-logs-service';
 import { cn } from '@/lib/utils';
 import CallDetailsPopup from './calls/CallDetailsPopup';
@@ -21,6 +21,8 @@ import { LeadEvaluationService } from '@/services/leadEvaluationService';
 import { PromptAdherenceService } from '@/services/promptAdherenceService';
 import { useAuth } from '@/context/AuthContext';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import TestCallCheckbox from './calls/TestCallCheckbox';
+import { toast } from '@/components/ui/use-toast';
 
 // Call type badge component with theme-aware styling
 const CallTypeBadge = ({ callType }: { callType: string }) => {
@@ -61,9 +63,10 @@ const CallTypeBadge = ({ callType }: { callType: string }) => {
   );
 };
 
-// Extended CallLog interface to include client_name for admin view
+// Extended CallLog interface to include client_name for admin view and is_test_call for test status
 export interface ExtendedCallLog extends CallLog {
   client_name?: string;
+  is_test_call?: boolean;
 }
 
 interface CallLogsTableProps {
@@ -305,7 +308,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
               <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap w-[120px]">Inquiry Type</TableHead>
               <SortableHeader field="call_start_time" label="Time" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap" />
               <SortableHeader field="call_type" label="Type" className="px-3 sm:px-4 py-3 text-xs hidden sm:table-cell whitespace-nowrap w-[110px]" />
-              <TableHead className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider w-[60px]">Actions</TableHead>
+              <TableHead className="px-3 sm:px-4 py-3 text-center text-xs font-medium text-foreground/70 uppercase tracking-wider w-[60px]">Test</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -334,10 +337,12 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
               filteredAndSortedLogs.map((log) => (
                 <TableRow 
                   key={log.id} 
-                  className="hover:bg-secondary/20 transition-colors cursor-pointer"
+                  className="hover:bg-secondary/20 transition-colors cursor-pointer group relative"
                   onClick={(e) => {
-                    // Prevent row click if clicking on action buttons
-                    if ((e.target as HTMLElement).closest('button')) {
+                    // Prevent row click if clicking on checkbox
+                    if ((e.target as HTMLElement).closest('input') || 
+                        (e.target as HTMLElement).closest('[role="checkbox"]') ||
+                        (e.target as HTMLElement).closest('button')) {
                       return;
                     }
                     setSelectedCall(log);
@@ -428,19 +433,21 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
                     <CallTypeBadge callType={log.call_type || 'unknown'} />
                   </TableCell>
                   
-                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 text-right w-[60px]">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedCall(log);
-                        setIsDetailsOpen(true);
+                  <TableCell className="px-3 sm:px-4 py-3 sm:py-4 text-center w-[60px]">
+                    <TestCallCheckbox 
+                      callId={log.id}
+                      isTestCall={log.is_test_call as boolean || false}
+                      onStatusChange={(id, isTest) => {
+                        // Update the call in the local state
+                        const updatedLogs = callLogs.map(c => 
+                          c.id === id ? { ...c, is_test_call: isTest } : c
+                        );
+                        // Trigger a refresh if needed
+                        if (onRefresh) {
+                          setTimeout(onRefresh, 500); // Delay refresh to allow UI to update
+                        }
                       }}
-                      className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                    >
-                      <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="sr-only">View Details</span>
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))

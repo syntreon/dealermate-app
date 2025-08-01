@@ -206,29 +206,56 @@ class CallLogsService {
   }
   
   /**
-   * Update an existing call log
+   * Update a call log
    */
-  public async updateCallLog(id: string, callLog: Partial<Database['public']['Tables']['calls']['Update']>): Promise<CallLog> {
+  public async updateCallLog(id: string, data: Partial<CallLog>): Promise<CallLog | null> {
     try {
-      const { data, error } = await supabase
+      const { data: updatedCall, error } = await supabase
         .from('calls')
-        .update(callLog)
+        .update(data)
         .eq('id', id)
         .select()
         .single();
       
-      if (error) {
-        console.error('Error updating call log:', error);
-        throw new Error(`Failed to update call log: ${error.message}`);
+      if (error) throw error;
+      
+      // Update cache if it exists
+      if (this.cache.data) {
+        this.cache.data = this.cache.data.map(call => 
+          call.id === id ? { ...call, ...updatedCall } : call
+        );
       }
       
-      // Invalidate cache
-      this.cache.data = null;
-      
-      return data;
+      return updatedCall;
     } catch (error) {
-      console.error('Error in updateCallLog:', error);
-      throw error;
+      console.error('Error updating call log:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Update the test status of a call
+   * @param id - The call ID
+   * @param isTestCall - Whether this is a test call
+   * @returns The updated call or null if there was an error
+   */
+  public async updateCallTestStatus(id: string, isTestCall: boolean): Promise<CallLog | null> {
+    try {
+      // Use Record<string, any> to handle fields not explicitly in the type definition
+      const updateData: Record<string, any> = { is_test_call: isTestCall };
+      
+      // Update the is_test_call field
+      const result = await this.updateCallLog(id, updateData as Partial<CallLog>);
+      
+      // If successful, invalidate cache to ensure fresh data on next fetch
+      if (result) {
+        this.cache.data = null;
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating call test status:', error);
+      return null;
     }
   }
   
