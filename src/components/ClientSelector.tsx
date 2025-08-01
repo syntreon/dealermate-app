@@ -51,7 +51,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="min-w-[200px] justify-between"
+            className="min-w-[200px] justify-between hover:bg-muted h-8"
             disabled={loading}
           >
             <div className="flex items-center gap-2 truncate">
