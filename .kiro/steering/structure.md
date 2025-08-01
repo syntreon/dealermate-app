@@ -88,7 +88,7 @@ src/
 │   │   │   ├── DEVELOPER_GUIDE.md # Developer guide for error handling system.
 │   │   │   ├── DEBUG_CHEATSHEET.md # Quick debugging reference and commands.
 │   │   │   └── TROUBLESHOOTING_FLOW.md # Visual problem-solving guides and decision trees.
-│   │   ├── AdminSidebar.tsx # Enhanced dual-sidebar navigation with hierarchical structure, collapsible main sidebar, and mobile-responsive overlay navigation.
+│   │   ├── AdminSidebar.tsx # Enhanced 3-state sidebar navigation (expanded, collapsed, expand-on-hover) with mobile-responsive overlay navigation.
 │   │   ├── ProtectedAdminRoute.tsx # Route protection based on user permissions.
 │   │   ├── __tests__/     # Admin component tests.
 │   │   │   └── AdminSidebar.test.tsx # Comprehensive tests for AdminSidebar component.
@@ -128,6 +128,7 @@ src/
 │   ├── analyticsNav.ts    # Analytics section navigation configuration with sub-sidebar items.
 │   ├── auditNav.ts        # Audit logs section navigation configuration.
 │   ├── managementNav.ts   # Management section navigation configuration.
+│   ├── managementTabs.ts  # Management section tab configuration with role-based access control (part of future config-driven routing system).
 │   └── settingsNav.ts     # Settings section navigation configuration.
 ├──
 ├── context/               # React Context providers for global state management.

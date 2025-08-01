@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import AdminDashboard from '@/pages/admin/dashboard';
 import UserManagement from '@/pages/admin/management/user-management';
-import ClientManagement from '@/pages/archived/ClientManagement';
+import ClientManagement from '@/pages/admin/management/client-management';
 
 // Mock admin user
 const mockAdminUser = {
