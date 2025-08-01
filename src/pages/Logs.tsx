@@ -30,7 +30,8 @@ const Logs: React.FC = () => {
   // Refetch logs when selectedClientId changes
   useEffect(() => {
     refetch({ clientId: selectedClientId });
-  }, [selectedClientId, refetch]);
+    // Only depend on selectedClientId, since refetch is stable
+  }, [selectedClientId]);
   
   // Get selected client name when client ID changes
   useEffect(() => {

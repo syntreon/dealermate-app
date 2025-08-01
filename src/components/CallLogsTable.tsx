@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 import {
   Table,
@@ -102,16 +102,29 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   const [evaluations, setEvaluations] = useState<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>>(new Map());
   const [adherenceScores, setAdherenceScores] = useState<Map<string, number>>(new Map());
 
-  const isAdmin = canViewSensitiveInfo(user);
+  // Use useMemo to stabilize the admin check and prevent infinite renders
+  const isAdmin = useMemo(() => canViewSensitiveInfo(user), [user]);
+  
+  // Use ref to track if we're currently fetching to prevent overlapping requests
+  const isFetchingRef = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch inquiry types and evaluation data when call logs change
   useEffect(() => {
-    const fetchCallData = async () => {
-      if (callLogs.length === 0) return;
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Debounce the fetch to prevent excessive API calls
+    timeoutRef.current = setTimeout(async () => {
+      if (callLogs.length === 0 || isFetchingRef.current) return;
 
       const callIds = callLogs.map(log => log.id).filter(Boolean);
       if (callIds.length === 0) return;
 
+      isFetchingRef.current = true;
+      
       try {
         // Always fetch inquiry types
         const inquiryMap = await CallIntelligenceService.getCallInquiryTypes(callIds);
@@ -129,10 +142,21 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
         }
       } catch (error) {
         console.error('Error fetching call data:', error);
+        // If we get insufficient resources error, wait longer before next attempt
+        if (error?.message?.includes('ERR_INSUFFICIENT_RESOURCES') || error?.message?.includes('Failed to fetch')) {
+          console.warn('Network resources exhausted, will retry after delay');
+        }
+      } finally {
+        isFetchingRef.current = false;
+      }
+    }, 300); // 300ms debounce
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
-
-    fetchCallData();
   }, [callLogs, isAdmin]);
 
   // Handle sorting

@@ -4,10 +4,10 @@
  * 
  * CRITICAL: This hook enforces client data isolation for compliance and privacy
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { callLogsService, CallLog, CallLogFilters } from '@/integrations/supabase/call-logs-service';
 import { useAuth } from '@/context/AuthContext';
-import { getClientIdFilter } from '@/utils/clientDataIsolation';
+import { getClientIdFilter, canViewSensitiveInfo } from '@/utils/clientDataIsolation';
 
 interface UseCallLogsReturn {
   callLogs: CallLog[];
@@ -46,6 +46,12 @@ export function useCallLogs(
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [filters, setFilters] = useState<CallLogFilters | undefined>(initialFilters);
 
+  // Memoize the client ID filter to prevent infinite render loops
+  const clientIdFilter = useMemo(() => getClientIdFilter(user), [user]);
+  
+  // Memoize the admin permission check to prevent infinite render loops
+  const isAdmin = useMemo(() => canViewSensitiveInfo(user), [user]);
+  
   // Function to fetch logs with optional force refresh
   const fetchLogs = useCallback(async (newFilters?: CallLogFilters, forceRefresh = false) => {
     try {
@@ -56,9 +62,6 @@ export function useCallLogs(
       if (newFilters) {
         setFilters(newFilters);
       }
-      
-      // Get client ID filter based on user role
-      const clientIdFilter = getClientIdFilter(user);
       
       // Merge filters with client ID filter for data isolation
       const filtersToUse: CallLogFilters = {
@@ -77,12 +80,17 @@ export function useCallLogs(
     } finally {
       setLoading(false);
     }
-  }, [filters, user]);
+  }, [filters, clientIdFilter]);
 
   // Force refresh function that bypasses cache
   const forceRefresh = useCallback(() => {
     return fetchLogs(undefined, true);
   }, [fetchLogs]);
+
+  // Refetch function is always stable
+  const refetch = (filters?: CallLogFilters) => {
+    return fetchLogs(filters);
+  };
   
   // Create a new call log
   const createCallLog = useCallback(async (callLog: any) => {

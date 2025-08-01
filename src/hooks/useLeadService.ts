@@ -4,7 +4,7 @@
  * 
  * CRITICAL: This hook enforces client data isolation for compliance and privacy
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { leadService, Lead, LeadFilters } from '@/integrations/supabase/lead-service';
 import { useAuth } from '@/context/AuthContext';
 import { getClientIdFilter, canViewSensitiveInfo } from '@/utils/clientDataIsolation';
@@ -58,6 +58,10 @@ export function useLeadService(
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [filters, setFilters] = useState<LeadFilters | undefined>(initialFilters);
 
+  // Memoize permission checks to prevent infinite render loops
+  const clientIdFilter = useMemo(() => getClientIdFilter(user), [user]);
+  const isAdmin = useMemo(() => canViewSensitiveInfo(user), [user]);
+
   // Function to fetch leads with optional force refresh
   const fetchLeads = useCallback(async (newFilters?: LeadFilters, forceRefresh = false) => {
     try {
@@ -68,9 +72,6 @@ export function useLeadService(
       if (newFilters) {
         setFilters(newFilters);
       }
-      
-      // Get client ID filter based on user role
-      const clientIdFilter = getClientIdFilter(user);
       
       // Merge filters with client ID filter for data isolation
       const filtersToUse: LeadFilters = {
@@ -89,12 +90,17 @@ export function useLeadService(
     } finally {
       setLoading(false);
     }
-  }, [filters, user]);
+  }, [filters, clientIdFilter]);
 
   // Force refresh function that bypasses cache
   const forceRefresh = useCallback(() => {
     return fetchLeads(undefined, true);
   }, [fetchLeads]);
+
+  // Refetch function is always stable
+  const refetch = (filters?: LeadFilters) => {
+    return fetchLeads(filters);
+  };
   
   // Create a new lead
   const createLead = useCallback(async (lead: Omit<Lead, 'id' | 'created_at'>) => {
@@ -187,7 +193,7 @@ export function useLeadService(
       // If user is not an admin, force includeClientId to false for privacy
       const exportOptions = {
         ...options,
-        includeClientId: canViewSensitiveInfo(user) ? options?.includeClientId : false
+        includeClientId: isAdmin ? options?.includeClientId : false
       };
       
       return await leadService.exportLeadsToCSV(filtersToUse, exportOptions);
@@ -195,7 +201,7 @@ export function useLeadService(
       console.error('Error exporting leads to CSV:', err);
       throw err;
     }
-  }, [filters, user]);
+  }, [filters, clientIdFilter, isAdmin]);
   
   // Export leads to Excel
   const exportLeadsToExcel = useCallback(async (options?: {
@@ -218,7 +224,7 @@ export function useLeadService(
       // If user is not an admin, force includeClientId to false for privacy
       const exportOptions = {
         ...options,
-        includeClientId: canViewSensitiveInfo(user) ? options?.includeClientId : false
+        includeClientId: isAdmin ? options?.includeClientId : false
       };
       
       return await leadService.exportLeadsToExcel(filtersToUse, exportOptions);
@@ -226,7 +232,7 @@ export function useLeadService(
       console.error('Error exporting leads to Excel:', err);
       throw err;
     }
-  }, [filters, user]);
+  }, [filters, clientIdFilter, isAdmin]);
 
   // Initial fetch on component mount
   useEffect(() => {

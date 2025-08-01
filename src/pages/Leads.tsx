@@ -38,7 +38,8 @@ const Leads: React.FC = () => {
   // Refetch leads when selectedClientId changes
   useEffect(() => {
     refetch({ clientId: selectedClientId });
-  }, [selectedClientId, refetch]);
+    // Only depend on selectedClientId, since refetch is stable
+  }, [selectedClientId]);
   
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);

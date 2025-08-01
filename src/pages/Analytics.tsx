@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
@@ -25,8 +25,8 @@ const Analytics = () => {
   const isMobile = useIsMobile();
   const tabsRef = useRef<HTMLDivElement>(null);
   
-  // Check if user can access analytics
-  const canViewAnalytics = canAccessAnalytics(user);
+  // Use useMemo to stabilize permission checks to prevent infinite renders
+  const canViewAnalytics = useMemo(() => canAccessAnalytics(user), [user]);
   
   // Redirect if user doesn't have access
   if (!canViewAnalytics) {
@@ -34,7 +34,7 @@ const Analytics = () => {
   }
   
   // Check if user can view all clients (admin)
-  const canViewAllClients = canViewSensitiveInfo(user);
+  const canViewAllClients = useMemo(() => canViewSensitiveInfo(user), [user]);
   
   // Tab options
   const allTabOptions = [

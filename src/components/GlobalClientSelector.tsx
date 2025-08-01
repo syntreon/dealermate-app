@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useClient } from '@/context/ClientContext';
 import ClientSelector from '@/components/ClientSelector';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
@@ -13,8 +13,8 @@ const GlobalClientSelector: React.FC = () => {
   const { user } = useAuth();
   const { selectedClientId, setSelectedClientId, clients, loading, error } = useClient();
   
-  // Only admin users can see all clients
-  const canViewAllClients = canViewSensitiveInfo(user);
+  // Only admin users can see all clients - memoize this check to prevent infinite render loops
+  const canViewAllClients = useMemo(() => canViewSensitiveInfo(user), [user]);
   
   // If user is not an admin, don't render the component
   if (!canViewAllClients) return null;

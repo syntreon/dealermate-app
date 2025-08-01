@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import {
   Table,
@@ -71,6 +71,9 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<SupabaseLead['status'] | 'all'>('all');
   const [selectedSource, setSelectedSource] = useState<SupabaseLead['source'] | 'all'>('all');
   const [inquiryTypes, setInquiryTypes] = useState<Map<string, string>>(new Map());
+  
+  // Stabilize admin permission check with useMemo to prevent infinite renders
+  const isAdmin = useMemo(() => canViewSensitiveInfo(user), [user]);
 
   // Handle sorting
   const handleSort = (field: keyof SupabaseLead) => {
