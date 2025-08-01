@@ -1,6 +1,42 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SystemMessage, AgentStatus } from '@/types/dashboard';
 
+// Enhanced system message type with publisher and client info
+export interface EnhancedSystemMessage {
+  id: string;
+  clientId: string | null;
+  type: 'info' | 'warning' | 'error' | 'success';
+  message: string;
+  timestamp: Date;
+  expiresAt: Date | null;
+  createdBy: string;
+  updatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  publisher?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  client?: {
+    id: string;
+    name: string;
+  };
+}
+
+// Pagination response type
+export interface PaginatedMessages {
+  messages: EnhancedSystemMessage[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+// In-memory cache for system messages
+const messageCache = new Map<string, { data: PaginatedMessages; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // Get current user ID for audit logging
 const getCurrentUserId = async (): Promise<string | null> => {
   try {
@@ -14,6 +50,117 @@ const getCurrentUserId = async (): Promise<string | null> => {
 
 export class SystemStatusService {
   // System Messages CRUD operations
+  
+  // Enhanced paginated method with joins for publisher and client info
+  static async getSystemMessagesPaginated(
+    page: number = 1,
+    pageSize: number = 5,
+    clientId?: string | null,
+    forceRefresh: boolean = false
+  ): Promise<PaginatedMessages> {
+    const cacheKey = `messages_${page}_${pageSize}_${clientId || 'all'}`;
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && messageCache.has(cacheKey)) {
+      const cached = messageCache.get(cacheKey)!;
+      if (Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+      }
+    }
+
+    const offset = (page - 1) * pageSize;
+    
+    // Simplified query - just get the basic system_messages data first
+    let query = supabase
+      .from('system_messages')
+      .select('*', { count: 'exact' })
+      .order('timestamp', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    // Filter by client if specified
+    if (clientId !== undefined && clientId !== null) {
+      query = query.or(`client_id.is.null,client_id.eq.${clientId}`);
+    }
+
+    const { data, error, count } = await query;
+    
+    if (error) throw error;
+
+    // Fetch additional data for each message
+    const enhancedMessages: EnhancedSystemMessage[] = [];
+    
+    for (const msg of data || []) {
+      // Get publisher info
+      let publisherInfo: { id: string; name: string; email: string } | undefined;
+      if (msg.created_by) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .eq('id', msg.created_by)
+          .single();
+          
+        if (userData) {
+          publisherInfo = {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email
+          };
+        }
+      }
+      
+      // Get client info if applicable
+      let clientInfo: { id: string; name: string } | undefined;
+      if (msg.client_id) {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('id, name')
+          .eq('id', msg.client_id)
+          .single();
+          
+        if (clientData) {
+          clientInfo = {
+            id: clientData.id,
+            name: clientData.name
+          };
+        }
+      }
+      
+      enhancedMessages.push({
+        id: msg.id,
+        clientId: msg.client_id,
+        type: msg.type,
+        message: msg.message,
+        timestamp: new Date(msg.timestamp),
+        expiresAt: msg.expires_at ? new Date(msg.expires_at) : null,
+        createdBy: msg.created_by,
+        updatedBy: msg.updated_by,
+        createdAt: msg.created_at,
+        updatedAt: msg.updated_at,
+        publisher: publisherInfo,
+        client: clientInfo
+      });
+    }
+
+    const result: PaginatedMessages = {
+      messages: enhancedMessages,
+      totalCount: count || 0,
+      page,
+      pageSize,
+      hasMore: (count || 0) > offset + pageSize
+    };
+
+    // Cache the result
+    messageCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    
+    return result;
+  }
+
+  // Clear cache (for manual refresh)
+  static clearMessageCache(): void {
+    messageCache.clear();
+  }
+
+  // Original method for backward compatibility
   static async getSystemMessages(clientId?: string | null): Promise<SystemMessage[]> {
     let query = supabase
       .from('system_messages')
@@ -97,6 +244,9 @@ export class SystemStatusService {
       .eq('id', id);
 
     if (error) throw error;
+    
+    // Clear cache after deletion
+    this.clearMessageCache();
   }
 
   // Agent Status operations

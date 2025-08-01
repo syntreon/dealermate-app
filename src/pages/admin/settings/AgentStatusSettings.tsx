@@ -11,6 +11,10 @@ import ClientSelector from '@/components/admin/ClientSelector';
 import { AdminService } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import SystemMessagesTable from '@/components/admin/SystemMessagesTable';
+import SystemUpdatePopup from '@/components/admin/SystemUpdatePopup';
+import { useSystemMessages } from '@/hooks/useSystemMessages';
+import { EnhancedSystemMessage } from '@/services/systemStatusService';
 
 const AgentStatusSettings: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -22,6 +26,26 @@ const AgentStatusSettings: React.FC = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const { user } = useAuth();
+  
+  // System messages table state
+  const [selectedMessage, setSelectedMessage] = useState<EnhancedSystemMessage | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  
+  // System messages hook with pagination and caching
+  const {
+    messages,
+    totalCount,
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
+    isLoading: isLoadingMessages,
+    error: messagesError,
+    refresh: refreshMessages,
+    nextPage,
+    prevPage,
+    deleteMessage
+  } = useSystemMessages({ pageSize: 5, clientId: null }); // Show all messages for admin
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -38,6 +62,36 @@ const AgentStatusSettings: React.FC = () => {
 
     fetchClients();
   }, [toast]);
+  
+  // Handle row click to open popup
+  const handleMessageClick = (message: EnhancedSystemMessage) => {
+    setSelectedMessage(message);
+    setIsPopupOpen(true);
+  };
+  
+  // Handle popup close
+  const handlePopupClose = () => {
+    setIsPopupOpen(false);
+    setSelectedMessage(null);
+  };
+  
+  // Handle message deletion
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      await deleteMessage(messageId);
+      toast({
+        title: 'Success',
+        description: 'System message has been deleted successfully.',
+        variant: 'default',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete the system message.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handlePublish = async () => {
     if (!status && !message) {
@@ -87,6 +141,9 @@ const AgentStatusSettings: React.FC = () => {
         variant: 'default',
       });
       setMessage('');
+      
+      // Refresh the messages table to show the new message
+      await refreshMessages();
     } catch (err) {
       console.error('Error publishing system status:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -185,6 +242,30 @@ const AgentStatusSettings: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Active System Messages Table */}
+      <SystemMessagesTable
+        messages={messages}
+        totalCount={totalCount}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+        isLoading={isLoadingMessages}
+        error={messagesError}
+        onRefresh={refreshMessages}
+        onNextPage={nextPage}
+        onPrevPage={prevPage}
+        onRowClick={handleMessageClick}
+      />
+      
+      {/* System Message Details Popup */}
+      <SystemUpdatePopup
+        message={selectedMessage}
+        isOpen={isPopupOpen}
+        onClose={handlePopupClose}
+        onDelete={handleDeleteMessage}
+      />
     </div>
   );
 };
