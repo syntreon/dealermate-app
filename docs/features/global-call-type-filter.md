@@ -6,6 +6,7 @@ This document describes the implementation, architecture, and extension plan for
 ---
 
 ## What We Have Done
+- **Default filter is now 'Live Calls'**: The global call type filter defaults to 'live', so users see only live calls unless they change the filter.
 - **Implemented a global call type filter** using React Context (`CallTypeContext`), accessible throughout the app via the `useCallType` hook.
 - **Integrated the filter into the Logs page**: All call log data (via `useCallLogs`) now respects the global call type filter, filtering by live/test/all calls as selected.
 - **Updated the service layer** (`callLogsService`) to apply the correct filtering logic at the database query level.
@@ -14,7 +15,7 @@ This document describes the implementation, architecture, and extension plan for
 ---
 
 ## How It Works
-- **Context**: The `CallTypeProvider` wraps the app in `App.tsx`. The context exposes `selectedCallType` and a setter.
+- **Context**: The `CallTypeProvider` wraps the app in `App.tsx`. The context exposes `selectedCallType` and a setter. The default is `'live'` (Live Calls).
 - **Usage**: Any component/page can call `const { selectedCallType } = useCallType()` to access the current filter.
 - **Filtering Logic**:
   - `'all'`: No filter on `is_test_call`

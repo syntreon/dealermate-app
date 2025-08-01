@@ -16,7 +16,7 @@ export const useCallType = () => {
 };
 
 export const CallTypeProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedCallType, setSelectedCallType] = useState<CallType>('all');
+  const [selectedCallType, setSelectedCallType] = useState<CallType>('live');
   return (
     <CallTypeContext.Provider value={{ selectedCallType, setSelectedCallType }}>
       {children}
