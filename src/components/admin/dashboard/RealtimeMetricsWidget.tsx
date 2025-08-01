@@ -80,9 +80,9 @@ export const RealtimeMetricsWidget = () => {
   useEffect(() => {
     loadRealtimeMetrics();
     
-    // Update every minute
-    const interval = setInterval(loadRealtimeMetrics, 60000);
-    return () => clearInterval(interval);
+    // DISABLED: Update every minute to reduce database egress costs
+    // const interval = setInterval(loadRealtimeMetrics, 60000);
+    // return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {

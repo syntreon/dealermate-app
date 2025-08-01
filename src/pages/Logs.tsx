@@ -77,7 +77,7 @@ const Logs: React.FC = () => {
     };
     
     fetchClientsData();
-  }, [user]);
+  }, [user?.id, user?.role, user?.client_id]); // Only depend on specific user properties
   
   useEffect(() => {
     // Only fetch if admin or a client is selected
@@ -114,7 +114,7 @@ const Logs: React.FC = () => {
         setLeadCallIds(new Set());
       })
       .finally(() => setLeadsLoading(false));
-  }, [user, selectedClientId]);
+  }, [user?.id, user?.role, user?.client_id, selectedClientId]); // Only depend on specific user properties
 
   // Enhance call logs with client name
   const enhancedCallLogs: ExtendedCallLog[] = callLogs.map(log => {

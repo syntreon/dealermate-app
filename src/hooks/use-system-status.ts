@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSupabase } from './use-supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define types for the system status
 export type AgentStatus = 'active' | 'inactive' | 'maintenance';
@@ -43,7 +43,6 @@ export interface SystemStatusState {
  * @returns Current system status state including agent status and broadcast messages
  */
 export const useSystemStatus = (clientId?: string) => {
-  const { supabase } = useSupabase();
   const [state, setState] = useState<SystemStatusState>({
     status: 'active', // Default to active
     statusMessage: null,

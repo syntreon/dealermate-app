@@ -54,6 +54,7 @@ export const useAuthSession = () => {
   const processingRef = useRef(false);
   const mountedRef = useRef(true);
   const sessionLoggedRef = useRef(false);
+  const currentUserRef = useRef<UserData | null>(null);
 
   const loadUserProfile = useCallback(async (userId: string, retryCount = 0): Promise<UserData | null> => {
     const maxRetries = 2;
@@ -122,6 +123,22 @@ export const useAuthSession = () => {
       return;
     }
 
+    // OPTIMIZATION: Only reload user profile for specific events, not token refreshes or redundant sign-ins
+    const shouldReloadProfile = (event === 'SIGNED_IN' && !currentUserRef.current) || event === 'INITIAL_SESSION';
+    
+    console.log(`Auth event: ${event}, shouldReloadProfile: ${shouldReloadProfile}, hasCurrentUser: ${!!currentUserRef.current}`);
+    
+    if (!shouldReloadProfile) {
+      // For token refresh or redundant sign-ins, just update the session without reloading profile
+      console.log(`Skipping profile reload for ${event} - using existing user data`);
+      if (currentUserRef.current) {
+        setAuthState(prev => ({ ...prev, session, user: currentUserRef.current }));
+      } else {
+        setAuthState(prev => ({ ...prev, session }));
+      }
+      return;
+    }
+
     processingRef.current = true;
     setAuthState(prev => ({ ...prev, isLoading: true }));
 
@@ -131,11 +148,12 @@ export const useAuthSession = () => {
         return;
       }
 
-      const userData = await loadUserProfile(session.user.id);
+      const userData = shouldReloadProfile ? await loadUserProfile(session.user.id) : currentUserRef.current;
       
       if (!mountedRef.current) return;
 
       if (userData) {
+        currentUserRef.current = userData; // Update ref for future token refreshes
         setAuthState({ user: userData, session, isAuthenticated: true, isLoading: false, error: null });
         if (!sessionLoggedRef.current) {
           try {
@@ -156,6 +174,7 @@ export const useAuthSession = () => {
           phone: "",
           is_admin: false
         };
+        currentUserRef.current = fallbackUser; // Update ref for future token refreshes
         setAuthState({ user: fallbackUser, session, isAuthenticated: true, isLoading: false, error: null });
         toast.error("Unable to load full user profile. Some features may be limited.");
       }

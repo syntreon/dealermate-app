@@ -383,13 +383,13 @@ export const CACHE_TAGS = {
 export const useCache = () => {
   const [stats, setStats] = useState<CacheStats>(adminDashboardCache.getStats());
   
-  // Update stats periodically
+  // DISABLED: Update stats periodically to reduce overhead
   useEffect(() => {
-    const interval = setInterval(() => {
-      setStats(adminDashboardCache.getStats());
-    }, 1000);
+    // const interval = setInterval(() => {
+    //   setStats(adminDashboardCache.getStats());
+    // }, 1000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   const get = useCallback(<T>(key: string): T | null => {

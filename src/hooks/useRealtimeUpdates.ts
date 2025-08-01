@@ -368,11 +368,12 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
     if (!enableActivityTracking) return;
 
     const handleActivity = () => updateActivity();
+    // DISABLED: Visibility change handler to prevent tab focus refreshes
     const handleVisibilityChange = () => {
-      setActivityTracker(prev => ({
-        ...prev,
-        isVisible: !document.hidden
-      }));
+      // setActivityTracker(prev => ({
+      //   ...prev,
+      //   isVisible: !document.hidden
+      // }));
     };
 
     // Activity event listeners
@@ -381,8 +382,8 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
       document.addEventListener(event, handleActivity, { passive: true });
     });
 
-    // Visibility change listener
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // DISABLED: Visibility change listener to prevent tab focus refreshes
+    // document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Inactivity check interval
     const inactivityCheckInterval = setInterval(checkInactivity, 30000); // Check every 30 seconds
@@ -391,7 +392,7 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
       activityEvents.forEach(event => {
         document.removeEventListener(event, handleActivity);
       });
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(inactivityCheckInterval);
     };
   }, [enableActivityTracking, updateActivity, checkInactivity]);

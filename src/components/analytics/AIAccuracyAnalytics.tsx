@@ -69,7 +69,7 @@ const AIAccuracyAnalytics: React.FC<AIAccuracyAnalyticsProps> = ({
     };
 
     fetchAIAccuracyAnalytics();
-  }, [user, startDate, endDate, clientId]);
+  }, [user?.id, user?.role, user?.client_id, startDate, endDate, clientId]); // Only depend on specific user properties
 
   // Loading state
   if (loading) {

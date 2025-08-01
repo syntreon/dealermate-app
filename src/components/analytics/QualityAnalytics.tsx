@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,9 +47,25 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Simple cache to prevent excessive API calls
+  const cacheRef = useRef<Map<string, { data: any; timestamp: number }>>(new Map());
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   useEffect(() => {
     const fetchQualityAnalytics = async () => {
       if (!user) return;
+
+      // Create cache key
+      const cacheKey = `quality_${user.id}_${clientId || 'all'}_${startDate || 'no_start'}_${endDate || 'no_end'}`;
+      
+      // Check cache first
+      const cached = cacheRef.current.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log('Using cached quality analytics data');
+        setData(cached.data);
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       setError(null);
@@ -69,6 +85,13 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
         });
 
         console.log('Quality analytics data fetched:', qualityData);
+        
+        // Cache the result
+        cacheRef.current.set(cacheKey, {
+          data: qualityData,
+          timestamp: Date.now()
+        });
+
         setData(qualityData);
       } catch (err) {
         console.error('Error fetching quality analytics:', err);
@@ -79,7 +102,7 @@ const QualityAnalytics: React.FC<QualityAnalyticsProps> = ({ startDate, endDate,
     };
 
     fetchQualityAnalytics();
-  }, [user, startDate, endDate, clientId]);
+  }, [user?.id, user?.role, user?.client_id, startDate, endDate, clientId]); // Only depend on specific user properties
 
   if (loading) {
     return (

@@ -81,9 +81,9 @@ export const SystemTab: React.FC<SystemTabProps> = () => {
 
   useEffect(() => {
     fetchSystemData();
-    // Set up polling for real-time updates every 30 seconds
-    const interval = setInterval(fetchSystemData, 30000);
-    return () => clearInterval(interval);
+    // DISABLED: Set up polling for real-time updates to reduce database egress costs
+    // const interval = setInterval(fetchSystemData, 30000);
+    // return () => clearInterval(interval);
   }, []);
 
   const fetchSystemData = async () => {

@@ -40,9 +40,9 @@ export const SystemHealthWidget = () => {
   useEffect(() => {
     loadSystemHealth();
     
-    // Auto-refresh every 2 minutes
-    const interval = setInterval(loadSystemHealth, 2 * 60 * 1000);
-    return () => clearInterval(interval);
+    // DISABLED: Auto-refresh to reduce database egress costs
+    // const interval = setInterval(loadSystemHealth, 2 * 60 * 1000);
+    // return () => clearInterval(interval);
   }, []);
 
   const getStatusIcon = (status: 'up' | 'down') => {

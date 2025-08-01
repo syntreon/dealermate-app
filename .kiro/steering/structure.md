@@ -27,6 +27,7 @@ The root directory contains configuration files, documentation, and the main sou
 │   ├── bug-analysis/  # Comprehensive bug analysis and testing documentation.
 │   │   ├── README.md  # Overview and navigation guide for bug analysis docs
 │   │   ├── comprehensive-bug-analysis.md # Main bug analysis document with all identified issues
+│   │   ├── component-remounting-fix-summary.md # Complete fix summary for component remounting performance issue
 │   │   ├── developer-guide.md # Developer guide for bug prevention and best practices
 │   │   ├── debug-cheatsheet.md # Quick debugging reference and solutions
 │   │   ├── troubleshooting-flow.md # Visual problem-solving guides and decision trees

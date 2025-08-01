@@ -5,6 +5,7 @@ import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { FinancialOverview } from '@/components/admin/dashboard/FinancialOverview';
 import { BusinessMetrics } from '@/components/admin/dashboard/BusinessMetrics';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
+
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { AlertCircle, BarChart3, Users, Building2, Activity, ArrowRight } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
@@ -194,9 +195,10 @@ const AdminDashboardSkeleton: React.FC = () => (
 // Main dashboard page component
 const AdminDashboardPage: React.FC = () => {
   const { data, isLoading, error, lastUpdated, refresh } = useAdminDashboardData({
-    autoRefresh: true,
-    refreshInterval: 5 * 60 * 1000, // 5 minutes
-    enableToasts: true
+    autoRefresh: false, // DISABLED to reduce database costs
+    refreshInterval: 15 * 60 * 1000, // 15 minutes when enabled
+    enableToasts: false,
+    retryAttempts: 2
   });
 
   // Show loading skeleton on initial load

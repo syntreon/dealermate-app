@@ -283,12 +283,13 @@ export const CacheInvalidation = {
 };
 
 /**
- * Automatic cache cleanup - runs every 5 minutes
+ * DISABLED: Automatic cache cleanup to reduce overhead and database egress costs
+ * Cache cleanup now happens on-demand when cache size limits are reached
  */
-setInterval(() => {
-  dashboardCache.cleanup();
-  analyticsCache.cleanup();
-  callsCache.cleanup();
-  leadsCache.cleanup();
-  adminCache.cleanup();
-}, 5 * 60 * 1000);
+// setInterval(() => {
+//   dashboardCache.cleanup();
+//   analyticsCache.cleanup();
+//   callsCache.cleanup();
+//   leadsCache.cleanup();
+//   adminCache.cleanup();
+// }, 5 * 60 * 1000);

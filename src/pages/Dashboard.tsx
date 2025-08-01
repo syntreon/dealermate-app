@@ -83,7 +83,7 @@ const Dashboard = () => {
     };
 
     fetchCallsData();
-  }, [user, selectedClientId, canViewAllClients, selectedCallType]); // Add selectedCallType to dependencies
+  }, [user?.id, user?.role, user?.client_id, selectedClientId, canViewAllClients, selectedCallType]); // Only depend on specific user properties
 
   // Updated chart colors to be theme-aware
   const chartData = [

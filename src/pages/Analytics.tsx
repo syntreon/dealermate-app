@@ -20,6 +20,11 @@ const Analytics = () => {
   const { user } = useAuth();
   const { selectedClientId } = useClient();
   const [activeTab, setActiveTab] = useState('calls');
+  
+  // Handle tab change
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+  }, []);
   const { dateRange, setDateRange, startDate, endDate } = useDateRange();
   const [dateFilters, setDateFilters] = useState<{ start?: string; end?: string }>({});
   const isMobile = useIsMobile();
@@ -76,7 +81,7 @@ const Analytics = () => {
         />
       </div>
 
-      <Tabs defaultValue="calls" className="w-full" onValueChange={setActiveTab}>
+      <Tabs defaultValue="calls" className="w-full" onValueChange={handleTabChange}>
         {/* Mobile-optimized tabs with horizontal scrolling */}
         {isMobile ? (
           <div className="relative mb-6">

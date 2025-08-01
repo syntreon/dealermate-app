@@ -197,12 +197,13 @@ class ThemeBackgroundSync {
     }
 
     /**
-     * Start background sync timer
+     * DISABLED: Start background sync timer to reduce overhead
      */
     private startBackgroundSync(): void {
-        this.syncTimer = setInterval(() => {
-            this.processSyncQueue();
-        }, this.SYNC_INTERVAL);
+        // DISABLED: Background sync to reduce database egress costs
+        // this.syncTimer = setInterval(() => {
+        //     this.processSyncQueue();
+        // }, this.SYNC_INTERVAL);
     }
 
     /**

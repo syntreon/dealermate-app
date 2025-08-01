@@ -89,7 +89,7 @@ export const ThemeInitProvider: React.FC<ThemeInitProviderProps> = ({ children }
     // 1. Never initialized before, OR
     // 2. User has changed
     if (user && (!isInitializedRef.current || currentUserIdRef.current !== user.id)) {
-      console.log(`Initializing theme for user ${user.id} (previous: ${currentUserIdRef.current})`);
+      console.log(`Initializing theme for user ${user.id} (previous: ${currentUserIdRef.current}) - isInitialized: ${isInitializedRef.current}`);
       
       try {
         // Get theme from user preferences
@@ -131,7 +131,7 @@ export const ThemeInitProvider: React.FC<ThemeInitProviderProps> = ({ children }
       currentUserIdRef.current = null;
       console.log('User logged out, resetting theme initialization');
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user ID, not the whole user object
 
   // Subscribe to theme service events for synchronization
   useEffect(() => {

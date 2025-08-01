@@ -12,8 +12,19 @@ import { CallTypeProvider } from '@/context/CallTypeContext';
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { RouteGroups, preloadCriticalRoutes } from "@/utils/routeCodeSplitting";
 import bundleAnalyzer from "@/utils/bundleAnalyzer";
+import "@/utils/immediateEmergencyFix"; // Initialize emergency egress controls
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // DISABLED: Prevent refresh when tab becomes active
+      refetchOnMount: true, // Keep this - only refetch when component mounts
+      refetchOnReconnect: false, // DISABLED: Don't refetch on network reconnect
+      staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 minutes
+      retry: 2, // Reduce retries from default 3 to 2
+    },
+  },
+});
 
 const App = () => {
   // Preload critical routes after app initialization

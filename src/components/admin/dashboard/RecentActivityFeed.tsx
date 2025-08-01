@@ -159,9 +159,9 @@ export const RecentActivityFeed = () => {
   useEffect(() => {
     loadRecentActivity();
     
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(loadRecentActivity, 30 * 1000);
-    return () => clearInterval(interval);
+    // DISABLED: Auto-refresh to reduce database egress costs
+    // const interval = setInterval(loadRecentActivity, 30 * 1000);
+    // return () => clearInterval(interval);
   }, []);
 
   const getActivityIcon = (type: ActivityItem['type']) => {
