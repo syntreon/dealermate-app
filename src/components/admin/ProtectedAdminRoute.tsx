@@ -29,7 +29,7 @@ const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({
   if (requireSystemAccess && !hasSystemAccess) {
     // For client_admin users, redirect to their accessible page
     if (user?.role === 'client_admin') {
-      return <Navigate to="/admin/users" replace />;
+      return <Navigate to="/admin/management/user-management" replace />;
     }
     
     // For other users without access, show access denied

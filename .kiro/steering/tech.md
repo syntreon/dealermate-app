@@ -2,6 +2,18 @@
 inclusion: always
 ---
 
+# Backend Opertation and System (how the call works)
+
+## Incoming call
+ Call comes from user to Twilio, 
+ 2. Twilio sends to Vapi via webhook
+ 3. Vapi is the AI call orchestrator
+ 4. Vapi does tool calls via Make.com as automation platform  
+ 5. End of call Vapi sends call data to make.com via webhook.
+ Make.com has multiple scenarios to post process trasncript data.
+ 6. Make.com sends to Supabase
+ 7. we pull data from supabase and display in dashboard
+
 # Technology Stack
 
 This document provides an overview of the technologies, libraries, and services used to build and run the Dealermate application.

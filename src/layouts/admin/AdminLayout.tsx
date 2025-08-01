@@ -20,6 +20,37 @@ const AdminLayout = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
 
+  // IMPORTANT: Always declare all hooks at the top level, before any conditional logic
+  // Calculate sidebar width for proper main content positioning
+  const [mainSidebarWidth, setMainSidebarWidth] = useState(() => {
+    // Initialize with correct width based on saved state
+    const saved = localStorage.getItem('admin-sidebar-state');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.mode === 'expanded' ? 256 : 64;
+      } catch {
+        return 64;
+      }
+    }
+    return 64; // Default collapsed width
+  });
+
+  // Listen for sidebar width changes (only for main sidebar width)
+  useEffect(() => {
+    const handleSidebarResize = (event: CustomEvent) => {
+      const detail = event.detail;
+      if (detail.width) {
+        setMainSidebarWidth(detail.width);
+      }
+    };
+
+    window.addEventListener('admin-sidebar-resize', handleSidebarResize as EventListener);
+    return () => {
+      window.removeEventListener('admin-sidebar-resize', handleSidebarResize as EventListener);
+    };
+  }, []);
+
   // Check if user has admin or client admin privileges
   const canAccessAdmin = canAccessAdminPanel(user);
   const hasClientAdmin = hasClientAdminAccess(user);
@@ -75,21 +106,6 @@ const AdminLayout = () => {
   if (hasClientAdmin && !hasSystemAccess && location.pathname === '/admin') {
     return <Navigate to="/admin/management" replace />;
   }
-
-  // Calculate sidebar width for proper main content positioning
-  const [mainSidebarWidth, setMainSidebarWidth] = useState(() => {
-    // Initialize with correct width based on saved state
-    const saved = localStorage.getItem('admin-sidebar-state');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.mode === 'expanded' ? 256 : 64;
-      } catch {
-        return 64;
-      }
-    }
-    return 64; // Default collapsed width
-  });
   
   // Determine active section based on current route
   const getActiveSection = (pathname: string): string => {
@@ -106,21 +122,6 @@ const AdminLayout = () => {
   
   // No sub-sidebar in the new structure - each section has its own layout
   const subSidebarVisible = false;
-  
-  // Listen for sidebar width changes (only for main sidebar width)
-  useEffect(() => {
-    const handleSidebarResize = (event: CustomEvent) => {
-      const detail = event.detail;
-      if (detail.width) {
-        setMainSidebarWidth(detail.width);
-      }
-    };
-
-    window.addEventListener('admin-sidebar-resize', handleSidebarResize as EventListener);
-    return () => {
-      window.removeEventListener('admin-sidebar-resize', handleSidebarResize as EventListener);
-    };
-  }, []);
 
   // Calculate left margin for main content (only main sidebar now)
   const totalLeftMargin = isMobile ? 0 : mainSidebarWidth;

@@ -9,4 +9,6 @@
 3. acccount manager role
 4. use Dashboard Header component in main pages similar to admin pages
 5. add topbar to mobile view 
+6. admin pages right side spacing to match left side spacing
+7. implement test and live environment 
 

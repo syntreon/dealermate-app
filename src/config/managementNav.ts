@@ -10,13 +10,13 @@ export interface SubNavItem {
 export const managementNavItems: SubNavItem[] = [
   {
     title: 'Users',
-    href: '/admin/management/users',
+    href: '/admin/management/user-management',
     icon: Users,
     description: 'Manage user accounts and permissions.',
   },
   {
     title: 'Clients',
-    href: '/admin/management/clients',
+    href: '/admin/management/client-management',
     icon: Building2,
     description: 'Manage client accounts and settings.',
   },

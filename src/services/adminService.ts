@@ -717,36 +717,34 @@ export const AdminService = {
 
       // Try to delete from auth.users using available methods
       let authUserDeleted = false;
-      
+      let adminApiWorked = false;
       try {
-        // First try using admin API (this will likely fail in client-side code)
-        let adminApiWorked = false;
-        
+        // Attempt admin API deletion (expected to 403 on client)
         try {
           const { error: authError } = await supabase.auth.admin.deleteUser(id);
-          
           if (!authError) {
-            console.log('Successfully deleted auth user via admin API');
+            // Admin API worked (rare on client)
             authUserDeleted = true;
             adminApiWorked = true;
+            console.log('Successfully deleted auth user via admin API');
           } else {
+            // Admin API returned error, log as warning
             console.warn('Admin API returned error:', authError);
           }
         } catch (adminApiError) {
-          // This catches 403 Forbidden and other exceptions from admin API
+          // Always catch 403 Forbidden and log as warning only
           console.warn('Admin API not available for auth user deletion (expected):', adminApiError.message);
         }
-        
-        // If admin API didn't work, try using the RPC function
+
+        // Always attempt fallback if admin API didn't work
         if (!adminApiWorked) {
           const { data: rpcResult, error: rpcError } = await supabase.rpc('delete_user_auth', { user_id: id });
-          
           if (!rpcError && rpcResult === true) {
-            console.log('Successfully deleted auth user via RPC function');
             authUserDeleted = true;
+            console.log('Successfully deleted auth user via RPC fallback');
           } else if (rpcError) {
+            // Only log to system alerts if both methods fail
             console.error('Failed to delete auth user via RPC:', rpcError);
-            // Log to system alerts table for admin attention
             try {
               await supabase.from('system_alerts').insert({
                 alert_type: 'auth_deletion_failure',
@@ -761,10 +759,8 @@ export const AdminService = {
           }
         }
       } catch (authDeleteError) {
-        // Catch any errors but don't fail the operation
-        console.error('Error during auth user deletion attempt:', authDeleteError);
-        
-        // Log to system alerts table for admin attention
+        // Catch any unexpected errors, log as warning, but do not fail the operation
+        console.error('Unexpected error during auth user deletion:', authDeleteError);
         try {
           await supabase.from('system_alerts').insert({
             alert_type: 'auth_deletion_failure',
@@ -777,6 +773,12 @@ export const AdminService = {
           console.error('Failed to create system alert:', alertError);
         }
       }
+      // If auth user wasn't deleted, log for admin attention but do not show user-facing error
+      if (!authUserDeleted) {
+        console.warn(`User ${id} was removed from public.users but may still exist in auth.users`);
+      }
+      // End of auth deletion logic
+
       
       // If auth user wasn't deleted, we should at least log this for admin attention
       if (!authUserDeleted) {

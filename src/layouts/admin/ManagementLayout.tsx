@@ -1,6 +1,8 @@
 import React, { Suspense } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { managementNavItems } from '@/config/managementNav';
+import { useAuth } from '@/context/AuthContext'; // Import user context for role-based filtering
+
 import { cn } from '@/lib/utils';
 import SectionErrorBoundary from '@/components/admin/layout/SectionErrorBoundary';
 import { MinimalSectionLoading } from '@/components/admin/layout/SectionLoadingFallback';
@@ -28,27 +30,42 @@ const ManagementLayout: React.FC = () => {
     <div className="border-b border-border my-3" />
   </div>
   <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto lg:overflow-x-visible px-2">
-              {managementNavItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  end // Use 'end' to match the route exactly
-                  className={({ isActive }) =>
-                    cn(
-                      'inline-flex items-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-                      'hover:bg-secondary hover:text-secondary-foreground',
-                      'px-4 py-2 whitespace-nowrap',
-                      isActive
-                        ? 'bg-secondary hover:bg-secondary text-secondary-foreground'
-                        : 'text-secondary-foreground hover:text-secondary-foreground',
-                      'justify-start'
-                    )
-                  }
-                >
-                  <item.icon className="mr-2 h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{item.title}</span>
-                </NavLink>
-              ))}
+              {/*
+                Role-based filtering: Only show allowed tabs for client_admin
+                client_admin: Users, Business, Roles & Permissions
+                system_admin: All tabs
+              */}
+              {(function() {
+                const { user } = useAuth() as any;
+                const isClientAdmin = user?.role === 'client_admin';
+                // Titles that client_admin can see (case-insensitive match)
+                const allowed = ['Users', 'Business', 'Roles & Permissions'];
+                const filtered = isClientAdmin
+                  ? managementNavItems.filter(item => allowed.includes(item.title))
+                  : managementNavItems;
+                return filtered.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    to={item.href}
+                    end // Use 'end' to match the route exactly
+                    className={({ isActive }) =>
+                      cn(
+                        'inline-flex items-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+                        'hover:bg-secondary hover:text-secondary-foreground',
+                        'px-4 py-2 whitespace-nowrap',
+                        isActive
+                          ? 'bg-secondary hover:bg-secondary text-secondary-foreground'
+                          : 'text-secondary-foreground hover:text-secondary-foreground',
+                        'justify-start'
+                      )
+                    }
+                  >
+                    <item.icon className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.title}</span>
+                  </NavLink>
+                ));
+              })()}
+
             </nav>
           </aside>
           <div className="flex-1 min-w-0 space-y-6 p-4 h-full overflow-y-auto">

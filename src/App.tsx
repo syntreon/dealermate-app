@@ -135,21 +135,23 @@ const App = () => {
                         </Suspense>
                       }>
                         {/* Default redirect for /admin/management */}
-                        <Route index element={<Navigate to="users" replace />} />
+                        <Route index element={<Navigate to="user-management" replace />} />
                         
                         {/* Management sub-pages */}
-                        <Route path="users" element={
+                        <Route path="user-management" element={
                           <Suspense fallback={<LoadingSpinner text="Loading user management..." />}>
                             <RouteGroups.admin.UserManagement />
                           </Suspense>
                         } />
-                        <Route path="clients" element={
+                        <Route path="users" element={<Navigate to="user-management" replace />} />
+                        <Route path="client-management" element={
                           <Suspense fallback={<LoadingSpinner text="Loading client management..." />}>
                             <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
                               <RouteGroups.admin.ClientManagement />
                             </RouteGroups.common.ProtectedAdminRoute>
                           </Suspense>
                         } />
+                        <Route path="clients" element={<Navigate to="client-management" replace />} />
                         <Route path="clients/:id" element={
                           <Suspense fallback={<LoadingSpinner text="Loading client details..." />}>
                             <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
@@ -159,14 +161,14 @@ const App = () => {
                         } />
                         <Route path="business" element={
                           <Suspense fallback={<LoadingSpinner text="Loading business management..." />}>
-                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={false}>
                               <RouteGroups.admin.BusinessManagement />
                             </RouteGroups.common.ProtectedAdminRoute>
                           </Suspense>
                         } />
                         <Route path="roles" element={
                           <Suspense fallback={<LoadingSpinner text="Loading roles & permissions..." />}>
-                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={true}>
+                            <RouteGroups.common.ProtectedAdminRoute requireSystemAccess={false}>
                               <RouteGroups.admin.RolesPermissions />
                             </RouteGroups.common.ProtectedAdminRoute>
                           </Suspense>

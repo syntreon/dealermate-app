@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Admin Dashboard', path: '/admin/dashboard' },
   { icon: Building2, label: 'Client Management', path: '/admin/clients' },
-  { icon: Users, label: 'User Management', path: '/admin/users' },
+  { icon: Users, label: 'User Management', path: '/admin/management/user-management' },
   { icon: Activity, label: 'System Status', path: '/admin/system-status' },
   { icon: Settings, label: 'Admin Settings', path: '/admin/settings' },
 ];
