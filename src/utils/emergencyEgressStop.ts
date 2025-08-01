@@ -114,7 +114,7 @@ export const checkEmergencyModeOnLoad = () => {
  */
 const clearAllIntervals = () => {
     // Get the highest interval ID and clear all intervals up to that point
-    const highestId = setTimeout(() => { }, 0);
+    const highestId = setTimeout(() => { }, 0) as unknown as number;
 
     for (let i = 1; i <= highestId; i++) {
         clearInterval(i);

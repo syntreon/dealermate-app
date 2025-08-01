@@ -55,6 +55,11 @@ export const useAuthSession = () => {
   const mountedRef = useRef(true);
   const sessionLoggedRef = useRef(false);
   const currentUserRef = useRef<UserData | null>(null);
+  
+  // Debug: Log when ref changes
+  useEffect(() => {
+    console.log('🔍 currentUserRef changed:', currentUserRef.current?.id || 'null');
+  }, [currentUserRef.current]);
 
   const loadUserProfile = useCallback(async (userId: string, retryCount = 0): Promise<UserData | null> => {
     const maxRetries = 2;

@@ -12,7 +12,7 @@ import { CallTypeProvider } from '@/context/CallTypeContext';
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { RouteGroups, preloadCriticalRoutes } from "@/utils/routeCodeSplitting";
 import bundleAnalyzer from "@/utils/bundleAnalyzer";
-import "@/utils/immediateEmergencyFix"; // Initialize emergency egress controls
+// Emergency egress controls are loaded via main.tsx import
 
 const queryClient = new QueryClient({
   defaultOptions: {
