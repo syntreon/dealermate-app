@@ -434,17 +434,25 @@ const MobileAdminNavigation = () => {
     if (isRightSwipe && !isDrawerOpen && touchStart < 50) {
       setIsDrawerOpen(true);
     }
-
-    // Reset dragging state
-    setIsDragging(false);
   };
 
-  // Handle tap outside to close (only if not dragging)
+  // Always close the drawer on overlay click for reliable UX
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isDragging) {
+    if (e.target === e.currentTarget) {
       setIsDrawerOpen(false);
     }
   };
+
+  const handleOpenSidebar = () => {
+    setIsDrawerOpen(true);
+  };
+
+  useEffect(() => {
+    window.addEventListener('open-admin-sidebar', handleOpenSidebar);
+    return () => {
+      window.removeEventListener('open-admin-sidebar', handleOpenSidebar);
+    };
+  }, []);
 
   // Prevent body scroll when drawer is open and handle escape key
   useEffect(() => {
@@ -471,18 +479,7 @@ const MobileAdminNavigation = () => {
 
   return (
     <>
-      {/* Mobile Menu Trigger Button */}
-      <div className="fixed top-4 left-4 z-50 md:hidden">
-        <Button
-          variant="outline"
-          size="icon"
-          className="bg-card/95 backdrop-blur-sm shadow-lg touch-manipulation h-12 w-12 border-2"
-          onClick={() => setIsDrawerOpen(true)}
-          aria-label="Open navigation menu"
-        >
-          <Menu className="h-6 w-6" />
-        </Button>
-      </div>
+      {/* Hamburger button removed. TopBar now controls sidebar opening. */}
 
       {/* Mobile Drawer Overlay */}
       {isDrawerOpen && (

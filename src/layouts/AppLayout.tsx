@@ -66,14 +66,15 @@ const AppLayout = () => {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <ClientProvider>
         <SidebarProvider defaultOpen={!isMobile}>
-          <div className="min-h-screen bg-background text-foreground flex w-full pt-14"> {/* pt-14 ensures content/sidebar start below fixed TopBar */}
+          {/* Use pt-12 (48px) on mobile and pt-14 (56px) on desktop to match TopBar height */}
+          <div className={cn("min-h-screen bg-background text-foreground flex w-full", isMobile ? "pt-12" : "pt-14")}>
             {/* Sidebar */}
             <AppSidebar />
             
             {/* Main content area */}
             <div className="flex flex-col flex-1">
-              {/* Top Bar - Only show on desktop */}
-              {!isMobile && <TopBar />}
+              {/* Top Bar - Always show on main page, including mobile. */}
+              <TopBar />
               
               {/* Page content */}
               <SidebarInset className="flex-1 overflow-auto p-2 pb-24 md:p-3">

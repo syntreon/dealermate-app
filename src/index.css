@@ -54,6 +54,7 @@
     --warning-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
     --info: 217 91% 60%; /* Blue Hex: #3B82F6 */
     --info-foreground: 0 0% 100%; /* White Hex: #FFFFFF */
+    --info-bg: 217 91% 96%; /* Very light blue for info backgrounds in light mode */
     
     /* Chart colors for visualizations */
     --chart-1: 217 91% 60%; /* Blue Hex: #3B82F6 */
@@ -102,6 +103,7 @@
     --warning-foreground: 240 5% 10%; /* Dark zinc text Hex: #18181B */
     --info: 217 91% 60%; /* Blue Hex: #3B82F6 */
     --info-foreground: 240 5% 10%; /* Dark zinc text Hex: #18181B */
+    --info-bg: 217 36% 12%; /* Darker blue for info backgrounds in dark mode - ensures visible dark background */
     
     /* Chart colors for dark mode */
     --chart-1: 217 91% 60%; /* Blue Hex: #3B82F6 */

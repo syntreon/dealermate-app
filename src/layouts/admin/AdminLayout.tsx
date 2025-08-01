@@ -130,7 +130,8 @@ const AdminLayout = () => {
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
       <ClientProvider>
         <SidebarProvider defaultOpen={!isMobile}>
-          <div className="min-h-screen bg-background text-foreground relative pt-14">   {/* pt-14 ensures content/sidebar start below fixed TopBar */}
+          {/* Use pt-12 (48px) on mobile and pt-14 (56px) on desktop to match TopBar height */}
+          <div className={cn("min-h-screen bg-background text-foreground relative", isMobile ? "pt-12" : "pt-14")}>
             {/* Sidebar */}
             <AdminSidebar />
             
@@ -142,8 +143,9 @@ const AdminLayout = () => {
                 width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
               }}
             >
-              {/* Top Bar - Only show on desktop */}
-              {!isMobile && <TopBar />}
+              {/* Top Bar - Always show on admin panel, including mobile.
+                  On mobile, TopBar renders the hamburger for sidebar. */}
+              <TopBar />
               
               {/* Page content with proper responsive behavior */}
               <main className={cn(

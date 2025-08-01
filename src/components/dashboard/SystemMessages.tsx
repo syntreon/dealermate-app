@@ -25,7 +25,7 @@ const SystemMessages: React.FC<SystemMessagesProps> = ({ messages, className }) 
         return {
           icon: Info,
           color: 'text-blue-500',
-          bgColor: 'bg-blue-50',
+          bgColor: 'bg-muted',
           borderColor: 'border-blue-200',
           badgeVariant: 'default' as const
         };
@@ -33,7 +33,7 @@ const SystemMessages: React.FC<SystemMessagesProps> = ({ messages, className }) 
         return {
           icon: AlertTriangle,
           color: 'text-yellow-500',
-          bgColor: 'bg-yellow-50',
+          bgColor: 'bg-muted',
           borderColor: 'border-yellow-200',
           badgeVariant: 'secondary' as const
         };
@@ -41,7 +41,7 @@ const SystemMessages: React.FC<SystemMessagesProps> = ({ messages, className }) 
         return {
           icon: AlertCircle,
           color: 'text-red-500',
-          bgColor: 'bg-red-50',
+          bgColor: 'bg-muted',
           borderColor: 'border-red-200',
           badgeVariant: 'destructive' as const
         };
@@ -57,7 +57,7 @@ const SystemMessages: React.FC<SystemMessagesProps> = ({ messages, className }) 
         return {
           icon: Info,
           color: 'text-gray-500',
-          bgColor: 'bg-gray-50',
+          bgColor: 'bg-muted',
           borderColor: 'border-gray-200',
           badgeVariant: 'secondary' as const
         };
@@ -134,11 +134,11 @@ const SystemMessages: React.FC<SystemMessagesProps> = ({ messages, className }) 
                     <div className="flex items-start gap-3">
                       <Icon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900 leading-relaxed">
+                        <p className="text-sm text-card-foreground leading-relaxed">
                           {message.message}
                         </p>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {formatTimestamp(message.timestamp)}
                           </span>
                           <Badge variant={config.badgeVariant} className="text-xs capitalize">

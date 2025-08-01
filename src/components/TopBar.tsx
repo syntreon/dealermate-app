@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Moon, Sun, Settings, Building2, AlertTriangle, Info, AlertCircle, CheckCircle, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -26,6 +27,10 @@ import GlobalCallTypeFilter from './GlobalCallTypeFilter';
 import { useCallType } from '@/context/CallTypeContext';
 
 const TopBar = () => {
+  const location = useLocation();
+  // Determine if user is in admin panel (route starts with /admin)
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [clientName, setClientName] = useState<string>("");
@@ -111,14 +116,18 @@ const TopBar = () => {
   const getMessageIcon = (type: MessageType) => {
     switch (type) {
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+        // Use semantic warning color
+        return <AlertTriangle className="h-4 w-4 text-[hsl(var(--warning))]" />;
       case 'error':
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
+        // Use semantic destructive color
+        return <AlertCircle className="h-4 w-4 text-[hsl(var(--destructive))]" />;
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
+        // Use semantic success color
+        return <CheckCircle className="h-4 w-4 text-[hsl(var(--success))]" />;
       case 'info':
       default:
-        return <Info className="h-4 w-4 text-blue-500" />;
+        // Use semantic primary color
+        return <Info className="h-4 w-4 text-[hsl(var(--primary))]" />;
     }
   };
 
@@ -126,9 +135,9 @@ const TopBar = () => {
   const getStatusBackgroundColor = () => {
     switch (status) {
       case 'maintenance':
-        return 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800';
+        return 'bg-[hsl(var(--warning)/0.08)] border-[hsl(var(--warning))]'; // Use semantic warning color
       case 'inactive':
-        return 'bg-destructive/10 border-destructive/30';
+        return 'bg-[hsl(var(--destructive)/0.08)] border-[hsl(var(--destructive))]'; // Use semantic destructive color
       default:
         return '';
     }
@@ -142,19 +151,22 @@ const TopBar = () => {
           "w-full px-4 py-2 border-b flex items-center justify-between z-10 relative",
           getStatusBackgroundColor(),
           broadcastMessage && status === 'active' && (
-            broadcastMessage.type === 'warning' ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800" :
-            broadcastMessage.type === 'error' ? "bg-destructive/10 border-destructive/30" :
-            broadcastMessage.type === 'success' ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800" :
-            "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+            // Use theme-aware semantic background and border for each type
+            // Use theme-aware backgrounds for each type; info uses --info-bg for proper dark mode support
+            broadcastMessage.type === 'warning' ? "bg-[hsl(var(--warning)/0.08)] border-[hsl(var(--warning))]" :
+            broadcastMessage.type === 'error' ? "bg-[hsl(var(--destructive)/0.08)] border-[hsl(var(--destructive))]" :
+            broadcastMessage.type === 'success' ? "bg-[hsl(var(--success)/0.08)] border-[hsl(var(--success))]" :
+            "bg-[hsl(var(--info-bg))] border-[hsl(var(--info))]"
           )
         )}>
           <div className="flex items-center space-x-2">
             {status !== 'active' ? (
               <>
-                <AlertTriangle className={cn(
-                  "h-4 w-4",
-                  status === 'maintenance' ? "text-amber-500" : "text-destructive"
-                )} />
+                {status === 'maintenance' ? (
+                  <AlertTriangle className="h-4 w-4 text-[hsl(var(--warning))]" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-[hsl(var(--destructive))]" />
+                )}
                 <span className="font-medium">
                   {status === 'maintenance' ? 'System Maintenance' : 'System Unavailable'}
                 </span>
@@ -172,32 +184,58 @@ const TopBar = () => {
         </div>
       )}
       
-      <div className="fixed top-0 left-0 w-full h-14 border-b border-border bg-background z-50 flex items-center justify-between px-4 md:px-6">
+      {/* Responsive TopBar: reduced height on mobile, normal on desktop */}
+      <div className="fixed top-0 left-0 w-full h-12 md:h-14 border-b border-border bg-background z-50 flex items-center justify-between px-2 md:px-6">
+        {/* Mobile admin sidebar hamburger button: only on admin routes, only on mobile */}
+        {isAdminRoute && (
+          <div className="md:hidden flex items-center mr-2">
+            {/* This button will trigger the admin sidebar drawer. 
+                To avoid duplicate triggers, ensure only one exists in the app. 
+                You may need to lift state/context if both TopBar and AdminSidebar are mounted. */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              aria-label="Open admin menu"
+              onClick={() => {
+                // Dispatch a custom event, or use context, to open the admin sidebar
+                // This is minimal and decoupled; AdminSidebar should listen for this event
+                window.dispatchEvent(new CustomEvent('open-admin-sidebar'));
+              }}
+            >
+              <span className="sr-only">Open admin menu</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu h-6 w-6"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+            </Button>
+          </div>
+        )}
+
         {/* TopBar is now fixed and full-width */}
       {/* DealerMate Logo at the left */}
       <div className="flex items-center gap-3">
-  <Logo />
+        {/* Responsive logo: smaller on mobile, default on desktop */}
+        <Logo className="h-7 w-auto md:h-8" />
   
   {/* Admin badge/icon shown only for admin users */}
+  {/* Hide Admin badge on mobile, show only on md+ screens */}
   {user?.is_admin && (
-    <span className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary text-xs font-semibold">
+    <span className="hidden md:flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary text-xs font-semibold">
       <Shield className="h-4 w-4" />
       Admin
     </span>
   )}
   {/* Separator for sequential filters, styled with border color */}
-  <span className="mx-1 text-[hsl(var(--border))] select-none">/</span>
+  <span className="hidden md:inline mx-1 text-[hsl(var(--border))] select-none">/</span>
   {/* Global Client Selector - Now immediately after logo */}
   <GlobalClientSelector />
   {/* Separator for sequential filters, styled with border color */}
-  <span className="mx-1 text-[hsl(var(--border))] select-none">/</span>
+  <span className="hidden md:inline mx-1 text-[hsl(var(--border))] select-none">/</span>
   {/* Global Call Type Filter for admins, context-driven */}
   {(() => {
     const { selectedCallType, setSelectedCallType } = useCallType();
     return <GlobalCallTypeFilter selectedCallType={selectedCallType} onCallTypeChange={setSelectedCallType} />;
   })()}
   {/* Separator for future filters */}
-  <span className="mx-1 text-[hsl(var(--border))] select-none">/</span>
+  <span className="hidden md:inline mx-1 text-[hsl(var(--border))] select-none">/</span>
 </div>
       {/* Removed: Call Facilitation Dashboard heading */}
       
@@ -213,12 +251,12 @@ const TopBar = () => {
           <SystemMessages messages={metrics.systemMessages} />
         )}
         
-        {/* Theme Toggle with icon for current theme */}
+        {/* Hide theme toggle on mobile, show only on md+ screens */}
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={toggleTheme} 
-          className="rounded-full"
+          className="hidden md:inline-flex rounded-full"
           aria-label="Toggle theme"
           title={`Current theme: ${theme || 'system'}. Click to change.`}
           disabled={isThemeChanging}
