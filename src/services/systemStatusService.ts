@@ -1,6 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SystemMessage, AgentStatus } from '@/types/dashboard';
 
+// Get current user ID for audit logging
+const getCurrentUserId = async (): Promise<string | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+};
+
 export class SystemStatusService {
   // System Messages CRUD operations
   static async getSystemMessages(clientId?: string | null): Promise<SystemMessage[]> {
@@ -31,6 +42,11 @@ export class SystemStatusService {
     clientId?: string | null,
     createdBy?: string
   ): Promise<SystemMessage> {
+    const userId = createdBy || await getCurrentUserId();
+    if (!userId) {
+      throw new Error('User authentication required');
+    }
+
     const { data, error } = await supabase
       .from('system_messages')
       .insert({
@@ -38,7 +54,7 @@ export class SystemStatusService {
         type: message.type,
         message: message.message,
         expires_at: message.expiresAt?.toISOString() || null,
-        created_by: createdBy,
+        created_by: userId,
         timestamp: new Date().toISOString()
       })
       .select()
@@ -124,13 +140,18 @@ export class SystemStatusService {
     clientId?: string | null,
     updatedBy?: string
   ): Promise<AgentStatus> {
+    const userId = updatedBy || await getCurrentUserId();
+    if (!userId) {
+      throw new Error('User authentication required');
+    }
+
     const { data, error } = await supabase
       .from('agent_status')
       .upsert({
         client_id: clientId || null,
         status: status.status,
         message: status.message,
-        updated_by: updatedBy,
+        updated_by: userId,
         last_updated: new Date().toISOString()
       }, {
         onConflict: 'client_id'

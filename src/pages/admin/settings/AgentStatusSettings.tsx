@@ -10,6 +10,7 @@ import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import ClientSelector from '@/components/admin/ClientSelector';
 import { AdminService } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 const AgentStatusSettings: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -20,6 +21,7 @@ const AgentStatusSettings: React.FC = () => {
   const { toast } = useToast();
   const [clients, setClients] = useState<any[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -51,19 +53,32 @@ const AgentStatusSettings: React.FC = () => {
     try {
       const { SystemStatusService } = await import('@/services/systemStatusService');
       
-      if (status) {
+      if (!user?.id) {
+        throw new Error('User authentication required');
+      }
+
+      // If All Clients, update agent status for each client
+      if (selectedClientId === null) {
+        for (const client of clients) {
+          await SystemStatusService.updateAgentStatus({
+            status: status,
+            message: message || undefined
+          }, client.id, user.id);
+        }
+      } else if (status) {
         await SystemStatusService.updateAgentStatus({
           status: status,
           message: message || undefined
-        }, selectedClientId);
+        }, selectedClientId, user.id);
       }
       
+      // Always pass null for global message (All Clients)
       if (message && messageType) {
         await SystemStatusService.createSystemMessage({
           type: messageType,
           message: message,
           expiresAt: null
-        }, selectedClientId);
+        }, selectedClientId, user.id);
       }
 
       toast({
@@ -117,12 +132,13 @@ const AgentStatusSettings: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="client-selector">Target Client</Label>
+              {/* Wrap client change to normalize 'all' to null for global */}
               <ClientSelector
                 clients={clients}
-                selectedClient={selectedClientId}
-                onClientChange={setSelectedClientId}
+                selectedClient={selectedClientId === null ? 'all' : selectedClientId}
+                onClientChange={(clientId) => setSelectedClientId(clientId === 'all' ? null : clientId)}
                 isLoading={isLoadingClients}
-              />
+/>
             </div>
             <div className="space-y-2">
               <Label htmlFor="status-selector">Agent Status</Label>

@@ -73,8 +73,22 @@ export const useSystemStatus = (clientId?: string) => {
           
         if (statusError) throw statusError;
         
-        // Get the most relevant status (client-specific takes precedence over global)
-        const relevantStatus = statusData && statusData.length > 0 ? statusData[0] : null;
+        // Process status data - we may have client-specific and global status
+        let relevantStatus = null;
+        
+        if (statusData && statusData.length > 0) {
+          // Find client-specific and global status
+          const clientStatus = statusData.find(s => s.client_id !== null);
+          const globalStatus = statusData.find(s => s.client_id === null);
+          
+          // Prioritize global status if it's maintenance or inactive
+          // Otherwise use client-specific status if available
+          if (globalStatus && (globalStatus.status === 'maintenance' || globalStatus.status === 'inactive')) {
+            relevantStatus = globalStatus;
+          } else {
+            relevantStatus = clientStatus || globalStatus;
+          }
+        }
         
         // Fetch active system messages (not expired and relevant to this client)
         const now = new Date().toISOString();
