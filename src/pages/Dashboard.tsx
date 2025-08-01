@@ -10,6 +10,7 @@ import { useClient } from '@/context/ClientContext';
 import { ComingSoonBadge } from '@/components/ui/coming-soon-badge';
 import { useNavigate } from 'react-router-dom';
 import { canViewSensitiveInfo } from '@/utils/clientDataIsolation';
+import { useCallType } from '@/context/CallTypeContext'; // Global call type filter
 
 import MetricsSummaryCards from '@/components/dashboard/MetricsSummaryCards';
 import useDashboardMetrics from '@/hooks/useDashboardMetrics';
@@ -19,6 +20,8 @@ import CallDetailsPopup from '@/components/calls/CallDetailsPopup';
 import { callLogsService } from '@/integrations/supabase/call-logs-service';
 
 const Dashboard = () => {
+  // Global call type filter from context
+  const { selectedCallType } = useCallType();
   const { user } = useAuth();
   const { selectedClientId } = useClient();
   const navigate = useNavigate();
@@ -52,7 +55,8 @@ const Dashboard = () => {
   const effectiveClientId = getEffectiveClientId();
 
   // Use our custom hook to fetch dashboard metrics
-  const { metrics, isLoading, error } = useDashboardMetrics(effectiveClientId);
+  // Pass selectedCallType to dashboard metrics hook
+  const { metrics, isLoading, error } = useDashboardMetrics(effectiveClientId, selectedCallType);
 
   // Fetch calls and stats
   useEffect(() => {
@@ -65,8 +69,8 @@ const Dashboard = () => {
         const effectiveClientId = canViewAllClients ? selectedClientId : (user?.client_id || undefined);
 
         const [recentCalls, callStats] = await Promise.all([
-          CallsService.getRecentCalls(5, effectiveClientId),
-          CallsService.getCallStats(effectiveClientId)
+          CallsService.getRecentCalls(5, effectiveClientId, selectedCallType),
+          CallsService.getCallStats(effectiveClientId, selectedCallType)
         ]);
 
         setCalls(recentCalls);
@@ -79,7 +83,7 @@ const Dashboard = () => {
     };
 
     fetchCallsData();
-  }, [user, selectedClientId, canViewAllClients]);
+  }, [user, selectedClientId, canViewAllClients, selectedCallType]); // Add selectedCallType to dependencies
 
   // Updated chart colors to be theme-aware
   const chartData = [

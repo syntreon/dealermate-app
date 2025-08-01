@@ -96,7 +96,13 @@ class CallLogsService {
       
       // Apply filters if provided
       if (filters) {
-        if (filters.callType) {
+        // Support global call type filter: 'all' = no filter, 'live' = is_test_call: false, 'test' = is_test_call: true
+        if (filters.callType === 'live') {
+          query = query.eq('is_test_call', false);
+        } else if (filters.callType === 'test') {
+          query = query.eq('is_test_call', true);
+        } else if (filters.callType && filters.callType !== 'all') {
+          // For legacy/other call_type string filters (e.g., 'inbound', 'outbound')
           query = query.eq('call_type', filters.callType);
         }
         

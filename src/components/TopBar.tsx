@@ -22,6 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { useSystemStatus, MessageType } from '@/hooks/use-system-status';
 import { AgentStatus } from '@/types/dashboard';
 import GlobalClientSelector from './GlobalClientSelector';
+import GlobalCallTypeFilter from './GlobalCallTypeFilter';
+import { useCallType } from '@/context/CallTypeContext';
 
 const TopBar = () => {
   const { user, logout } = useAuth();
@@ -173,22 +175,34 @@ const TopBar = () => {
       <div className="fixed top-0 left-0 w-full h-14 border-b border-border bg-background z-50 flex items-center justify-between px-4 md:px-6">
         {/* TopBar is now fixed and full-width */}
       {/* DealerMate Logo at the left */}
-      <div className="flex items-center gap-2">
-        <Logo />
-        {/* Admin badge/icon shown only for admin users */}
-        {user?.is_admin && (
-          <span className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary text-xs font-semibold">
-            <Shield className="h-4 w-4" />
-            Admin
-          </span>
-        )}
-      </div>
+      <div className="flex items-center gap-3">
+  <Logo />
+  
+  {/* Admin badge/icon shown only for admin users */}
+  {user?.is_admin && (
+    <span className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary text-xs font-semibold">
+      <Shield className="h-4 w-4" />
+      Admin
+    </span>
+  )}
+  {/* Separator for sequential filters, styled with border color */}
+  <span className="mx-1 text-[hsl(var(--border))] select-none">/</span>
+  {/* Global Client Selector - Now immediately after logo */}
+  <GlobalClientSelector />
+  {/* Separator for sequential filters, styled with border color */}
+  <span className="mx-1 text-[hsl(var(--border))] select-none">/</span>
+  {/* Global Call Type Filter for admins, context-driven */}
+  {(() => {
+    const { selectedCallType, setSelectedCallType } = useCallType();
+    return <GlobalCallTypeFilter selectedCallType={selectedCallType} onCallTypeChange={setSelectedCallType} />;
+  })()}
+  {/* Separator for future filters */}
+  <span className="mx-1 text-[hsl(var(--border))] select-none">/</span>
+</div>
       {/* Removed: Call Facilitation Dashboard heading */}
       
       <div className="flex items-center space-x-3">
-        {/* Global Client Selector - Only visible for admin users */}
-        <GlobalClientSelector />
-        
+              
         {/* Agent Status Indicator - Using the original component with real-time status data */}
         {!isLoading && (
           <AgentStatusIndicator agentStatus={agentStatus} />

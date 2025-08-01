@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, RefreshCw, Filter } from 'lucide-react';
 import { useCallLogs } from '@/hooks/useCallLogs';
+import { useCallType } from '@/context/CallTypeContext'; // Global call type filter
 import { leadService } from '@/integrations/supabase/lead-service';
 import CallLogsTable, { ExtendedCallLog } from '@/components/CallLogsTable';
 import { useAuth } from '@/context/AuthContext';
@@ -15,6 +16,8 @@ import { CachedAdminService } from '@/services/cachedAdminService';
  * Shows a table of call logs with caller information, appointment details, and status
  */
 const Logs: React.FC = () => {
+  // Global call type filter from context
+  const { selectedCallType } = useCallType();
   // State for call IDs that have an associated lead
   const [leadCallIds, setLeadCallIds] = useState<Set<string>>(new Set());
   const [leadsLoading, setLeadsLoading] = useState(false);
@@ -22,16 +25,18 @@ const Logs: React.FC = () => {
   const { user } = useAuth();
   const { selectedClientId, clients } = useClient();
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
-  const { callLogs, loading, error, forceRefresh, refetch } = useCallLogs();
+  // Pass selectedCallType as initial filter
+  const { callLogs, loading, error, forceRefresh, refetch } = useCallLogs(true, { callType: selectedCallType });
   const [clientsMap, setClientsMap] = useState<Record<string, string>>({});
 
   // Client selection is now handled by the global ClientContext
   
   // Refetch logs when selectedClientId changes
+  // Refetch logs when selectedClientId or selectedCallType changes
   useEffect(() => {
-    refetch({ clientId: selectedClientId });
-    // Only depend on selectedClientId, since refetch is stable
-  }, [selectedClientId]);
+    refetch({ clientId: selectedClientId, callType: selectedCallType });
+    // Only depend on selectedClientId and selectedCallType, since refetch is stable
+  }, [selectedClientId, selectedCallType]);
   
   // Get selected client name when client ID changes
   useEffect(() => {

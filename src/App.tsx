@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CallsProvider } from "@/context/CallsContext";
 import { LeadProvider } from "@/context/LeadContext";
 import { ThemeInitProvider } from "@/context/ThemeInitProvider";
+import { CallTypeProvider } from '@/context/CallTypeContext';
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { RouteGroups, preloadCriticalRoutes } from "@/utils/routeCodeSplitting";
 import bundleAnalyzer from "@/utils/bundleAnalyzer";
@@ -33,8 +34,9 @@ const App = () => {
           <ThemeInitProvider>
             <CallsProvider>
               <LeadProvider>
-                <Suspense fallback={<LoadingSpinner text="Loading application..." />}>
-                  <Routes>
+                <CallTypeProvider>
+                  <Suspense fallback={<LoadingSpinner text="Loading application..." />}>
+                    <Routes>
                     <Route path="/login" element={
                       <Suspense fallback={<LoadingSpinner text="Loading login..." />}>
                         <RouteGroups.auth.Login />
@@ -300,6 +302,7 @@ const App = () => {
                     } />
                   </Routes>
                 </Suspense>
+                </CallTypeProvider>
               </LeadProvider>
             </CallsProvider>
           </ThemeInitProvider>

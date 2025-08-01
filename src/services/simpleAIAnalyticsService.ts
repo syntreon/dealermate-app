@@ -52,7 +52,8 @@ export class SimpleAIAnalyticsService {
   static async getSimpleAnalytics(
     startDate: string,
     endDate: string,
-    clientId?: string
+    clientId?: string,
+    callType: 'all' | 'live' | 'test' = 'all', // Add callType param
   ): Promise<SimpleAIAnalytics> {
     try {
       // Single query to get all the data we need with proper cost fields
@@ -77,6 +78,12 @@ export class SimpleAIAnalyticsService {
 
       if (clientId) {
         query = query.eq('client_id', clientId);
+      }
+      // Call type filter logic using is_test_call
+      if (callType === 'live') {
+        query = query.eq('is_test_call', false);
+      } else if (callType === 'test') {
+        query = query.eq('is_test_call', true);
       }
 
       const { data: calls, error } = await query;
