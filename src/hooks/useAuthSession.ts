@@ -58,8 +58,13 @@ export const useAuthSession = () => {
   
   // Debug: Log when ref changes
   useEffect(() => {
-    console.log('🔍 currentUserRef changed:', currentUserRef.current?.id || 'null');
+    console.log('🔍 [DEBUG] currentUserRef changed:', currentUserRef.current?.id || 'null');
   }, [currentUserRef.current]);
+  
+  // Debug: Log hook initialization
+  useEffect(() => {
+    console.log('🚀 [DEBUG] useAuthSession hook initialized with FIXES');
+  }, []);
 
   const loadUserProfile = useCallback(async (userId: string, retryCount = 0): Promise<UserData | null> => {
     const maxRetries = 2;
@@ -129,9 +134,10 @@ export const useAuthSession = () => {
     }
 
     // OPTIMIZATION: Only reload user profile for specific events, not token refreshes or redundant sign-ins
-    const shouldReloadProfile = (event === 'SIGNED_IN' && !currentUserRef.current) || event === 'INITIAL_SESSION';
+    // IMPORTANT: Always process SIGNED_OUT events to handle logout properly
+    const shouldReloadProfile = (event === 'SIGNED_IN' && !currentUserRef.current) || event === 'INITIAL_SESSION' || event === 'SIGNED_OUT';
     
-    console.log(`Auth event: ${event}, shouldReloadProfile: ${shouldReloadProfile}, hasCurrentUser: ${!!currentUserRef.current}`);
+    console.log(`🔍 [DEBUG] Auth event: ${event}, shouldReloadProfile: ${shouldReloadProfile}, hasCurrentUser: ${!!currentUserRef.current}`);
     
     if (!shouldReloadProfile) {
       // For token refresh or redundant sign-ins, just update the session without reloading profile
@@ -149,6 +155,10 @@ export const useAuthSession = () => {
 
     try {
       if (!session?.user) {
+        // Clear the user ref on logout/session end
+        currentUserRef.current = null;
+        sessionLoggedRef.current = false;
+        console.log('🔍 [DEBUG] Session ended - clearing user data');
         setAuthState({ user: null, session: null, isAuthenticated: false, isLoading: false, error: null });
         return;
       }
