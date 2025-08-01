@@ -25,13 +25,32 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Client, CreateUserData, UpdateUserData } from '@/types/admin';
 
-// Define form validation schema
+// --- User Form Validation Schema ---
+// - client_id is required for client_user and client_admin roles
+// - client_id must be null/blank for owner, admin, user roles
 const userFormSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   role: z.enum(['owner', 'admin', 'client_admin', 'client_user', 'user']),
   client_id: z.string().nullable().optional(),
+}).superRefine((data, ctx) => {
+  const needsClient = data.role === 'client_user' || data.role === 'client_admin';
+  if (needsClient && (!data.client_id || data.client_id === '')) {
+    ctx.addIssue({
+      path: ['client_id'],
+      code: z.ZodIssueCode.custom,
+      message: 'Client is required for this role',
+    });
+  }
+  if (!needsClient && data.client_id) {
+    ctx.addIssue({
+      path: ['client_id'],
+      code: z.ZodIssueCode.custom,
+      message: 'Client must be blank for this role',
+    });
+  }
 });
+
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
@@ -58,7 +77,12 @@ const UserForm: React.FC<UserFormProps> = ({
 
   // No password validation needed since we use invitation flow
 
-  // Initialize form with default values or existing user data
+  // --- Form Initialization (Add & Edit) ---
+  // The same validation rules apply for both add and edit user flows.
+  // - For editing, default values are set from the current user record.
+  // - For adding, defaults are blank or current admin's client.
+  // - Role/client cross-field validation is enforced by the schema.
+  // - Switching roles (even in edit mode) will reset client_id as needed.
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
