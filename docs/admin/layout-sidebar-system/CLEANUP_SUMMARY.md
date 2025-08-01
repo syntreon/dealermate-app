@@ -11,9 +11,6 @@
 - `src/pages/archived/SystemHealthMonitoring.tsx` - Duplicate system health monitoring
 - `src/pages/archived/` - Empty directory removed
 
-### Configuration Files
-- `src/config/managementTabs.ts` - Unused tab-based navigation configuration
-
 ## Files Updated
 
 ### Test Files

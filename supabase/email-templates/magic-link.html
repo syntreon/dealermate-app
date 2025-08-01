@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dealermate Authentication</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #18181B;
+            color: #FAFAFA;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .email-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #6366F1;
+            margin-bottom: 8px;
+        }
+        
+        .tagline {
+            color: #A1A1AA;
+            font-size: 16px;
+        }
+        
+        .email-content {
+            background-color: #27272A;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            border: 1px solid #3F3F46;
+        }
+        
+        .email-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #FAFAFA;
+        }
+        
+        .email-text {
+            font-size: 16px;
+            color: #A1A1AA;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+        
+        .action-button {
+            display: inline-block;
+            background-color: #6366F1;
+            color: #F8FAFC;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.2s ease;
+            margin-bottom: 24px;
+        }
+        
+        .action-button:hover {
+            background-color: #5855EB;
+        }
+        
+        .security-info {
+            background-color: #3F3F46;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            font-size: 14px;
+            color: #A1A1AA;
+        }
+        
+        .security-title {
+            color: #FAFAFA;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .backup-link {
+            font-size: 14px;
+            color: #A1A1AA;
+            margin-top: 24px;
+        }
+        
+        .backup-link a {
+            color: #6366F1;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        
+        .email-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid #3F3F46;
+            color: #A1A1AA;
+            font-size: 14px;
+        }
+        
+        .expire-notice {
+            background-color: #EF4444;
+            color: #F8FAFC;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 24px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .template {
+            display: none;
+        }
+        
+        .template.active {
+            display: block;
+        }
+        
+        .template-selector {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .template-button {
+            background-color: #3F3F46;
+            color: #A1A1AA;
+            border: none;
+            padding: 8px 16px;
+            margin: 0 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .template-button.active {
+            background-color: #6366F1;
+            color: #F8FAFC;
+        }
+        
+        .template-button:hover {
+            background-color: #5855EB;
+            color: #F8FAFC;
+        }
+        
+        @media (max-width: 480px) {
+            .email-container {
+                padding: 20px 16px;
+            }
+            
+            .email-content {
+                padding: 24px;
+            }
+            
+            .email-title {
+                font-size: 20px;
+            }
+            
+            .action-button {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .template-button {
+                display: block;
+                margin: 4px 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body bgcolor="#18181B" style="background-color:#18181B; color:#FAFAFA;">
+    <div class="email-container" style="background-color:#18181B; color:#FAFAFA;">
+    
+
+        <!-- Magic Link Template -->
+        <div id="magic-link" class="template active">
+            <div class="email-header">
+                <div class="logo">Dealermate</div>
+                <div class="tagline">AI Call Intelligence for Modern Dealerships</div>
+            </div>
+            
+            <div class="email-content" style="background-color:#27272A; color:#FAFAFA; border-radius:12px; padding:40px; text-align:center; border:1px solid #3F3F46;">
+                <h1 class="email-title">Sign In to Dealermate</h1>
+                
+                <p class="email-text">
+                    Click the button below to securely sign in to your Dealermate account. 
+                    No password required - just click and you're in!
+                </p>
+                
+                <a href="{{ .SiteURL }}/auth/callback?token={{ .Token }}&type=magiclink" class="action-button">Sign In Securely</a>
+                
+                <div class="security-info">
+                    <div class="security-title">Security Notice</div>
+                    This link will expire in 15 minutes and can only be used once for your security.
+                </div>
+                
+                <div class="backup-link">
+                    <p>If the button doesn't work, copy and paste this link:</p>
+                    <a href="{{ .SiteURL }}/auth/callback?token={{ .Token }}&type=magiclink">{{ .SiteURL }}/auth/callback?token={{ .Token }}&type=magiclink</a>
+                </div>
+            </div>
+            
+            <div class="email-footer" style="background-color:#18181B; color:#A1A1AA; text-align:center; margin-top:40px; padding-top:24px; border-top:1px solid #3F3F46; font-size:14px;">
+                <p>If you didn't request this sign-in link, please ignore this email.</p>
+                <p>© 2025 Dealermate. All rights reserved.</p>
+            </div>
+        </div>
