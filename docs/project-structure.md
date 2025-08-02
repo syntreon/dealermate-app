@@ -1,5 +1,7 @@
 # Project Structure (updated)
 
+## Documentation
+- docs/test-mode-toggle-react-query.md  # Explains Test Mode button React Query sync and multi-location state
 ## Documentation Files
 
 ### Analytics Documentation
