@@ -19,7 +19,7 @@ interface CallLogsAdvancedFilterProps {
   // Now static options, not passed in
 }
 
-const INQUIRY_TYPE_OPTIONS = ['purchase', 'service', 'general', 'other'];
+const INQUIRY_TYPE_OPTIONS = ['sales', 'service', 'general', 'other'];
 
 /**
  * Minimal, modular advanced filter UI for CallLogsTable

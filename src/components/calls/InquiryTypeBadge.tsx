@@ -20,7 +20,7 @@ interface InquiryTypeBadgeProps {
 // Colors matching CallAnalytics.tsx
 const inquiryColors = {
   general: '#a78bfa',     // Light purple shade
-  purchase: '#10b981',    // Green shade
+  sales: '#10b981',    // Green shade
   service: '#f59e0b',     // Orange shade
   parts: '#3b82f6',       // Blue shade
   test_drive: '#ec4899',  // Pink shade
@@ -46,7 +46,7 @@ const InquiryTypeBadge: React.FC<InquiryTypeBadgeProps> = ({ inquiryType, classN
     switch(normalizedType) {
       case 'general':
         return <MessageSquare className="h-3 w-3 mr-1" />;
-      case 'purchase':
+      case 'sales':
         return <ShoppingCart className="h-3 w-3 mr-1" />;
       case 'service':
         return <Wrench className="h-3 w-3 mr-1" />;

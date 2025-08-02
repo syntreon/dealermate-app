@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the implementation of the Call Intelligence Analytics feature, specifically focusing on the call inquiry pie chart component. This component visualizes the distribution of call inquiry types (purchase, service, general, etc.) based on data from the `call_intelligence` table in Supabase.
+This document outlines the implementation of the Call Intelligence Analytics feature, specifically focusing on the call inquiry pie chart component. This component visualizes the distribution of call inquiry types (sales, service, general, etc.) based on data from the `call_intelligence` table in Supabase.
 
 **Current Architecture:** This implementation uses **application-level filtering** rather than Row Level Security (RLS) policies, which is consistent with the existing application architecture.
 
@@ -18,7 +18,7 @@ CREATE TABLE public.call_intelligence (
   lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
   
   -- Key field for pie chart
-  inquiry_type TEXT NOT NULL,  -- 'general', 'purchase', 'service', 'parts', 'test_drive', 'finance', 'trade_in', 'other'
+  inquiry_type TEXT NOT NULL,  -- 'general', 'sales', 'service', 'parts', 'test_drive', 'finance', 'trade_in', 'other'
   
   -- Other fields omitted for brevity
   
@@ -90,7 +90,7 @@ Key implementation details:
    // If no real data is available, use fallback mock data
    const callInquiries = callInquiriesData.length > 0 ? callInquiriesData : [
      { type: 'general', count: 18, percentage: 18 },
-     { type: 'purchase', count: 52, percentage: 52 },
+     { type: 'sales', count: 52, percentage: 52 },
      { type: 'service', count: 28, percentage: 28 },
      { type: 'other', count: 2, percentage: 2 }
    ];

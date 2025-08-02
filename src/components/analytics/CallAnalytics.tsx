@@ -84,7 +84,7 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
   // Colors for call inquiry types
   const inquiryColors = useMemo(() => ({
     general: '#a78bfa',     // Light purple shade
-    purchase: '#10b981',    // Green shade
+    sales: '#10b981',    // Green shade
     service: '#f59e0b',     // Orange shade
     parts: '#3b82f6',       // Blue shade
     test_drive: '#ec4899',  // Pink shade
@@ -139,7 +139,7 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
         // If no real data is available, use fallback mock data
         const callInquiries = callInquiriesData.length > 0 ? callInquiriesData : [
           { type: 'general', count: 18, percentage: 18 },
-          { type: 'purchase', count: 52, percentage: 52 },
+          { type: 'sales', count: 52, percentage: 52 },
           { type: 'service', count: 28, percentage: 28 },
           { type: 'other', count: 2, percentage: 2 }
         ];
