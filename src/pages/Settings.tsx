@@ -5,7 +5,7 @@ import { canViewSensitiveInfo, hasClientAdminAccess } from '@/utils/clientDataIs
 import { UserPlus, Settings as SettingsIcon, User as UserIcon, Bell, Building2, Bot, Sliders, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AddUserForm } from '@/components/settings/AddUserForm';
 import { UserProfileCard } from '@/components/settings/UserProfileCard';
 import { UserSettingsForm } from '@/components/settings/UserSettingsForm';
@@ -16,6 +16,7 @@ import { Preferences } from '@/components/settings/Preferences';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { UserData } from '@/hooks/useAuthSession';
+
 
 // Import User type
 import { User } from '@/types/user';
@@ -53,16 +54,22 @@ const Settings = () => {
     setUser
   } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState('user');
   // Removed webhook-related state as it's not used in the new app
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('user');
 
   // Loading state for initial data fetching
   useEffect(() => {
     // Set loading to false after initial render
     setIsLoading(false);
-  }, []);
+    
+    // Check if we should open the business tab
+    if (location.state?.openBusinessTab) {
+      setActiveTab('business');
+    }
+  }, [location.state]);
   
   // Handle user updates
   const handleUserUpdate = (updatedUser: UserWithPreferences) => {
