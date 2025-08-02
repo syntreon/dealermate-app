@@ -40,7 +40,7 @@ const GlobalCallTypeFilter: React.FC<GlobalCallTypeFilterProps> = ({ selectedCal
       {canInteract ? (
         // Interactive selector for admin/owner/client_admin
         <Select value={selectedCallType} onValueChange={onCallTypeChange}>
-          <SelectTrigger className="w-full h-8 text-sm bg-background border-border focus:ring-0 focus:border-primary hover:bg-muted">
+          <SelectTrigger className="justify-between hover:bg-muted h-8">
             <SelectValue placeholder="Call Type" />
           </SelectTrigger>
           <SelectContent>
@@ -53,7 +53,7 @@ const GlobalCallTypeFilter: React.FC<GlobalCallTypeFilterProps> = ({ selectedCal
         </Select>
       ) : (
         // Non-interactive display for client_user (always shows "Live Calls")
-        <div className="flex items-center px-3 h-8 text-sm bg-background border border-border rounded-md">
+        <div className="w-[90px] hidden md:flex items-center px-4 h-8 text-xs bg-background border border-border rounded-sm">
           <span className="text-card-foreground">Live Calls</span>
         </div>
       )}

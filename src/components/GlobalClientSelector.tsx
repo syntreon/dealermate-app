@@ -62,7 +62,7 @@ const GlobalClientSelector: React.FC = () => {
   
   // For non-admin users, show a non-interactive client name display
   return (
-    <div className="hidden md:flex items-center px-3 h-8 text-sm bg-background border border-border rounded-md">
+    <div className="hidden md:flex items-center px-3 h-8 text-xs bg-background border border-border rounded-sm">
       <Users className="h-4 w-4 shrink-0 opacity-50 mr-2" />
       <span className="text-card-foreground">{userClientName || "Loading..."}</span>
     </div>

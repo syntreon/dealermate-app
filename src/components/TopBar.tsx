@@ -231,8 +231,8 @@ const TopBar = () => {
     const { selectedCallType, setSelectedCallType } = useCallType();
     return <GlobalCallTypeFilter selectedCallType={selectedCallType} onCallTypeChange={setSelectedCallType} />;
   })()}
-  {/* Separator for future filters */}
-  <span className="hidden md:inline mx-1 text-[hsl(var(--border))] select-none">/</span>
+  {/* Separator for future filters 
+  <span className="hidden md:inline mx-1 text-[hsl(var(--border))] select-none">/</span> */}
 </div>
       {/* Removed: Call Facilitation Dashboard heading */}
       
