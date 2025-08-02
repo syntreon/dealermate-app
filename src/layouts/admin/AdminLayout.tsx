@@ -139,7 +139,7 @@ const AdminLayout = () => {
             
             {/* Main content area with fixed header and scrollable content */}
             <div 
-              className="flex flex-col flex-1 overflow-hidden"
+              className="flex flex-col flex-1"
               style={{ 
                 marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
                 width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`

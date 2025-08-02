@@ -46,8 +46,7 @@ const AuditLayout: React.FC = () => {
               ))}
             </nav>
           </aside>
-          {/* CRITICAL: Scrollable content area - use min-h-0 and flex-1 for proper scrolling */}
-          <div className="flex-1 min-w-0 p-4 overflow-y-auto overflow-x-hidden min-h-0">
+          <div className="flex-1 min-w-0 p-4 overflow-y-auto overflow-x-hidden h-full">
             <Suspense fallback={<MinimalSectionLoading sectionName="Audit Page" />}>
               <Outlet />
             </Suspense>
