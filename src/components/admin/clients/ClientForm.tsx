@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,12 +24,15 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Client, CreateClientData, UpdateClientData } from '@/types/admin';
+import { AdminService } from '@/services/adminService';
+import { Switch } from '@/components/ui/switch';
+import { AlertTriangle } from 'lucide-react';
 
 // Define form validation schema
 const clientFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   type: z.string().min(1, 'Type is required'),
-  subscription_plan: z.enum(['free trial', 'basic', 'Pro', 'Custom'], {
+  subscription_plan: z.enum(['Free Trial', 'Basic', 'Pro', 'Custom'], {
     required_error: 'Subscription plan is required',
   }),
   contact_person: z.string().optional(),
@@ -38,7 +42,8 @@ const clientFormSchema = z.object({
   monthly_billing_amount_cad: z.coerce.number().min(0, 'Amount must be positive'),
   finders_fee_cad: z.coerce.number().min(0, 'Amount must be positive'),
   slug: z.string().min(2, 'Slug must be at least 2 characters').regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
-  status: z.enum(['active', 'inactive', 'trial', 'churned']).optional(),
+  status: z.enum(['active', 'inactive', 'trial', 'churned', 'pending']).optional(),
+  is_in_test_mode: z.boolean().optional(),
 });
 
 type ClientFormValues = z.infer<typeof clientFormSchema>;
@@ -56,23 +61,31 @@ const ClientForm: React.FC<ClientFormProps> = ({
   onCancel,
   isSubmitting,
 }) => {
+  const queryClient = useQueryClient();
+  // If editing, fetch latest client data
+  const { data: clientData, isLoading } = useQuery<Client | undefined>({
+  queryKey: ['client', client?.id],
+  queryFn: () => client?.id ? AdminService.getClientById(client.id) : Promise.resolve(undefined),
+  enabled: !!client?.id,
+});
   const isEditing = !!client;
   
   // Initialize form with default values or existing client data
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
-      name: client?.name || '',
-      type: client?.type || '',
-      subscription_plan: client?.subscription_plan || 'free trial',
-      contact_person: client?.contact_person || '',
-      contact_email: client?.contact_email || '',
-      phone_number: client?.phone_number || '',
-      billing_address: client?.billing_address || '',
-      monthly_billing_amount_cad: client?.monthly_billing_amount_cad || 0,
-      finders_fee_cad: client?.finders_fee_cad || 0,
-      slug: client?.slug || '',
-      status: client?.status,
+      name: clientData?.name || client?.name || '',
+      type: clientData?.type || client?.type || '',
+      subscription_plan: clientData?.subscription_plan || client?.subscription_plan || 'Free Trial',
+      contact_person: clientData?.contact_person || client?.contact_person || '',
+      contact_email: clientData?.contact_email || client?.contact_email || '',
+      phone_number: clientData?.phone_number || client?.phone_number || '',
+      billing_address: clientData?.billing_address || client?.billing_address || '',
+      monthly_billing_amount_cad: clientData?.monthly_billing_amount_cad || client?.monthly_billing_amount_cad || 0,
+      finders_fee_cad: clientData?.finders_fee_cad || client?.finders_fee_cad || 0,
+      slug: clientData?.slug || client?.slug || '',
+      status: clientData?.status || client?.status,
+      is_in_test_mode: clientData?.is_in_test_mode ?? client?.is_in_test_mode ?? false,
     },
   });
 
@@ -159,8 +172,8 @@ const ClientForm: React.FC<ClientFormProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="free trial">Free Trial</SelectItem>
-                          <SelectItem value="basic">Basic</SelectItem>
+                          <SelectItem value="Free Trial">Free Trial</SelectItem>
+                          <SelectItem value="Basic">Basic</SelectItem>
                           <SelectItem value="Pro">Pro</SelectItem>
                           <SelectItem value="Custom">Custom</SelectItem>
                         </SelectContent>
@@ -334,6 +347,43 @@ const ClientForm: React.FC<ClientFormProps> = ({
                   </div>
                 </div>
               )}
+            </div>
+            
+            {/* Test Mode Toggle */}
+            <div className="space-y-4 pt-4">
+              <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-md">
+                      <AlertTriangle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-card-foreground">Test Mode</h3>
+                      <p className="text-sm text-muted-foreground">Enable or disable test mode for this client</p>
+                    </div>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="is_in_test_mode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <p>
+                    When test mode is enabled, calls for this client will be marked as test calls. 
+                    This is useful for development and testing purposes.
+                  </p>
+                </div>
+              </div>
             </div>
             
             <div className="flex justify-end gap-4">

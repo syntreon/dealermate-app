@@ -43,6 +43,25 @@ const getCurrentUserId = async (): Promise<string | null> => {
   }
 };
 
+// Normalize subscription plan to ensure consistent capitalization
+const normalizeSubscriptionPlan = (plan: string): 'Free Trial' | 'Basic' | 'Pro' | 'Custom' => {
+  const planLower = plan.toLowerCase();
+  
+  if (planLower === 'free trial' || planLower === 'freetrial' || planLower === 'free' || planLower === 'trial' || planLower === 'free_trial') {
+    return 'Free Trial';
+  } else if (planLower === 'basic') {
+    return 'Basic';
+  } else if (planLower === 'pro' || planLower === 'professional') {
+    return 'Pro';
+  } else if (planLower === 'custom' || planLower === 'enterprise') {
+    return 'Custom';
+  }
+  
+  // Default to Basic if unknown
+  console.warn(`Unknown subscription plan: ${plan}, defaulting to Basic`);
+  return 'Basic';
+};
+
 const transformClient = (row: Database['public']['Tables']['clients']['Row']): Client => {
   // Handle the case where joined_at might be missing
   const joinedAt = row.joined_at || row.created_at || new Date().toISOString();
@@ -52,7 +71,7 @@ const transformClient = (row: Database['public']['Tables']['clients']['Row']): C
     name: row.name,
     status: row.status as 'active' | 'inactive' | 'trial' | 'churned' | 'pending',
     type: row.type,
-    subscription_plan: row.subscription_plan as 'Free Trial' | 'Basic' | 'Pro' | 'Custom',
+    subscription_plan: normalizeSubscriptionPlan(row.subscription_plan),
     contact_person: row.contact_person,
     contact_email: row.contact_email,
     phone_number: row.phone_number,
@@ -64,6 +83,7 @@ const transformClient = (row: Database['public']['Tables']['clients']['Row']): C
     finders_fee_cad: row.finders_fee_cad || 0,
     slug: row.slug,
     config_json: row.config_json || {},
+    is_in_test_mode: (row as any).is_in_test_mode ?? false,
     joined_at: new Date(joinedAt),
     last_active_at: row.last_active_at ? new Date(row.last_active_at) : null,
   };
@@ -1150,9 +1170,9 @@ export const AdminService = {
     return AdminService.createClient(data, userId || undefined);
   },
 
-  updateClientWithAudit: async (id: string, data: UpdateClientData): Promise<Client> => {
-    const userId = await getCurrentUserId();
-    return AdminService.updateClient(id, data, userId || undefined);
+  updateClientWithAudit: async (id: string, data: UpdateClientData, userId?: string): Promise<Client> => {
+    const finalUserId = userId || await getCurrentUserId();
+    return AdminService.updateClient(id, data, finalUserId || undefined);
   },
 
   deleteClientWithAudit: async (id: string): Promise<void> => {

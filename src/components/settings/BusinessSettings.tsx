@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -22,27 +23,30 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { InfoIcon, AlertTriangle, Building2, Mail, Phone, User, Edit, Save, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
 import { hasClientAdminAccess } from '@/utils/clientDataIsolation';
+import { AdminService } from '@/services/adminService';
 import { AuditService } from '@/services/auditService';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 
 interface BusinessSettingsProps {
   clientId: string | null;
   isAdmin: boolean;
 }
 
-interface BusinessData {
+// Define Client type to match what AdminService returns
+type Client = {
   id: string;
   name: string;
   status: 'active' | 'inactive' | 'trial' | 'churned';
   contact_person: string | null;
   contact_email: string | null;
   phone_number: string | null;
-  address: string | null;
-}
+  billing_address: string | null;
+  is_in_test_mode: boolean;
+};
 
 // Form validation schema
 const businessFormSchema = z.object({
@@ -58,16 +62,25 @@ type BusinessFormValues = z.infer<typeof businessFormSchema>;
 export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, isAdmin }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [businessData, setBusinessData] = useState<BusinessData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isTestModeUpdating, setIsTestModeUpdating] = React.useState(false);
+
+  // Fetch client data using React Query v5 object syntax
+  const { data: businessData, isLoading, error } = useQuery({
+    queryKey: ['client', clientId],
+    queryFn: async () => {
+      if (!clientId) throw new Error('Client ID is required');
+      return await AdminService.getClientById(clientId) as Client;
+    },
+    enabled: !!clientId
+  });
 
   // Check if current user can edit business information
   const canEditBusiness = isAdmin || hasClientAdminAccess(user);
 
-  // Initialize form
+  // Initialize form with React Hook Form
   const form = useForm<BusinessFormValues>({
     resolver: zodResolver(businessFormSchema),
     defaultValues: {
@@ -79,50 +92,68 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
     },
   });
 
-  // Fetch business data
+  // Update form when business data changes
   useEffect(() => {
-    const fetchBusinessData = async () => {
-      if (!clientId) {
-        setIsLoading(false);
-        return;
-      }
+    if (businessData) {
+      // Reset form with the mapped business data
+      // Use type-safe setValue calls to avoid TypeScript errors
+      form.setValue('name', businessData.name || '');
+      form.setValue('contact_person', businessData.contact_person || '');
+      form.setValue('contact_email', businessData.contact_email || '');
+      form.setValue('phone_number', businessData.phone_number || '');
+      form.setValue('address', businessData.billing_address || '');
+    }
+  }, [businessData, form]);
 
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const { data, error } = await supabase
-          .from('clients')
-          .select('id, name, status, contact_person, contact_email, phone_number, address')
-          .eq('id', clientId)
-          .single();
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Safely cast data to BusinessData after error check
-        const businessInfo = data as unknown as BusinessData;
-        setBusinessData(businessInfo);
-        
-        // Update form with fetched data
-        form.reset({
-          name: businessInfo.name || '',
-          contact_person: businessInfo.contact_person || '',
-          contact_email: businessInfo.contact_email || '',
-          phone_number: businessInfo.phone_number || '',
-          address: businessInfo.address || '',
-        });
-      } catch (err) {
-        console.error('Error fetching business data:', err);
-        setError('Failed to load business information. Please try again later.');
-      } finally {
-        setIsLoading(false);
+  // Handle test mode toggle
+  const handleTestModeToggle = async (checked: boolean) => {
+    if (!businessData || !user || !canEditBusiness) return;
+    
+    setIsTestModeUpdating(true);
+    
+    // Optimistically update the cache first
+    const queryKey = ['client', businessData.id];
+    const previousData = queryClient.getQueryData<Client>(queryKey);
+    
+    // Apply optimistic update
+    queryClient.setQueryData<Client>(queryKey, (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        is_in_test_mode: checked
+      };
+    });
+    
+    try {
+      // Update client with audit (this already logs the audit event internally)
+      await AdminService.updateClientWithAudit(businessData.id, { is_in_test_mode: checked }, user.id);
+      
+      // Force refresh all client queries to ensure sync across components
+      await queryClient.invalidateQueries({ 
+        queryKey: ['client'], 
+        exact: false // This will invalidate all queries starting with ['client']
+      });
+      
+      toast({
+        title: 'Success',
+        description: `Test mode ${checked ? 'enabled' : 'disabled'} successfully.`,
+      });
+    } catch (err) {
+      // Revert optimistic update on error
+      if (previousData) {
+        queryClient.setQueryData(queryKey, previousData);
       }
-    };
-
-    fetchBusinessData();
-  }, [clientId, form]);
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to update test mode. Please try again.',
+        variant: 'destructive',
+      });
+      console.error('Test mode toggle error:', err);
+    } finally {
+      setIsTestModeUpdating(false);
+    }
+  };
 
   // Handle form submission
   const handleFormSubmit = async (values: BusinessFormValues) => {
@@ -136,7 +167,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
         contact_person: values.contact_person || null,
         contact_email: values.contact_email || null,
         phone_number: values.phone_number || null,
-        address: values.address || null,
+        billing_address: values.address || null, // Map address to billing_address
+        is_in_test_mode: businessData.is_in_test_mode
       };
 
       // Store old values for audit log
@@ -145,24 +177,14 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
         contact_person: businessData.contact_person,
         contact_email: businessData.contact_email,
         phone_number: businessData.phone_number,
-        address: businessData.address,
+        billing_address: businessData.billing_address,
       };
 
-      // Update business information
-      const { data, error } = await supabase
-        .from('clients')
-        .update(updateData)
-        .eq('id', businessData.id)
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local state
-      const updatedBusinessData = data as unknown as BusinessData;
-      setBusinessData(updatedBusinessData);
+      // Update client with audit
+      await AdminService.updateClientWithAudit(businessData.id, updateData, user.id);
+      
+      // Invalidate query to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['client', businessData.id] });
 
       // Log audit event
       try {
@@ -172,24 +194,20 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
           businessData.id,
           oldValues,
           updateData,
-          undefined, // IP address - could be obtained from request
+          undefined, // ipAddress
           navigator.userAgent
         );
       } catch (auditError) {
         console.error('Failed to log audit event:', auditError);
-        // Don't fail the main operation if audit logging fails
       }
 
-      // Show success message
       toast({
         title: 'Success',
         description: 'Business information updated successfully.',
       });
-
-      // Close dialog
+      
       setIsEditDialogOpen(false);
     } catch (err) {
-      console.error('Error updating business data:', err);
       toast({
         title: 'Error',
         description: 'Failed to update business information. Please try again.',
@@ -231,7 +249,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
         <div className="p-6">
           <div className="flex items-center justify-center p-6 text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
             <AlertTriangle className="h-5 w-5 mr-2" />
-            <span>{error}</span>
+            <span>Failed to load business information. Please try again.</span>
           </div>
         </div>
       </div>
@@ -416,14 +434,14 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
               <h3 className="font-medium text-lg text-card-foreground">{businessData.name}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mt-4">
-              {businessData.address && (
+              {businessData.billing_address && (
                 <div className="flex items-center gap-3">
                   <div className="bg-muted p-2 rounded-md">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs mb-1">Address</p>
-                    <p className="font-medium text-card-foreground">{businessData.address}</p>
+                    <p className="font-medium text-card-foreground">{businessData.billing_address}</p>
                   </div>
                 </div>
               )}
@@ -466,6 +484,36 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
             </div>
           </div>
         </div>
+
+        {/* Test Mode Toggle */}
+        {canEditBusiness && businessData && (
+          <div className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg border border-border">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-md">
+                    <AlertTriangle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-lg text-card-foreground">Test Mode</h3>
+                    <p className="text-sm text-muted-foreground">Enable or disable test mode for this client</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={businessData.is_in_test_mode ?? false}
+                  onCheckedChange={handleTestModeToggle}
+                  disabled={isTestModeUpdating}
+                />
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                <p>
+                  When test mode is enabled, calls for this client will be marked as test calls. 
+                  This is useful for development and testing purposes.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Admin message for users without edit permissions */}
         {!canEditBusiness && (
