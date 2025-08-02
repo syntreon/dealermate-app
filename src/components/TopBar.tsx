@@ -310,6 +310,19 @@ const TopBar = () => {
                 <span>Settings</span>
               </a>
             </DropdownMenuItem>
+            {/* Additional user actions - placeholders for future logic */}
+            <DropdownMenuItem asChild>
+              <a href="https://profuse-flower-f87.notion.site/Feature-Requests-24315123560a802998edf6242a832d97" className="flex items-center cursor-pointer" target="_blank" rel="noopener noreferrer">
+                <Info className="h-4 w-4 mr-2" />
+                <span>Request Feature</span>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href="https://profuse-flower-f87.notion.site/24315123560a800d965cc7ed828193ee?pvs=105" className="flex items-center cursor-pointer" target="_blank" rel="noopener noreferrer">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                <span>Report a Bug</span>
+              </a>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
               Logout
             </DropdownMenuItem>
