@@ -81,8 +81,14 @@ export class SystemStatusService {
       .range(offset, offset + pageSize - 1);
 
     // Filter by client if specified
-    if (clientId !== undefined && clientId !== null) {
-      query = query.or(`client_id.is.null,client_id.eq.${clientId}`);
+    if (clientId !== undefined) {
+      if (clientId === null) {
+        // For admin view (All Clients), show all messages
+        // No additional filtering needed
+      } else {
+        // For specific client, show client-specific messages + global messages
+        query = query.or(`client_id.is.null,client_id.eq.${clientId}`);
+      }
     }
 
     const { data, error, count } = await query;
@@ -98,14 +104,14 @@ export class SystemStatusService {
       if (msg.created_by) {
         const { data: userData } = await supabase
           .from('users')
-          .select('id, name, email')
+          .select('id, full_name, email')
           .eq('id', msg.created_by)
           .single();
           
         if (userData) {
           publisherInfo = {
             id: userData.id,
-            name: userData.name,
+            name: userData.full_name || 'Unknown User',
             email: userData.email
           };
         }
@@ -172,8 +178,14 @@ export class SystemStatusService {
 
     // If clientId is provided, get messages for that client + platform-wide messages
     // If clientId is null (admin), get all messages
-    if (clientId !== undefined && clientId !== null) {
-      query = query.or(`client_id.is.null,client_id.eq.${clientId}`);
+    if (clientId !== undefined) {
+      if (clientId === null) {
+        // For admin view (All Clients), show all messages
+        // No additional filtering needed
+      } else {
+        // For specific client, show client-specific messages + global messages
+        query = query.or(`client_id.is.null,client_id.eq.${clientId}`);
+      }
     }
 
     const { data, error } = await query;
@@ -197,10 +209,13 @@ export class SystemStatusService {
       throw new Error('User authentication required');
     }
 
+    // Ensure clientId is properly handled - convert undefined to null, keep null as null
+    const effectiveClientId = clientId === undefined ? null : clientId;
+
     const { data, error } = await supabase
       .from('system_messages')
       .insert({
-        client_id: clientId || null,
+        client_id: effectiveClientId,
         type: message.type,
         message: message.message,
         expires_at: message.expiresAt?.toISOString() || null,
@@ -284,7 +299,7 @@ export class SystemStatusService {
     return {
       status: data.status,
       lastUpdated: new Date(data.last_updated),
-      message: data.message
+      message: data.message || null
     };
   }
 
@@ -309,15 +324,15 @@ export class SystemStatusService {
       throw new Error('User authentication required');
     }
 
-    // For the default platform-wide status, we need to ensure we have a valid user ID
-    const effectiveClientId = clientId || null;
+    // Ensure clientId is properly handled - convert undefined to null, keep null as null
+    const effectiveClientId = clientId === undefined ? null : clientId;
     
     const { data, error } = await supabase
       .from('agent_status')
       .upsert({
         client_id: effectiveClientId,
         status: status.status,
-        message: status.message,
+        message: status.message || null,
         updated_by: userId,
         last_updated: new Date().toISOString()
       }, {
@@ -350,7 +365,16 @@ export class SystemStatusService {
     changedByEmail: string | null;
     previousStatus: string | null;
     previousMessage: string | null;
+    isCurrent?: boolean;
   }>> {
+    // First, get the current agent status
+    let currentStatus = null;
+    try {
+      currentStatus = await this.getAgentStatus(clientId);
+    } catch (error) {
+      console.warn('Could not fetch current agent status:', error);
+    }
+
     // Query audit logs for agent_status changes
     let query = supabase
       .from('audit_logs')
@@ -364,11 +388,15 @@ export class SystemStatusService {
       `)
       .eq('table_name', 'agent_status')
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .limit(limit - 1); // Reserve one spot for current status
 
     // Filter by client_id if specified
     if (clientId !== undefined) {
-      query = query.eq('client_id', clientId);
+      if (clientId === null) {
+        query = query.is('client_id', null);
+      } else {
+        query = query.eq('client_id', clientId);
+      }
     }
 
     const { data, error } = await query;
@@ -376,10 +404,32 @@ export class SystemStatusService {
     if (error) throw error;
 
     // Transform audit log entries into status history format
-    return data.map(item => {
+    const historyEntries = await Promise.all((data || []).map(async (item) => {
       // Extract status and message from new_values
       const newValues = item.new_values || {};
       const oldValues = item.old_values || {};
+      
+      // Fetch user data separately to avoid join issues
+      let userName = 'Unknown User';
+      let userEmail = null;
+      
+      if (item.user_id) {
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('full_name, email')
+            .eq('id', item.user_id)
+            .single();
+          
+          if (userData) {
+            userName = userData.full_name || 'Unknown User';
+            userEmail = userData.email;
+          }
+        } catch (error) {
+          // User might not exist anymore, keep default values
+          console.warn('Could not fetch user data for audit log:', error);
+        }
+      }
       
       return {
         id: item.id,
@@ -388,12 +438,34 @@ export class SystemStatusService {
         message: newValues.message || null,
         changedAt: new Date(item.created_at),
         changedBy: item.user_id,
-        changedByName: null, // We don't have user name data from the join anymore
-        changedByEmail: null, // We don't have user email data from the join anymore
+        changedByName: userName,
+        changedByEmail: userEmail,
         previousStatus: oldValues.status || null,
-        previousMessage: oldValues.message || null
+        previousMessage: oldValues.message || null,
+        isCurrent: false
       };
-    });
+    }));
+
+    // Add current status as the first entry if available
+    if (currentStatus) {
+      const currentEntry = {
+        id: 'current',
+        clientId: clientId || null,
+        status: currentStatus.status,
+        message: currentStatus.message || null,
+        changedAt: currentStatus.lastUpdated,
+        changedBy: 'system',
+        changedByName: 'Current Status',
+        changedByEmail: null,
+        previousStatus: null,
+        previousMessage: null,
+        isCurrent: true
+      };
+      
+      return [currentEntry, ...historyEntries];
+    }
+
+    return historyEntries;
   }
 
   static startMonitoring() {

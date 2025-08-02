@@ -36,6 +36,8 @@ export const useRealtimeAgentStatus = (
   const subscriptionRef = useRef<Subscription | null>(null);
   const connectionSubscriptionRef = useRef<Subscription | null>(null);
   const lastStatusRef = useRef<AgentStatus | null>(null);
+  const handleStatusUpdateRef = useRef<(status: AgentStatus) => void>();
+  const handleConnectionChangeRef = useRef<(status: ConnectionStatus) => void>();
 
   // Load initial agent status
   const loadAgentStatus = useCallback(async () => {
@@ -132,33 +134,40 @@ export const useRealtimeAgentStatus = (
 
   // Handle connection status changes
   const handleConnectionChange = useCallback((status: ConnectionStatus) => {
-    setConnectionStatus(status);
-    
-    if (enableNotifications) {
-      if (status.status === 'connected' && connectionStatus.status !== 'connected') {
-        toast.success('Real-time connection established');
-      } else if (status.status === 'disconnected' && connectionStatus.status === 'connected') {
-        toast.warning('Real-time connection lost');
-      } else if (status.status === 'error') {
-        toast.error(`Connection error: ${status.error}`);
+    setConnectionStatus(prevStatus => {
+      if (enableNotifications) {
+        if (status.status === 'connected' && prevStatus.status !== 'connected') {
+          toast.success('Real-time connection established');
+        } else if (status.status === 'disconnected' && prevStatus.status === 'connected') {
+          toast.warning('Real-time connection lost');
+        } else if (status.status === 'error') {
+          toast.error(`Connection error: ${status.error}`);
+        }
       }
-    }
-  }, [connectionStatus.status, enableNotifications]);
+      return status;
+    });
+  }, [enableNotifications]);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    handleStatusUpdateRef.current = handleStatusUpdate;
+    handleConnectionChangeRef.current = handleConnectionChange;
+  }, [handleStatusUpdate, handleConnectionChange]);
 
   // Setup subscriptions
   useEffect(() => {
     // Load initial data
     loadAgentStatus();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates with stable callback refs
     subscriptionRef.current = realtimeService.subscribeToAgentStatus(
       clientId || null,
-      handleStatusUpdate
+      (status) => handleStatusUpdateRef.current?.(status)
     );
 
-    // Subscribe to connection status changes
+    // Subscribe to connection status changes with stable callback refs
     connectionSubscriptionRef.current = realtimeService.onConnectionChange(
-      handleConnectionChange
+      (status) => handleConnectionChangeRef.current?.(status)
     );
 
     // Cleanup function
@@ -172,7 +181,7 @@ export const useRealtimeAgentStatus = (
         connectionSubscriptionRef.current = null;
       }
     };
-  }, [clientId, loadAgentStatus, handleStatusUpdate, handleConnectionChange]);
+  }, [clientId, loadAgentStatus]); // Only depend on clientId and loadAgentStatus
 
   // Handle connection recovery
   useEffect(() => {

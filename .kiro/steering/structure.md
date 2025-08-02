@@ -61,6 +61,7 @@ src/
 ├── index.css              # Global CSS styles.
 ├──
 ├── components/            # Reusable UI components.
+│   ├── ClientSelector.tsx # Refined client selector with search functionality and better UI.
 │   ├── admin/             # Components specific to the Admin Dashboard.
 │   │   ├── dashboard/     # Admin dashboard specific components.
 │   │   │   ├── LoadingSkeletons.tsx # Comprehensive theme-aware loading skeletons for all dashboard components.
@@ -93,6 +94,8 @@ src/
 │   │   │   └── TROUBLESHOOTING_FLOW.md # Visual problem-solving guides and decision trees.
 │   │   ├── AdminSidebar.tsx # Enhanced 3-state sidebar navigation (expanded, collapsed, expand-on-hover) with mobile-responsive overlay navigation.
 │   │   ├── ProtectedAdminRoute.tsx # Route protection based on user permissions.
+│   │   ├── SystemMessagesTable.tsx # Table component for displaying system messages.
+│   │   ├── SystemUpdatePopup.tsx # Popup component for system message details.
 │   │   ├── __tests__/     # Admin component tests.
 │   │   │   └── AdminSidebar.test.tsx # Comprehensive tests for AdminSidebar component.
 │   │   └── ... # Other admin components

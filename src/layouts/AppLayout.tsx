@@ -24,7 +24,7 @@ const AppLayout = () => {
   } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
-  
+
   // Force refresh the page
   const handleForceRefresh = () => {
     window.location.reload();
@@ -66,16 +66,18 @@ const AppLayout = () => {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <ClientProvider>
         <SidebarProvider defaultOpen={!isMobile}>
+
+
           {/* Use pt-12 (48px) on mobile and pt-14 (56px) on desktop to match TopBar height */}
           <div className={cn("min-h-screen bg-background text-foreground flex w-full", isMobile ? "pt-12" : "pt-14")}>
             {/* Sidebar */}
             <AppSidebar />
-            
+
             {/* Main content area */}
             <div className="flex flex-col flex-1">
               {/* Top Bar - Always show on main page, including mobile. */}
               <TopBar />
-              
+
               {/* Page content */}
               <SidebarInset className="flex-1 overflow-auto p-2 pb-24 md:p-3">
                 <div className="w-full animate-in">
@@ -83,7 +85,7 @@ const AppLayout = () => {
                 </div>
               </SidebarInset>
             </div>
-            
+
             <Toaster position="top-right" />
           </div>
         </SidebarProvider>

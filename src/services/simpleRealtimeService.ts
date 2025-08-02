@@ -16,6 +16,8 @@ class SimpleRealtimeService {
   private channels: Map<string, RealtimeChannel> = new Map();
   private connectionStatus: ConnectionStatus = { status: 'disconnected' };
   private connectionCallbacks: ((status: ConnectionStatus) => void)[] = [];
+  private isDebugMode: boolean = process.env.NODE_ENV === 'development';
+  private isRealtimeEnabled: boolean = true; // Always enabled, just silenced in dev
 
   constructor() {
     // Start with a simple connected status
@@ -26,10 +28,18 @@ class SimpleRealtimeService {
     });
   }
 
+  private log(message: string, ...args: any[]) {
+    // Completely disable all realtime logging to prevent console spam
+    // TODO: Re-enable when subscription churn issue is resolved
+    return;
+  }
+
   private updateConnectionStatus(status: Partial<ConnectionStatus>) {
     this.connectionStatus = { ...this.connectionStatus, ...status };
     this.connectionCallbacks.forEach(callback => callback(this.connectionStatus));
   }
+
+  private callbacks: Map<string, Set<(data: any) => void>> = new Map();
 
   /**
    * Subscribe to agent status changes
@@ -38,52 +48,80 @@ class SimpleRealtimeService {
     clientId: string | null,
     callback: (status: AgentStatus) => void
   ): Subscription {
+
+
     const channelName = `agent-status-${clientId || 'global'}`;
     
-    // Remove existing channel if it exists
-    if (this.channels.has(channelName)) {
-      this.channels.get(channelName)?.unsubscribe();
+    // Add callback to the set
+    if (!this.callbacks.has(channelName)) {
+      this.callbacks.set(channelName, new Set());
     }
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'agent_status',
-          filter: clientId ? `client_id=eq.${clientId}` : 'client_id=is.null'
-        },
-        (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('Agent status change received:', payload);
-          
-          const record = payload.new || payload.old;
-          if (record) {
-            const agentStatus: AgentStatus = {
-              id: record.id,
-              client_id: record.client_id,
-              status: record.status,
-              message: record.message,
-              last_updated: new Date(record.last_updated),
-              updated_by: record.updated_by,
-              created_at: new Date(record.created_at)
-            };
+    this.callbacks.get(channelName)!.add(callback);
+    
+    // Only create channel if it doesn't exist
+    if (!this.channels.has(channelName)) {
+      this.log(`Creating new agent status subscription for ${channelName}`);
+      
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_status',
+            filter: clientId ? `client_id=eq.${clientId}` : 'client_id=is.null'
+          },
+          (payload: RealtimePostgresChangesPayload<any>) => {
+            this.log('Agent status change received:', payload);
             
-            callback(agentStatus);
+            const record = payload.new || payload.old;
+            if (record) {
+              const agentStatus: AgentStatus = {
+                id: record.id,
+                client_id: record.client_id,
+                status: record.status,
+                message: record.message,
+                last_updated: new Date(record.last_updated),
+                updated_by: record.updated_by,
+                created_at: new Date(record.created_at)
+              };
+              
+              // Call all registered callbacks
+              const callbacks = this.callbacks.get(channelName);
+              if (callbacks) {
+                callbacks.forEach(cb => cb(agentStatus));
+              }
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        console.log(`Agent status subscription: ${status}`);
-      });
+        )
+        .subscribe((status) => {
+          this.log(`Agent status subscription: ${status}`);
+        });
 
-    this.channels.set(channelName, channel);
+      this.channels.set(channelName, channel);
+    } else {
+      this.log(`Reusing existing agent status subscription for ${channelName}`);
+    }
 
     return {
       unsubscribe: () => {
-        channel.unsubscribe();
-        this.channels.delete(channelName);
+        // Remove callback from set
+        const callbacks = this.callbacks.get(channelName);
+        if (callbacks) {
+          callbacks.delete(callback);
+          
+          // If no more callbacks, unsubscribe from channel
+          if (callbacks.size === 0) {
+            this.log(`No more callbacks for ${channelName}, unsubscribing`);
+            const channel = this.channels.get(channelName);
+            if (channel) {
+              channel.unsubscribe();
+              this.channels.delete(channelName);
+            }
+            this.callbacks.delete(channelName);
+          }
+        }
       }
     };
   }
@@ -95,77 +133,106 @@ class SimpleRealtimeService {
     clientId: string | null,
     callback: (messages: SystemMessage[]) => void
   ): Subscription {
+
+
     const channelName = `system-messages-${clientId || 'global'}`;
     
-    if (this.channels.has(channelName)) {
-      this.channels.get(channelName)?.unsubscribe();
+    // Add callback to the set
+    if (!this.callbacks.has(channelName)) {
+      this.callbacks.set(channelName, new Set());
     }
+    this.callbacks.get(channelName)!.add(callback);
+    
+    // Only create channel if it doesn't exist
+    if (!this.channels.has(channelName)) {
+      this.log(`Creating new system messages subscription for ${channelName}`);
+      
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'system_messages',
+            filter: clientId ? `client_id=eq.${clientId}` : 'client_id=is.null'
+          },
+          async (payload: RealtimePostgresChangesPayload<any>) => {
+            this.log('System message change received:', payload);
+            
+            // Fetch updated messages after any change
+            try {
+              let query = supabase
+                .from('system_messages')
+                .select('*')
+                .order('timestamp', { ascending: false })
+                .limit(10);
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'system_messages',
-          filter: clientId ? `client_id=eq.${clientId}` : 'client_id=is.null'
-        },
-        async (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('System message change received:', payload);
-          
-          // Fetch updated messages after any change
-          try {
-            let query = supabase
-              .from('system_messages')
-              .select('*')
-              .order('timestamp', { ascending: false })
-              .limit(10);
+              if (clientId) {
+                query = query.or(`client_id.eq.${clientId},client_id.is.null`);
+              } else {
+                query = query.is('client_id', null);
+              }
 
-            if (clientId) {
-              query = query.or(`client_id.eq.${clientId},client_id.is.null`);
-            } else {
-              query = query.is('client_id', null);
+              const { data, error } = await query;
+
+              if (error) {
+                this.log('Error fetching updated system messages:', error);
+                return;
+              }
+
+              const messages: SystemMessage[] = (data || []).map(msg => ({
+                id: msg.id,
+                client_id: msg.client_id,
+                type: msg.type as 'info' | 'warning' | 'error' | 'success',
+                message: msg.message,
+                timestamp: new Date(msg.timestamp),
+                expires_at: msg.expires_at ? new Date(msg.expires_at) : null,
+                created_by: msg.created_by,
+                updated_by: msg.updated_by,
+                created_at: new Date(msg.created_at),
+                updated_at: new Date(msg.updated_at),
+                isExpired: msg.expires_at ? new Date(msg.expires_at) < new Date() : false,
+                isGlobal: msg.client_id === null
+              }));
+
+              // Call all registered callbacks
+              const callbacks = this.callbacks.get(channelName);
+              if (callbacks) {
+                callbacks.forEach(cb => cb(messages));
+              }
+            } catch (error) {
+              this.log('Error processing system message update:', error);
             }
-
-            const { data, error } = await query;
-
-            if (error) {
-              console.error('Error fetching updated system messages:', error);
-              return;
-            }
-
-            const messages: SystemMessage[] = (data || []).map(msg => ({
-              id: msg.id,
-              client_id: msg.client_id,
-              type: msg.type as 'info' | 'warning' | 'error' | 'success',
-              message: msg.message,
-              timestamp: new Date(msg.timestamp),
-              expires_at: msg.expires_at ? new Date(msg.expires_at) : null,
-              created_by: msg.created_by,
-              updated_by: msg.updated_by,
-              created_at: new Date(msg.created_at),
-              updated_at: new Date(msg.updated_at),
-              isExpired: msg.expires_at ? new Date(msg.expires_at) < new Date() : false,
-              isGlobal: msg.client_id === null
-            }));
-
-            callback(messages);
-          } catch (error) {
-            console.error('Error processing system message update:', error);
           }
-        }
-      )
-      .subscribe((status) => {
-        console.log(`System messages subscription: ${status}`);
-      });
+        )
+        .subscribe((status) => {
+          this.log(`System messages subscription: ${status}`);
+        });
 
-    this.channels.set(channelName, channel);
+      this.channels.set(channelName, channel);
+    } else {
+      this.log(`Reusing existing system messages subscription for ${channelName}`);
+    }
 
     return {
       unsubscribe: () => {
-        channel.unsubscribe();
-        this.channels.delete(channelName);
+        // Remove callback from set
+        const callbacks = this.callbacks.get(channelName);
+        if (callbacks) {
+          callbacks.delete(callback);
+          
+          // If no more callbacks, unsubscribe from channel
+          if (callbacks.size === 0) {
+            this.log(`No more callbacks for ${channelName}, unsubscribing`);
+            const channel = this.channels.get(channelName);
+            if (channel) {
+              channel.unsubscribe();
+              this.channels.delete(channelName);
+            }
+            this.callbacks.delete(channelName);
+          }
+        }
       }
     };
   }
@@ -177,10 +244,20 @@ class SimpleRealtimeService {
     callback: (client: Client) => void,
     clientId?: string
   ): Subscription {
+
+
     const channelName = `client-updates-${clientId || 'all'}`;
     
+    // Check if channel already exists and is active
     if (this.channels.has(channelName)) {
-      this.channels.get(channelName)?.unsubscribe();
+      this.log(`Reusing existing client updates subscription for ${channelName}`);
+      const existingChannel = this.channels.get(channelName)!;
+      return {
+        unsubscribe: () => {
+          existingChannel.unsubscribe();
+          this.channels.delete(channelName);
+        }
+      };
     }
 
     const channel = supabase
@@ -194,7 +271,7 @@ class SimpleRealtimeService {
           filter: clientId ? `id=eq.${clientId}` : undefined
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('Client update received:', payload);
+          this.log('Client update received:', payload);
           
           const record = payload.new || payload.old;
           if (record && payload.eventType !== 'DELETE') {
@@ -224,7 +301,7 @@ class SimpleRealtimeService {
         }
       )
       .subscribe((status) => {
-        console.log(`Client updates subscription: ${status}`);
+        this.log(`Client updates subscription: ${status}`);
       });
 
     this.channels.set(channelName, channel);
@@ -244,10 +321,20 @@ class SimpleRealtimeService {
     callback: (user: User) => void,
     userId?: string
   ): Subscription {
+
+
     const channelName = `user-updates-${userId || 'all'}`;
     
+    // Check if channel already exists and is active
     if (this.channels.has(channelName)) {
-      this.channels.get(channelName)?.unsubscribe();
+      this.log(`Reusing existing user updates subscription for ${channelName}`);
+      const existingChannel = this.channels.get(channelName)!;
+      return {
+        unsubscribe: () => {
+          existingChannel.unsubscribe();
+          this.channels.delete(channelName);
+        }
+      };
     }
 
     const channel = supabase
@@ -261,7 +348,7 @@ class SimpleRealtimeService {
           filter: userId ? `id=eq.${userId}` : undefined
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('User update received:', payload);
+          this.log('User update received:', payload);
           
           const record = payload.new || payload.old;
           if (record && payload.eventType !== 'DELETE') {
@@ -281,7 +368,7 @@ class SimpleRealtimeService {
         }
       )
       .subscribe((status) => {
-        console.log(`User updates subscription: ${status}`);
+        this.log(`User updates subscription: ${status}`);
       });
 
     this.channels.set(channelName, channel);
@@ -321,7 +408,7 @@ class SimpleRealtimeService {
    * Manually trigger reconnection (no-op in simple version)
    */
   async reconnect(): Promise<void> {
-    console.log('Reconnect requested - Supabase handles this automatically');
+    this.log('Reconnect requested - Supabase handles this automatically');
   }
 
   /**
@@ -339,7 +426,38 @@ class SimpleRealtimeService {
   getActiveSubscriptionsCount(): number {
     return this.channels.size;
   }
+
+  /**
+   * Enable or disable realtime subscriptions (for debugging)
+   */
+  setRealtimeEnabled(enabled: boolean): void {
+    this.isRealtimeEnabled = enabled;
+    this.log(`Realtime ${enabled ? 'enabled' : 'disabled'}`);
+    
+    if (!enabled) {
+      // Disconnect all existing subscriptions when disabling
+      this.disconnect();
+    }
+  }
+
+  /**
+   * Check if realtime is currently enabled
+   */
+  isRealtimeCurrentlyEnabled(): boolean {
+    return this.isRealtimeEnabled;
+  }
 }
 
 // Export singleton instance
 export const simpleRealtimeService = new SimpleRealtimeService();
+
+// Add global debugging methods in development
+if (process.env.NODE_ENV === 'development') {
+  (window as any).realtimeService = {
+    enable: () => simpleRealtimeService.setRealtimeEnabled(true),
+    disable: () => simpleRealtimeService.setRealtimeEnabled(false),
+    status: () => simpleRealtimeService.isRealtimeCurrentlyEnabled(),
+    subscriptions: () => simpleRealtimeService.getActiveSubscriptionsCount(),
+    disconnect: () => simpleRealtimeService.disconnect()
+  };
+}

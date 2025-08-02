@@ -92,27 +92,44 @@ const RealtimeNotificationSystem: React.FC<RealtimeNotificationSystemProps> = ({
         onSystemMessagesChange(messages);
       }
       
-      // Show notifications for high-priority messages
+      // Show notifications for all system messages
       if (enableSystemMessageNotifications) {
-        const criticalMessages = messages.filter(msg => 
-          (msg.type === 'error' || msg.type === 'warning') && 
+        const activeMessages = messages.filter(msg => 
           (!msg.expires_at || msg.expires_at > new Date())
         );
         
-        criticalMessages.forEach(message => {
+        activeMessages.forEach(message => {
           if (shouldShowNotification(`message-${message.id}`, 30000)) {
-            const duration = message.type === 'error' ? 15000 : 8000;
+            const duration = message.type === 'error' ? 15000 : 
+                           message.type === 'warning' ? 8000 : 
+                           message.type === 'success' ? 5000 : 6000;
             
-            if (message.type === 'error') {
-              toast.error(message.message, {
-                description: message.isGlobal ? 'System-wide alert' : 'Client-specific alert',
-                duration,
-              });
-            } else if (message.type === 'warning') {
-              toast.warning(message.message, {
-                description: message.isGlobal ? 'System-wide notice' : 'Client-specific notice',
-                duration,
-              });
+            switch (message.type) {
+              case 'error':
+                toast.error(message.message, {
+                  description: message.isGlobal ? 'System-wide alert' : 'Client-specific alert',
+                  duration,
+                });
+                break;
+              case 'warning':
+                toast.warning(message.message, {
+                  description: message.isGlobal ? 'System-wide notice' : 'Client-specific notice',
+                  duration,
+                });
+                break;
+              case 'success':
+                toast.success(message.message, {
+                  description: message.isGlobal ? 'System-wide update' : 'Client-specific update',
+                  duration,
+                });
+                break;
+              case 'info':
+              default:
+                toast.info(message.message, {
+                  description: message.isGlobal ? 'System-wide information' : 'Client-specific information',
+                  duration,
+                });
+                break;
             }
           }
         });

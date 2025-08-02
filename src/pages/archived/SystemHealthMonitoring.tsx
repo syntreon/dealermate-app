@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import SystemHealthDashboard from '@/components/admin/SystemHealthDashboard';
-import ClientSelector from '@/components/admin/archived/ClientSelector';
+import ClientSelector from '@/components/ClientSelector';
 import { AdminService } from '@/services/adminService';
 import { SystemHealth, SystemMetrics, Client } from '@/types/admin';
 
@@ -118,9 +118,10 @@ const SystemHealthMonitoring = () => {
       <div className="mb-6">
         <ClientSelector
           clients={clients}
-          selectedClient={selectedClient}
-          onClientChange={setSelectedClient}
-          isLoading={clientsLoading}
+          selectedClientId={selectedClient === 'all' ? null : selectedClient}
+          onClientChange={(clientId) => setSelectedClient(clientId || 'all')}
+          loading={clientsLoading}
+          error={null}
         />
         <p className="text-sm text-muted-foreground mt-2">
           {selectedClient === 'all' 

@@ -116,8 +116,8 @@ export class AIAccuracyAnalyticsService {
         const qualityScores = modelCalls
           .map(call => call.lead_evaluations?.[0]?.overall_evaluation_score)
           .filter(score => score !== null && score !== undefined);
-        const averageQualityScore = qualityScores.length > 0 
-          ? qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length 
+        const averageQualityScore = qualityScores.length > 0
+          ? qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length
           : 0;
 
         // Calculate average adherence score
@@ -129,7 +129,7 @@ export class AIAccuracyAnalyticsService {
           : 0;
 
         // Calculate failure rate
-        const failuresCount = modelCalls.filter(call => 
+        const failuresCount = modelCalls.filter(call =>
           call.prompt_adherence_reviews?.[0]?.critical_failures_summary
         ).length;
         const failureRate = callCount > 0 ? (failuresCount / callCount) * 100 : 0;
@@ -168,15 +168,15 @@ export class AIAccuracyAnalyticsService {
         : 0;
 
       const bestPerformingModel = modelsUsed.length > 0
-        ? modelsUsed.reduce((best, current) => 
-            current.averageAccuracy > best.averageAccuracy ? current : best
-          ).modelName
+        ? modelsUsed.reduce((best, current) =>
+          current.averageAccuracy > best.averageAccuracy ? current : best
+        ).modelName
         : 'N/A';
 
       const worstPerformingModel = modelsUsed.length > 0
-        ? modelsUsed.reduce((worst, current) => 
-            current.averageAccuracy < worst.averageAccuracy ? current : worst
-          ).modelName
+        ? modelsUsed.reduce((worst, current) =>
+          current.averageAccuracy < worst.averageAccuracy ? current : worst
+        ).modelName
         : 'N/A';
 
       // Create performance comparison data
@@ -238,7 +238,7 @@ export class AIAccuracyAnalyticsService {
 
         dateCalls.forEach(call => {
           const modelName = call.call_llm_model || 'Unknown';
-          
+
           // Track model-specific accuracy
           if (!modelAccuracies[modelName]) {
             modelAccuracies[modelName] = 0;
@@ -246,12 +246,12 @@ export class AIAccuracyAnalyticsService {
 
           const qualityScore = call.lead_evaluations?.[0]?.overall_evaluation_score;
           const adherenceScore = call.prompt_adherence_reviews?.[0]?.prompt_adherence_score;
-          
+
           if (qualityScore !== null && qualityScore !== undefined) {
             totalQualityScore += qualityScore;
             qualityCount++;
           }
-          
+
           if (adherenceScore !== null && adherenceScore !== undefined) {
             totalAdherenceScore += adherenceScore;
             adherenceCount++;
@@ -299,7 +299,7 @@ export class AIAccuracyAnalyticsService {
   ): Promise<FailurePatternData> {
     try {
       const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
-      
+
       // Process failure data
       const failureCategories: { [category: string]: FailureCategory } = {};
       const criticalFailures: { [description: string]: CriticalFailureData } = {};
@@ -338,7 +338,7 @@ export class AIAccuracyAnalyticsService {
           const wrongItems = this.parseJsonbArray(review.what_went_wrong);
           wrongItems?.forEach(item => {
             const category = this.categorizeFailure(item);
-            
+
             if (!failureCategories[category]) {
               failureCategories[category] = {
                 category,
@@ -348,7 +348,7 @@ export class AIAccuracyAnalyticsService {
                 examples: []
               };
             }
-            
+
             failureCategories[category].count++;
             if (failureCategories[category].examples.length < 3) {
               failureCategories[category].examples.push(item);
@@ -356,12 +356,12 @@ export class AIAccuracyAnalyticsService {
 
             // Track model-specific failures
             modelFailures[modelName].totalFailures++;
-            modelFailures[modelName].failureCategories[category] = 
+            modelFailures[modelName].failureCategories[category] =
               (modelFailures[modelName].failureCategories[category] || 0) + 1;
 
             // Track date-specific failures
             failureTrends[date].totalFailures++;
-            failureTrends[date].failuresByModel[modelName] = 
+            failureTrends[date].failuresByModel[modelName] =
               (failureTrends[date].failuresByModel[modelName] || 0) + 1;
           });
         }
@@ -369,7 +369,7 @@ export class AIAccuracyAnalyticsService {
         // Process critical failures
         if (review.critical_failures_summary) {
           const criticalFailure = review.critical_failures_summary;
-          
+
           if (!criticalFailures[criticalFailure]) {
             criticalFailures[criticalFailure] = {
               description: criticalFailure,
@@ -379,12 +379,12 @@ export class AIAccuracyAnalyticsService {
               lastOccurrence: call.created_at
             };
           }
-          
+
           criticalFailures[criticalFailure].count++;
           if (!criticalFailures[criticalFailure].affectedModels.includes(modelName)) {
             criticalFailures[criticalFailure].affectedModels.push(modelName);
           }
-          
+
           // Update occurrence dates
           if (new Date(call.created_at) < new Date(criticalFailures[criticalFailure].firstOccurrence)) {
             criticalFailures[criticalFailure].firstOccurrence = call.created_at;
@@ -436,7 +436,7 @@ export class AIAccuracyAnalyticsService {
   ): Promise<KeywordAnalysisData> {
     try {
       const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
-      
+
       const keywordFrequency: { [keyword: string]: KeywordFrequency } = {};
       const categoryBreakdown: { [category: string]: FailureCategoryBreakdown } = {};
       const trendingIssues: { [issue: string]: TrendingIssueData } = {};
@@ -456,10 +456,10 @@ export class AIAccuracyAnalyticsService {
 
         // Extract keywords using simple text processing
         const keywords = this.extractKeywords(allFailureText);
-        
+
         keywords.forEach(keyword => {
           const category = this.categorizeKeyword(keyword);
-          
+
           if (!keywordFrequency[keyword]) {
             keywordFrequency[keyword] = {
               keyword,
@@ -534,7 +534,7 @@ export class AIAccuracyAnalyticsService {
   ): Promise<ConversationQualityMetrics> {
     try {
       const calls = await this._getFilteredCallsData(startDate, endDate, clientId, modelType);
-      
+
       // Enhanced quality correlation analysis
       const qualityCorrelation = await this.correlateQualityWithModels(calls);
       const qualityAggregation = this.aggregateQualityScores(calls);
@@ -610,14 +610,14 @@ export class AIAccuracyAnalyticsService {
     thresholdAnalysis: QualityThresholdAnalysis;
   }> {
     const modelQualityData: { [modelName: string]: QualityDataPoint[] } = {};
-    
+
     // Collect quality data points for each model
     calls.forEach(call => {
       const evaluation = call.lead_evaluations?.[0];
       if (!evaluation) return;
 
       const modelName = call.call_llm_model || 'Unknown';
-      
+
       if (!modelQualityData[modelName]) {
         modelQualityData[modelName] = [];
       }
@@ -818,7 +818,7 @@ export class AIAccuracyAnalyticsService {
 
       // Track sentiment for the date
       if (evaluation.sentiment) {
-        qualityTrends[date].sentimentScores[evaluation.sentiment] = 
+        qualityTrends[date].sentimentScores[evaluation.sentiment] =
           (qualityTrends[date].sentimentScores[evaluation.sentiment] || 0) + 1;
       }
 
@@ -980,7 +980,7 @@ export class AIAccuracyAnalyticsService {
       if (dataPoints.length === 0) return;
 
       thresholdAnalysis.thresholdPerformance[modelName] = {};
-      
+
       thresholds.forEach(threshold => {
         const aboveThreshold = dataPoints.filter(point => point.overallScore >= threshold).length;
         const percentage = Math.round((aboveThreshold / dataPoints.length) * 100);
@@ -990,7 +990,7 @@ export class AIAccuracyAnalyticsService {
       // Calculate quality distribution
       const scores = dataPoints.map(point => point.overallScore);
       const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-      
+
       thresholdAnalysis.modelRankings.push({
         modelName,
         averageScore: Math.round(avgScore * 100) / 100,
@@ -1024,11 +1024,11 @@ export class AIAccuracyAnalyticsService {
   // Helper methods
   private static parseJsonbArray(jsonbData: any): string[] | null {
     if (!jsonbData) return null;
-    
+
     if (Array.isArray(jsonbData)) {
       return jsonbData.filter(item => typeof item === 'string');
     }
-    
+
     if (typeof jsonbData === 'string') {
       try {
         const parsed = JSON.parse(jsonbData);
@@ -1041,21 +1041,21 @@ export class AIAccuracyAnalyticsService {
           .split(/(?:Rule:|CRITICAL FAILURE:|Guiding Principle:|Systemic Change:|Training\/Fine-tuning:|Refinement:|Error Recovery:)/)
           .map(item => item.trim())
           .filter(item => item.length > 0);
-        
+
         if (items.length > 1) {
           return items;
         }
-        
+
         return [jsonbData];
       }
     }
-    
+
     return null;
   }
 
   private static categorizeFailure(failureText: string): string {
     const text = failureText.toLowerCase();
-    
+
     if (text.includes('hallucin') || text.includes('made up') || text.includes('fabricat')) {
       return 'hallucination';
     }
@@ -1068,7 +1068,7 @@ export class AIAccuracyAnalyticsService {
     if (text.includes('prompt') || text.includes('instruction') || text.includes('adherence')) {
       return 'protocol';
     }
-    
+
     return 'other';
   }
 
@@ -1089,7 +1089,7 @@ export class AIAccuracyAnalyticsService {
 
   private static extractKeywords(text: string): string[] {
     if (!text) return [];
-    
+
     // Simple keyword extraction - split by common delimiters and filter meaningful words
     const words = text
       .toLowerCase()
@@ -1097,7 +1097,7 @@ export class AIAccuracyAnalyticsService {
       .split(/\s+/)
       .filter(word => word.length > 3)
       .filter(word => !this.isStopWord(word));
-    
+
     // Remove duplicates and return
     return [...new Set(words)];
   }
@@ -1111,7 +1111,7 @@ export class AIAccuracyAnalyticsService {
 
   private static categorizeKeyword(keyword: string): 'hallucination' | 'transcriber' | 'rules' | 'protocol' | 'other' {
     const word = keyword.toLowerCase();
-    
+
     if (word.includes('hallucin') || word.includes('fabricat') || word.includes('made') || word.includes('invent')) {
       return 'hallucination';
     }
@@ -1124,7 +1124,7 @@ export class AIAccuracyAnalyticsService {
     if (word.includes('protocol') || word.includes('procedure') || word.includes('process') || word.includes('prompt')) {
       return 'protocol';
     }
-    
+
     return 'other';
   }
 
@@ -1136,26 +1136,26 @@ export class AIAccuracyAnalyticsService {
       averageResponseTime: 0,
       responseTimeStats: { avg: 0, median: 0, p95: 0, p99: 0 },
       responseTimeTrend: [],
-      tokenUsageStats: { 
-        totalTokensUsed: 0, 
-        averageInputTokens: 0, 
-        averageOutputTokens: 0, 
-        totalTokens: 0, 
-        avgInputTokens: 0, 
-        avgOutputTokens: 0, 
-        input: 0, 
-        output: 0, 
-        tokensByModel: {} 
+      tokenUsageStats: {
+        totalTokensUsed: 0,
+        averageInputTokens: 0,
+        averageOutputTokens: 0,
+        totalTokens: 0,
+        avgInputTokens: 0,
+        avgOutputTokens: 0,
+        input: 0,
+        output: 0,
+        tokensByModel: {}
       },
       tokenDistributionByModel: [],
-      costEfficiencyMetrics: { 
-        averageCostPerCall: 0, 
-        avgCostPerCall: 0, 
-        avgCostPer1kTokens: 0, 
-        costAccuracyRatio: 0, 
-        costByModel: {}, 
-        costTrends: [], 
-        costVsAccuracyCorrelation: 0 
+      costEfficiencyMetrics: {
+        averageCostPerCall: 0,
+        avgCostPerCall: 0,
+        avgCostPer1kTokens: 0,
+        costAccuracyRatio: 0,
+        costByModel: {},
+        costTrends: [],
+        costVsAccuracyCorrelation: 0
       },
       costTrend: [],
       costByModel: [],
@@ -1229,16 +1229,16 @@ export class AIAccuracyAnalyticsService {
    */
   private static calculateTokenUsageStats(calls: any[]): TokenUsageStats {
     const tokens = calls.map(c => c.total_tokens).filter(t => typeof t === 'number');
-    if (tokens.length === 0) return { 
-      totalTokensUsed: 0, 
-      averageInputTokens: 0, 
-      averageOutputTokens: 0, 
-      totalTokens: 0, 
-      avgInputTokens: 0, 
-      avgOutputTokens: 0, 
-      input: 0, 
-      output: 0, 
-      tokensByModel: {} 
+    if (tokens.length === 0) return {
+      totalTokensUsed: 0,
+      averageInputTokens: 0,
+      averageOutputTokens: 0,
+      totalTokens: 0,
+      avgInputTokens: 0,
+      avgOutputTokens: 0,
+      input: 0,
+      output: 0,
+      tokensByModel: {}
     };
     const totalTokens = tokens.reduce((sum, t) => sum + t, 0);
     return {
@@ -1265,14 +1265,14 @@ export class AIAccuracyAnalyticsService {
    * Calculate cost efficiency metrics
    */
   private static calculateCostEfficiencyMetrics(calls: any[]): CostEfficiencyMetrics {
-    return { 
-      averageCostPerCall: 0, 
-      avgCostPerCall: 0, 
-      avgCostPer1kTokens: 0, 
-      costAccuracyRatio: 0, 
-      costByModel: {}, 
-      costTrends: [], 
-      costVsAccuracyCorrelation: 0 
+    return {
+      averageCostPerCall: 0,
+      avgCostPerCall: 0,
+      avgCostPer1kTokens: 0,
+      costAccuracyRatio: 0,
+      costByModel: {},
+      costTrends: [],
+      costVsAccuracyCorrelation: 0
     }; // Placeholder
   }
 
@@ -1347,7 +1347,7 @@ export class AIAccuracyAnalyticsService {
    * Calculate correlation analysis between different metrics
    */
   private static calculateCorrelationAnalysis(calls: any[]): CorrelationAnalysis {
-    const validCalls = calls.filter(call => 
+    const validCalls = calls.filter(call =>
       call.lead_evaluations?.[0]?.overall_evaluation_score !== null &&
       call.call_duration_seconds !== null &&
       call.total_call_cost_usd !== null
@@ -1378,7 +1378,7 @@ export class AIAccuracyAnalyticsService {
    */
   private static generatePerformanceInsights(diagnostics: PerformanceDiagnostic[]): string[] {
     const insights: string[] = [];
-    
+
     if (diagnostics.length === 0) {
       insights.push("All performance metrics are within optimal ranges.");
       return insights;
@@ -1407,7 +1407,7 @@ export class AIAccuracyAnalyticsService {
    */
   private static calculateStandardDeviation(values: number[]): number {
     if (values.length === 0) return 0;
-    
+
     const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
     const squaredDifferences = values.map(value => Math.pow(value - mean, 2));
     const meanSquaredDifference = squaredDifferences.reduce((sum, value) => sum + value, 0) / values.length;
@@ -1419,12 +1419,12 @@ export class AIAccuracyAnalyticsService {
    */
   private static calculateConfidenceInterval(values: number[]): { lower: number; upper: number } {
     if (values.length === 0) return { lower: 0, upper: 0 };
-    
+
     const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
     const standardDeviation = this.calculateStandardDeviation(values);
     const standardError = standardDeviation / Math.sqrt(values.length);
     const marginOfError = 1.96 * standardError; // 95% confidence interval
-    
+
     return { lower: mean - marginOfError, upper: mean + marginOfError };
   }
 
@@ -1433,10 +1433,10 @@ export class AIAccuracyAnalyticsService {
    */
   private static calculateQualityConsistency(dataPoints: QualityDataPoint[]): number {
     if (dataPoints.length === 0) return 0;
-    
+
     const scores = dataPoints.map(p => p.overallScore);
     const standardDeviation = this.calculateStandardDeviation(scores);
-    
+
     // Convert to consistency score (0-100, where lower standard deviation = higher consistency)
     // Using inverse relationship: consistency = 100 / (1 + standardDeviation)
     return Math.min(100, 100 / (1 + standardDeviation));
@@ -1447,13 +1447,13 @@ export class AIAccuracyAnalyticsService {
    */
   private static identifyStrengthAreas(dimensions: QualityDimensions): string[] {
     const strengths: string[] = [];
-    
+
     if (dimensions.accuracy >= 4.0) strengths.push('Accuracy');
     if (dimensions.completeness >= 4.0) strengths.push('Completeness');
     if (dimensions.relevance >= 4.0) strengths.push('Relevance');
     if (dimensions.clarity >= 4.0) strengths.push('Clarity');
     if (dimensions.professionalism >= 4.0) strengths.push('Professionalism');
-    
+
     return strengths;
   }
 
@@ -1462,13 +1462,13 @@ export class AIAccuracyAnalyticsService {
    */
   private static identifyImprovementAreas(dimensions: QualityDimensions): string[] {
     const improvements: string[] = [];
-    
+
     if (dimensions.accuracy < 4.0) improvements.push('Accuracy');
     if (dimensions.completeness < 4.0) improvements.push('Completeness');
     if (dimensions.relevance < 4.0) improvements.push('Relevance');
     if (dimensions.clarity < 4.0) improvements.push('Clarity');
     if (dimensions.professionalism < 4.0) improvements.push('Professionalism');
-    
+
     return improvements;
   }
 }
