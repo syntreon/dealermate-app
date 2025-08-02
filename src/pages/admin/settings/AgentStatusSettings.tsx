@@ -132,6 +132,65 @@ const AgentStatusSettings: React.FC = () => {
     }
   };
 
+  const handleClientChange = (clientId: string | null) => {
+    setSelectedClientId(clientId);
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!status) {
+      toast({
+        title: 'Status Required',
+        description: 'Please select a status.',
+        variant: 'default',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { SystemStatusService } = await import('@/services/systemStatusService');
+      
+      if (!user?.id) {
+        throw new Error('User authentication required');
+      }
+
+      // If All Clients, update agent status for each client
+      if (selectedClientId === null) {
+        for (const client of clients) {
+          await SystemStatusService.updateAgentStatus({
+            status: status,
+            message: message || undefined
+          }, client.id, user.id);
+        }
+      } else {
+        await SystemStatusService.updateAgentStatus({
+          status: status,
+          message: message || undefined
+        }, selectedClientId, user.id);
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Agent status has been updated successfully.',
+        variant: 'default',
+      });
+      
+      // Refresh the status history
+      const history = await SystemStatusService.getAgentStatusHistory(selectedClientId, 10);
+      setStatusHistory(history);
+    } catch (err) {
+      console.error('Error updating agent status:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      toast({
+        title: 'Update Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!status && !message) {
       toast({
@@ -255,7 +314,7 @@ const AgentStatusSettings: React.FC = () => {
           </div>
 
           <Button 
-            onClick={handleStatusUpdate}
+            onClick={() => handleStatusUpdate()}
             disabled={isSubmitting}
             className="w-full"
           >
@@ -265,7 +324,7 @@ const AgentStatusSettings: React.FC = () => {
       </Card>
       
       {/* Agent Status History */}
-      <Card>
+      <Card className="bg-card text-card-foreground border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -341,13 +400,17 @@ const AgentStatusSettings: React.FC = () => {
       {/* System Messages Table */}
       <SystemMessagesTable 
         messages={messages}
-        loading={isLoadingMessages}
+        totalCount={messages.length}
+        isLoading={isLoadingMessages}
         error={messagesError}
-        onMessageClick={handleMessageClick}
+        onRowClick={handleMessageClick}
         onRefresh={refreshMessages}
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={(page) => nextPage(page)}
+        hasNextPage={currentPage < totalPages}
+        hasPrevPage={currentPage > 1}
+        onNextPage={() => nextPage(currentPage + 1)}
+        onPrevPage={() => nextPage(currentPage - 1)}
       />
       
       {/* System Message Details Popup */}

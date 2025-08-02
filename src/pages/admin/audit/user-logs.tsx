@@ -13,7 +13,7 @@ const UserLogs: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col space-y-6 overflow-y-auto pr-2">
       {/* Standardized Dashboard Header */}
       <DashboardHeader
         title="User Logs"

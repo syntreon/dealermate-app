@@ -360,8 +360,7 @@ export class SystemStatusService {
         new_values,
         old_values,
         created_at,
-        user_id,
-        users!audit_logs_user_id_fkey (name, email)
+        user_id
       `)
       .eq('table_name', 'agent_status')
       .order('created_at', { ascending: false })
@@ -389,8 +388,8 @@ export class SystemStatusService {
         message: newValues.message || null,
         changedAt: new Date(item.created_at),
         changedBy: item.user_id,
-        changedByName: (item.users && Array.isArray(item.users) && item.users.length > 0) ? item.users[0].name : null,
-        changedByEmail: (item.users && Array.isArray(item.users) && item.users.length > 0) ? item.users[0].email : null,
+        changedByName: null, // We don't have user name data from the join anymore
+        changedByEmail: null, // We don't have user email data from the join anymore
         previousStatus: oldValues.status || null,
         previousMessage: oldValues.message || null
       };

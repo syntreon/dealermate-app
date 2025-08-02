@@ -10,8 +10,10 @@ import { MinimalSectionLoading } from '@/components/admin/layout/SectionLoadingF
 const ManagementLayout: React.FC = () => {
   return (
     <SectionErrorBoundary sectionName="Management">
-      <div className="space-y-6">
-        <div className="flex flex-col lg:flex-row lg:space-x-8 lg:h-[calc(100vh-56px)]">
+      {/* CRITICAL: Remove h-full from outer container to prevent height conflicts */}
+      <div className="flex flex-col min-h-0 flex-1">
+        {/* CRITICAL: Use min-h-0 and flex-1 instead of h-full to work with parent constraints */}
+        <div className="flex min-h-0 flex-1 lg:flex-row lg:space-x-8">
           {/*
             Sub-sidebar: sticky and separated on desktop/tablet only.
             - Sticks below the top bar (h-14 = 56px)
@@ -19,17 +21,17 @@ const ManagementLayout: React.FC = () => {
             - No width or nav logic changes
           */}
           <aside
-  className="lg:w-56 lg:flex-shrink-0 lg:border-r lg:border-border"
->
-  {/* Section heading and description, minimal style */}
-  <div className="py-3">
-    <div className="px-6">
-      <h2 className="text-lg font-bold text-foreground">Management</h2>
-      <p className="text-xs text-muted-foreground mt-1">Manage users, clients, business settings, and permissions.</p>
-    </div>
-    <div className="border-b border-border my-3" />
-  </div>
-  <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto lg:overflow-x-visible px-2">
+            className="lg:w-56 lg:flex-shrink-0 lg:border-r lg:border-border flex flex-col min-h-0"
+          >
+            {/* Section heading and description, minimal style */}
+            <div className="flex-shrink-0 py-6"> {/* Change this spacing to adjust sub sidebar heading spacing */}
+              <div className="px-6">
+                <h2 className="text-lg font-bold text-foreground">Management</h2>
+                <p className="text-xs text-muted-foreground mt-1">Manage users, clients, business settings, and permissions.</p>
+              </div>
+              <div className="border-b border-border my-3" />
+            </div>
+            <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto lg:overflow-x-visible px-2 lg:flex-1 lg:min-h-0">
               {/*
                 Role-based filtering: Only show allowed tabs for client_admin
                 client_admin: Users, Business, Roles & Permissions
@@ -68,11 +70,12 @@ const ManagementLayout: React.FC = () => {
 
             </nav>
           </aside>
-          <div className="flex-1 min-w-0 space-y-6 p-4 h-full overflow-y-auto">
-  <Suspense fallback={<MinimalSectionLoading sectionName="Management Page" />}>
-    <Outlet />
-  </Suspense>
-</div>
+          {/* CRITICAL: Scrollable content area - use min-h-0 and flex-1 for proper scrolling */}
+          <div className="flex-1 min-w-0 p-4 overflow-y-auto overflow-x-hidden min-h-0">
+            <Suspense fallback={<MinimalSectionLoading sectionName="Management Page" />}>
+              <Outlet />
+            </Suspense>
+          </div>
         </div>
       </div>
     </SectionErrorBoundary>

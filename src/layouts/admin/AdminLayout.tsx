@@ -130,32 +130,43 @@ const AdminLayout = () => {
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
       <ClientProvider>
         <SidebarProvider defaultOpen={!isMobile}>
-          {/* Use pt-12 (48px) on mobile and pt-14 (56px) on desktop to match TopBar height */}
-          <div className={cn("min-h-screen bg-background text-foreground relative", isMobile ? "pt-12" : "pt-14")}>
-            {/* Sidebar */}
-            <AdminSidebar />
+          {/* Fixed container for the entire layout - no page scroll */}
+          <div className="flex h-screen bg-background text-foreground overflow-hidden">
+            {/* Sidebar - fixed position */}
+            <div className="flex-shrink-0 h-full">
+              <AdminSidebar />
+            </div>
             
-            {/* Main content area */}
+            {/* Main content area with fixed header and scrollable content */}
             <div 
-              className="min-h-screen transition-all duration-300 ease-in-out"
+              className="flex flex-col flex-1 overflow-hidden"
               style={{ 
                 marginLeft: isMobile ? 0 : `${totalLeftMargin}px`,
                 width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
               }}
             >
-              {/* Top Bar - Always show on admin panel, including mobile.
-                  On mobile, TopBar renders the hamburger for sidebar. */}
-              <TopBar />
+              {/* Top Bar - fixed height, no scroll */}
+              <div className="flex-shrink-0">
+                <TopBar />
+              </div>
               
-              {/* Page content with proper responsive behavior */}
-              <main className={cn(
-                "w-full transition-all duration-300",
-                isMobile ? "pt-20 px-4 pb-8" : "" // Remove p-6 here for desktop
-              )}>
-                <div className="w-full max-w-none overflow-x-auto"> {/* Add px-6 here for desktop */}
-                  <Outlet />
-                </div>
-              </main>
+              {/* Scrollable content area - ONLY this area scrolls */}
+              <div className="flex-1 overflow-hidden flex flex-col h-full">
+                {/* Page content with proper responsive behavior and guaranteed height flow */}
+                <main className={cn(
+                  "w-full transition-all duration-300 flex-1 flex flex-col h-full",
+                  isMobile ? "pt-3 px-1 pb-8" : "" // Remove p-6 here for desktop
+                )}>
+                  <div className="w-full max-w-none h-full flex flex-col"> {/* CRITICAL: Add flex flex-col to ensure height flows */}
+                    <div className={cn(
+                      "h-full flex flex-col", // CRITICAL: Add flex flex-col to pass height down
+                      !isMobile ? "px-0" : "px-3" //Dont change the spacing, adjust feature layout spacing instead (edge to edge for layout borders)
+                    )}>
+                      <Outlet />
+                    </div>
+                  </div>
+                </main>
+              </div>
             </div>
             
             <Toaster position="top-right" />
