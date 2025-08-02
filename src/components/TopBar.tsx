@@ -16,6 +16,8 @@ import {
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import AgentStatusIndicator from '@/components/dashboard/AgentStatusIndicator';
+import TestModeBadge from '@/components/common/TestModeBadge';
+import { useQuery } from '@tanstack/react-query';
 import SystemMessages from '@/components/dashboard/SystemMessages';
 import useDashboardMetrics from '@/hooks/useDashboardMetrics';
 import { AdminService } from '@/services/adminService';
@@ -51,30 +53,25 @@ const TopBar = () => {
     message: statusMessage || '',
     lastUpdated: new Date()
   };
-  
+
+  // Fetch client data using React Query for test mode badge
+  const { data: clientData } = useQuery({
+    queryKey: ['client', clientId],
+    queryFn: () => clientId ? AdminService.getClientById(clientId) : Promise.resolve(undefined),
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000 // 5 minutes for minimal refetching
+  });
+
   // Fetch client name when component mounts or clientId changes
   useEffect(() => {
-    const fetchClientName = async () => {
-      if (clientId) {
-        try {
-          const client = await AdminService.getClientById(clientId);
-          if (client) {
-            setClientName(client.name);
-          }
-        } catch (error) {
-          console.error('Error fetching client name:', error);
-        }
-      }
-    };
-    
-    if (clientId) {
-      fetchClientName();
+    if (clientData && clientData.name) {
+      setClientName(clientData.name);
     } else if (user?.is_admin) {
       setClientName("Admin");
     } else {
       setClientName("");
     }
-  }, [clientId, user]);
+  }, [clientData, user]);
   
   // Toggle between light, dark, and system themes using theme service
   const toggleTheme = async () => {
@@ -241,10 +238,14 @@ const TopBar = () => {
       
       <div className="flex items-center space-x-3">
               
-        {/* Agent Status Indicator - Using the original component with real-time status data */}
-        {!isLoading && (
-          <AgentStatusIndicator agentStatus={agentStatus} />
-        )}
+        {/* Agent Status Indicator and Test Mode Badge */}
+        <div className="flex items-center gap-2">
+          {!isLoading && (
+            <AgentStatusIndicator agentStatus={agentStatus} />
+          )}
+          {/* Conditionally render TestModeBadge if test mode is enabled */}
+          {clientData?.is_in_test_mode && <TestModeBadge />}
+        </div>
         
         {/* System Messages */}
         {metrics?.systemMessages && (
