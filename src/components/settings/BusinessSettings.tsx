@@ -507,12 +507,12 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
       </div>
       <div className="mt-4 text-sm text-muted-foreground">
         <p>
-          When test mode is enabled, calls for this client will be marked as test calls. 
+          When test mode is enabled, all incoming calls will be marked as test calls. 
           This is useful for development and testing purposes.
         </p>
         {!canEditBusiness && (
           <span className="text-xs text-muted-foreground italic block mt-2">
-            Only admins or client admins can change test mode.
+            Only managers or account managers can change test mode.
           </span>
         )}
       </div>
@@ -526,10 +526,9 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
             <div className="flex items-start">
               <InfoIcon className="h-5 w-5 text-primary mr-2 mt-0.5" />
               <div>
-                <p className="font-medium text-primary mb-1">Edit Access Required</p>
+                <p className="font-medium text-primary mb-1">Edit Business Details</p>
                 <p className="text-muted-foreground">
-                  To modify business information, please contact your client administrator or system administrator. 
-                  Only users with admin or client admin privileges can change business-level settings.
+                  To modify business information, please contact your business manager or account manager. 
                 </p>
               </div>
             </div>

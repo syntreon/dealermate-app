@@ -35,13 +35,13 @@ export class LeadEvaluationService {
    * @param callIds - Array of call IDs to get evaluations for
    * @returns Map of call ID to evaluation summary
    */
-  static async getEvaluationsByCallIds(callIds: string[]): Promise<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>> {
+  static async getEvaluationsByCallIds(callIds: string[]): Promise<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative'; humanReviewRequired: boolean }>> {
     try {
       if (callIds.length === 0) return new Map();
       
       const { data, error } = await supabase
         .from('lead_evaluations' as any)
-        .select('call_id, overall_evaluation_score, sentiment')
+        .select('call_id, overall_evaluation_score, sentiment, human_review_required')
         .in('call_id', callIds);
 
       if (error) {
@@ -49,12 +49,14 @@ export class LeadEvaluationService {
         return new Map();
       }
 
-      const evaluationMap = new Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>();
+      // Build evaluation map including humanReviewRequired for each call
+      const evaluationMap = new Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative'; humanReviewRequired: boolean }>();
       data?.forEach(item => {
         if (item.call_id) {
           evaluationMap.set(item.call_id, {
             overallScore: item.overall_evaluation_score,
-            sentiment: item.sentiment
+            sentiment: item.sentiment,
+            humanReviewRequired: !!item.human_review_required // ensure boolean
           });
         }
       });

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Calendar, ChevronDown, ChevronUp, Clock, Filter, Phone, PhoneCall, PhoneOutgoing, Search, User, VoicemailIcon, Eye, Info } from 'lucide-react';
 import { CallLog, CallType } from '@/integrations/supabase/call-logs-service';
+import CallLogsAdvancedFilter, { CallLogsAdvancedFilters } from './CallLogsAdvancedFilter';
 import { cn } from '@/lib/utils';
 import CallDetailsPopup from './calls/CallDetailsPopup';
 import { Button } from '@/components/ui/button';
@@ -94,6 +95,8 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
    */
   leadCallIds = new Set(),
 }) => {
+  // Advanced filter state (minimal, modular)
+  const [advancedFilters, setAdvancedFilters] = useState<CallLogsAdvancedFilters>({});
   const { user } = useAuth();
   const [sortField, setSortField] = useState<keyof CallLog>('call_start_time');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -102,7 +105,7 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   const [selectedCall, setSelectedCall] = useState<ExtendedCallLog | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [inquiryTypes, setInquiryTypes] = useState<Map<string, string>>(new Map());
-  const [evaluations, setEvaluations] = useState<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative' }>>(new Map());
+  const [evaluations, setEvaluations] = useState<Map<string, { overallScore: number | null; sentiment: 'positive' | 'neutral' | 'negative'; humanReviewRequired: boolean }>>(new Map());
   const [adherenceScores, setAdherenceScores] = useState<Map<string, number>>(new Map());
 
   // Use useMemo to stabilize the admin check and prevent infinite renders
@@ -173,32 +176,56 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
   };
 
   // Filter and sort call logs
+  // Apply advanced filters and existing filters
   const filteredAndSortedLogs = callLogs
     .filter(log => {
-      // Apply call type filter (case-insensitive to match data and filter values)
+      // 1. Call type filter (existing)
       if (selectedCallType && log.call_type?.toLowerCase() !== selectedCallType.toLowerCase()) {
         return false;
       }
 
-      // Apply search filter if search term exists
-      // Search now includes: caller name, phone number, transcript, client ID, inquiry type, and call type
-      // This ensures users can search by call type keywords (e.g., 'inbound', 'outbound')
+      // 2. Advanced filters (score, sentiment, inquiry type, review required)
+      const evaluation = evaluations.get(log.id);
+      // Score filter (1-5, nullable)
+      const evalScore = evaluation?.overallScore ?? null;
+      if (
+        (advancedFilters.minScore !== undefined && (evalScore === null || evalScore < advancedFilters.minScore)) ||
+        (advancedFilters.maxScore !== undefined && (evalScore === null || evalScore > advancedFilters.maxScore))
+      ) {
+        return false;
+      }
+      // Sentiment filter - handle '__all__' sentinel value
+      const sentiment = evaluation?.sentiment ?? '';
+      if (advancedFilters.sentiment && advancedFilters.sentiment !== '__all__' && sentiment !== advancedFilters.sentiment) {
+        return false;
+      }
+      // Inquiry type filter (from inquiryTypes map) - handle '__all__' sentinel value
+      const inquiryType = inquiryTypes.get(log.id) ?? '';
+      if (advancedFilters.inquiryType && advancedFilters.inquiryType !== '__all__' && inquiryType !== advancedFilters.inquiryType) {
+        return false;
+      }
+      // Review required filter (boolean in LeadEvaluation)
+      const reviewEvaluation = evaluations.get(log.id);
+      if (
+        advancedFilters.reviewRequired !== undefined &&
+        reviewEvaluation?.humanReviewRequired !== undefined &&
+        reviewEvaluation?.humanReviewRequired !== advancedFilters.reviewRequired
+      ) {
+        return false;
+      }
+
+      // 3. Search filter (existing)
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
-        // Debug: log call_type being checked
-        if (log.call_type && search) {
-          console.log('[CallType Search Debug]', { callType: log.call_type, search });
-        }
         return (
           (log.caller_full_name?.toLowerCase().includes(search) || false) ||
           (log.caller_phone_number?.toLowerCase().includes(search) || false) ||
           (log.transcript?.toLowerCase().includes(search) || false) ||
           (log.client_id?.toLowerCase().includes(search) || false) ||
-          (inquiryTypes.get(log.id)?.toLowerCase().includes(search) || false) ||
+          (inquiryType.toLowerCase().includes(search) || false) ||
           (log.call_type?.toLowerCase().includes(search) || false)
         );
       }
-
       return true;
     })
     .sort((a, b) => {
@@ -290,6 +317,11 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
             </select>
           </div>
           
+          {/* Advanced Filter UI */}
+          <CallLogsAdvancedFilter
+            filters={advancedFilters}
+            onFilterChange={setAdvancedFilters}
+          />
           {/* Spacer */}
           <div className="flex-grow"></div>
         </div>
