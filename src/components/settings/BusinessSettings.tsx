@@ -486,34 +486,39 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ clientId, is
         </div>
 
         {/* Test Mode Toggle */}
-        {canEditBusiness && businessData && (
-          <div className="space-y-4">
-            <div className="bg-muted/50 p-4 rounded-lg border border-border">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-md">
-                    <AlertTriangle className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-lg text-card-foreground">Test Mode</h3>
-                    <p className="text-sm text-muted-foreground">Enable or disable test mode for this client</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={businessData.is_in_test_mode ?? false}
-                  onCheckedChange={handleTestModeToggle}
-                  disabled={isTestModeUpdating}
-                />
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>
-                  When test mode is enabled, calls for this client will be marked as test calls. 
-                  This is useful for development and testing purposes.
-                </p>
-              </div>
-            </div>
+        {businessData && (
+  <div className="space-y-4">
+    <div className="bg-muted/50 p-4 rounded-lg border border-border">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-2 rounded-md">
+            <AlertTriangle className="h-5 w-5 text-primary" />
           </div>
+          <div>
+            <h3 className="font-medium text-lg text-card-foreground">Test Mode</h3>
+            <p className="text-sm text-muted-foreground">Enable or disable test mode for this client</p>
+          </div>
+        </div>
+        <Switch
+          checked={businessData.is_in_test_mode ?? false}
+          onCheckedChange={canEditBusiness ? handleTestModeToggle : undefined}
+          disabled={!canEditBusiness || isTestModeUpdating}
+        />
+      </div>
+      <div className="mt-4 text-sm text-muted-foreground">
+        <p>
+          When test mode is enabled, calls for this client will be marked as test calls. 
+          This is useful for development and testing purposes.
+        </p>
+        {!canEditBusiness && (
+          <span className="text-xs text-muted-foreground italic block mt-2">
+            Only admins or client admins can change test mode.
+          </span>
         )}
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Admin message for users without edit permissions */}
         {!canEditBusiness && (
