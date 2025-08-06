@@ -12,6 +12,8 @@ import { CallTypeProvider } from '@/context/CallTypeContext';
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { RouteGroups, preloadCriticalRoutes } from "@/utils/routeCodeSplitting";
 import bundleAnalyzer from "@/utils/bundleAnalyzer";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 // Emergency egress controls are loaded via main.tsx import
 
 const queryClient = new QueryClient({
@@ -46,6 +48,8 @@ const App = () => {
             <CallsProvider>
               <LeadProvider>
                 <CallTypeProvider>
+                  <SpeedInsights />
+                  <Analytics />
                   <Suspense fallback={<LoadingSpinner text="Loading application..." />}>
                     <Routes>
                     <Route path="/login" element={
@@ -323,6 +327,7 @@ const App = () => {
       <Sonner />
     </TooltipProvider>
   </QueryClientProvider>
+  
   );
 };
 
