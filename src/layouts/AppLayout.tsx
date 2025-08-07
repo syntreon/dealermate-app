@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import AppSidebar from '../components/AppSidebar';
 import TopBar from '../components/TopBar';
 import { Toaster } from '@/components/ui/sonner';
+
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Wifi, WifiOff, RefreshCw, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
 import { ClientProvider } from '@/context/ClientContext';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { NotificationModal } from '@/components/NotificationModal';
+import { useState } from 'react';
 
 const AppLayout = () => {
   const {
@@ -24,7 +28,19 @@ const AppLayout = () => {
   } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const [currentNotification, setCurrentNotification] = useState<any>(null);
 
+  // Handle notification display with auto-dismiss
+  const handleNotification = (notification: any) => {
+    console.log('Received notification in AppLayout:', notification);
+    setCurrentNotification(notification);
+  };
+
+  // Subscribe to real-time notifications
+  useRealtimeNotifications({
+    user,
+    onNotification: handleNotification
+  });
   // Force refresh the page
   const handleForceRefresh = () => {
     window.location.reload();
@@ -87,6 +103,10 @@ const AppLayout = () => {
             </div>
 
             <Toaster position="top-right" />
+            <NotificationModal
+              notification={currentNotification}
+              onClose={() => setCurrentNotification(null)}
+            />
           </div>
         </SidebarProvider>
       </ClientProvider>

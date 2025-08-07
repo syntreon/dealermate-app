@@ -29,9 +29,10 @@ class SimpleRealtimeService {
   }
 
   private log(message: string, ...args: any[]) {
-    // Completely disable all realtime logging to prevent console spam
-    // TODO: Re-enable when subscription churn issue is resolved
-    return;
+    // Enable logging for debugging
+    if (this.isDebugMode) {
+      console.log(`[SimpleRealtimeService] ${message}`, ...args);
+    }
   }
 
   private updateConnectionStatus(status: Partial<ConnectionStatus>) {
@@ -381,6 +382,59 @@ class SimpleRealtimeService {
     };
   }
 
+/**
+ * Subscribe to notification inserts for a given client
+ */
+subscribeToNotifications(
+  clientId: string | null,
+  callback: (notification: any) => void
+): Subscription {
+  const channelName = `notifications-${clientId || 'global'}`;
+  console.log('subscribeToNotifications called with clientId:', clientId);
+
+  if (!this.callbacks.has(channelName)) {
+    this.callbacks.set(channelName, new Set());
+  }
+  this.callbacks.get(channelName)!.add(callback);
+
+  if (!this.channels.has(channelName)) {
+    console.log('Creating new channel for notifications with clientId filter:', clientId);
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: clientId ? `client_id=eq.${clientId}` : undefined,
+        },
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          console.log('Received notification payload:', payload);
+          const notification = payload.new;
+          if (notification) {
+            console.log('Sending notification to callbacks:', notification);
+            const callbacks = this.callbacks.get(channelName);
+            if (callbacks) {
+              callbacks.forEach(cb => cb(notification));
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Notification subscription status:', status);
+      });
+    this.channels.set(channelName, channel);
+  }
+
+  return {
+    unsubscribe: () => {
+      console.log('Unsubscribing from notifications channel:', channelName);
+      this.callbacks.get(channelName)?.delete(callback);
+      // (Optionally, clean up channel if no callbacks left)
+    },
+  };
+}
   /**
    * Get current connection status
    */
