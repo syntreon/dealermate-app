@@ -24,6 +24,7 @@ import Logo from '@/components/Logo';
 import { mainNavItems, hasRequiredAccess, backToMainAppItem } from '@/config/adminNav';
 import { useSidebarStatePersistence, type SidebarMode } from '@/hooks/useSidebarStatePersistence';
 import { sidebarStateService } from '@/services/sidebarStateService';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 // Function to filter navigation items based on user role
 const getFilteredNavItems = (user: unknown) => {
@@ -48,6 +49,8 @@ const DesktopAdminSidebar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  // Mobile drawer state for admin sidebar
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   // Dynamic TopBar offset (including banner)
   const [topBarHeight, setTopBarHeight] = useState<number>(0);
   useEffect(() => {
@@ -59,6 +62,23 @@ const DesktopAdminSidebar = () => {
     window.dispatchEvent(new CustomEvent('request-admin-topbar-height'));
     return () => window.removeEventListener('admin-topbar-height', onTopbarHeight as EventListener);
   }, []);
+
+  // Wire TopBar hamburger to open this admin mobile drawer without duplicating desktop logic
+  useEffect(() => {
+    const openHandler = () => setIsMobileOpen(true);
+    const closeHandler = () => setIsMobileOpen(false);
+    window.addEventListener('open-admin-sidebar', openHandler as EventListener);
+    window.addEventListener('close-admin-sidebar', closeHandler as EventListener);
+    return () => {
+      window.removeEventListener('open-admin-sidebar', openHandler as EventListener);
+      window.removeEventListener('close-admin-sidebar', closeHandler as EventListener);
+    };
+  }, []);
+
+  // Close drawer on route change for clean UX
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
 
   // Use the enhanced sidebar state persistence hook
   const {
@@ -179,6 +199,53 @@ const DesktopAdminSidebar = () => {
 
   return (
     <>
+      {/* Mobile Admin Drawer: opens via TopBar 'open-admin-sidebar' event */}
+      <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+        <SheetContent
+          side="left"
+          className="w-[18rem] p-0 bg-card text-foreground border-border [&>button]:hidden"
+        >
+          {/* Offset for TopBar/banner and constrain height inside the drawer */}
+          <div
+            className="w-full overflow-y-auto border-r border-border"
+            style={{ paddingTop: topBarHeight, height: `calc(100vh - ${topBarHeight}px)` }}
+          >
+            {/* Back to Main App */}
+            <div className="px-4 pt-4 pb-2">
+              <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                <NavLink to={backToMainAppItem.href} onClick={() => setIsMobileOpen(false)}>
+                  <backToMainAppItem.icon className="h-4 w-4 mr-2" />
+                  {backToMainAppItem.title}
+                </NavLink>
+              </Button>
+            </div>
+
+            {/* Main Navigation */}
+            <nav className="space-y-2 px-2 pb-24">
+              {filteredNavItems.map((item) => {
+                const isActive = getActiveSection(location.pathname) === item.id;
+                return (
+                  <NavLink
+                    key={item.id}
+                    to={item.href}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200",
+                      isActive
+                        ? "bg-primary/10 text-primary border-l-4 border-primary"
+                        : "text-foreground/70 hover:text-foreground hover:bg-secondary border-l-4 border-transparent"
+                    )}
+                    onClick={() => setIsMobileOpen(false)}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium">{item.title}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Base sidebar - always 64px when collapsed or expand-on-hover */}
       <div
         ref={sidebarRef}
