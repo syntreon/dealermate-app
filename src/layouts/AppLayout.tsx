@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import AppSidebar from '../components/AppSidebar';
@@ -16,7 +16,7 @@ import { ThemeProvider } from 'next-themes';
 import { ClientProvider } from '@/context/ClientContext';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { NotificationModal } from '@/components/NotificationModal';
-import { useState } from 'react';
+import { useState as useLocalState } from 'react';
 
 const AppLayout = () => {
   const {
@@ -28,7 +28,20 @@ const AppLayout = () => {
   } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [currentNotification, setCurrentNotification] = useState<any>(null);
+  const [currentNotification, setCurrentNotification] = useLocalState<any>(null);
+  // Track TopBar height (including banner) to offset entire layout
+  const [topBarHeight, setTopBarHeight] = useState<number>(0);
+
+  useEffect(() => {
+    const onTopbarHeight = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { height?: number };
+      if (detail && typeof detail.height === 'number') setTopBarHeight(detail.height);
+    };
+    window.addEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+    // Request current height on mount
+    window.dispatchEvent(new CustomEvent('request-admin-topbar-height'));
+    return () => window.removeEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+  }, []);
 
   // Handle notification display with auto-dismiss
   const handleNotification = (notification: any) => {
@@ -84,8 +97,8 @@ const AppLayout = () => {
         <SidebarProvider defaultOpen={!isMobile}>
 
 
-          {/* Use pt-12 (48px) on mobile and pt-14 (56px) on desktop to match TopBar height */}
-          <div className={cn("min-h-screen bg-background text-foreground flex w-full", isMobile ? "pt-12" : "pt-14")}>
+          {/* Offset entire layout by TopBar+banner height so sidebar and content sit below */}
+          <div className={cn("min-h-screen bg-background text-foreground flex w-full")} style={{ paddingTop: topBarHeight }}>
             {/* Sidebar */}
             <AppSidebar />
 

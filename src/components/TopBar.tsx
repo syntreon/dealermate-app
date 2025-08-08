@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Moon, Sun, Settings, Building2, AlertTriangle, Info, AlertCircle, CheckCircle, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -140,52 +140,94 @@ const TopBar = () => {
     }
   };
 
+  // Ref to measure banner height precisely
+  const bannerRef = useRef<HTMLDivElement | null>(null);
+  // Broadcast TopBar height (including banner when visible) so layouts can offset content
+  useEffect(() => {
+    const computeAndDispatch = () => {
+      // Base header height: mobile 48px (h-12), desktop 56px (h-14)
+      const isDesktop = window.innerWidth >= 768;
+      const base = isDesktop ? 56 : 48;
+      // Measure actual banner height if visible
+      const bannerHeight = bannerRef.current ? bannerRef.current.offsetHeight || 0 : 0;
+      const height = base + bannerHeight;
+      window.dispatchEvent(new CustomEvent('admin-topbar-height', { detail: { height } }));
+    };
+
+    // Initial broadcast and on dependency changes
+    computeAndDispatch();
+    const onResize = () => computeAndDispatch();
+    const onRequest = () => computeAndDispatch();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('request-admin-topbar-height', onRequest as EventListener);
+
+    // Observe banner height changes dynamically
+    let observer: ResizeObserver | null = null;
+    if (bannerRef.current && 'ResizeObserver' in window) {
+      observer = new ResizeObserver(() => computeAndDispatch());
+      observer.observe(bannerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('request-admin-topbar-height', onRequest as EventListener);
+      if (observer) observer.disconnect();
+    };
+  }, [isLoading, status, broadcastMessage]);
+
   return (
-    <>
-      {/* System Status Banner */}
-      {!isLoading && (status !== 'active' || broadcastMessage) && (
-        <div className={cn(
-          "w-full px-4 py-2 border-b flex items-center justify-between z-10 relative",
-          getStatusBackgroundColor(),
-          broadcastMessage && status === 'active' && (
-            // Use theme-aware semantic background and border for each type
-            // Use theme-aware backgrounds for each type; info uses --info-bg for proper dark mode support
-            broadcastMessage.type === 'warning' ? "bg-[hsl(var(--warning)/0.08)] border-[hsl(var(--warning))]" :
-            broadcastMessage.type === 'error' ? "bg-[hsl(var(--destructive)/0.08)] border-[hsl(var(--destructive))]" :
-            broadcastMessage.type === 'success' ? "bg-[hsl(var(--success)/0.08)] border-[hsl(var(--success))]" :
-            "bg-[hsl(var(--info-bg))] border-[hsl(var(--info))]"
-          )
-        )}>
-          <div className="flex items-center space-x-2">
-            {status !== 'active' ? (
-              <>
-                {status === 'maintenance' ? (
-                  <AlertTriangle className="h-4 w-4 text-[hsl(var(--warning))]" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4 text-[hsl(var(--destructive))]" />
-                )}
-                <span className="font-medium">
-                  {status === 'maintenance' ? 'System Maintenance' : 'System Unavailable'}
-                </span>
-                {statusMessage && (
-                  <span className="text-sm text-muted-foreground"> - {statusMessage}</span>
-                )}
-              </>
-            ) : broadcastMessage && (
-              <>
-                {getMessageIcon(broadcastMessage.type)}
-                <span className="text-sm">{broadcastMessage.message}</span>
-              </>
+      <div className={cn("fixed top-0 left-0 z-50 w-full bg-background")}> 
+        {/* Fixed wrapper across the app */}
+        {/* System Status Banner - inside the same container so it pushes the bar below */}
+        {!isLoading && (status !== 'active' || broadcastMessage) && (
+          <div
+            ref={bannerRef}
+            className={cn(
+              "w-full px-4 py-2 border-b flex items-center justify-between",
+              getStatusBackgroundColor(),
+              broadcastMessage && status === 'active' && (
+                broadcastMessage.type === 'warning'
+                  ? "bg-[hsl(var(--warning)/0.08)] border-[hsl(var(--warning))]"
+                  : broadcastMessage.type === 'error'
+                  ? "bg-[hsl(var(--destructive)/0.08)] border-[hsl(var(--destructive))]"
+                  : broadcastMessage.type === 'success'
+                  ? "bg-[hsl(var(--success)/0.08)] border-[hsl(var(--success))]"
+                  : "bg-[hsl(var(--info-bg))] border-[hsl(var(--info))]"
+              )
             )}
+          >
+            <div className="flex items-center space-x-2">
+              {status !== 'active' ? (
+                <>
+                  {status === 'maintenance' ? (
+                    <AlertTriangle className="h-4 w-4 text-[hsl(var(--warning))]" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 text-[hsl(var(--destructive))]" />
+                  )}
+                  <span className="font-medium">
+                    {status === 'maintenance' ? 'System Maintenance' : 'System Unavailable'}
+                  </span>
+                  {statusMessage && (
+                    <span className="text-sm text-muted-foreground"> - {statusMessage}</span>
+                  )}
+                </>
+              ) : (
+                broadcastMessage && (
+                  <>
+                    {getMessageIcon(broadcastMessage.type)}
+                    <span className="text-sm">{broadcastMessage.message}</span>
+                  </>
+                )
+              )}
+            </div>
           </div>
-        </div>
-      )}
-      
-      {/* Responsive TopBar: reduced height on mobile, normal on desktop */}
-      <div className="fixed top-0 left-0 w-full h-12 md:h-14 border-b border-border bg-background z-50 flex items-center justify-between px-2 md:px-6">
-        {/* Mobile admin sidebar hamburger button: only on admin routes, only on mobile */}
-        {isAdminRoute && (
-          <div className="md:hidden flex items-center mr-2">
+        )}
+
+        {/* Responsive TopBar: reduced height on mobile, normal on desktop */}
+        <div className="h-12 md:h-14 border-b border-border w-full flex items-center justify-between px-2 md:px-6">
+          {/* Mobile admin sidebar hamburger button: only on admin routes, only on mobile */}
+          {isAdminRoute && (
+            <div className="md:hidden flex items-center mr-2">
             {/* This button will trigger the admin sidebar drawer. 
                 To avoid duplicate triggers, ensure only one exists in the app. 
                 You may need to lift state/context if both TopBar and AdminSidebar are mounted. */}
@@ -328,9 +370,9 @@ const TopBar = () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
+        </div>
       </div>
-    </div>
-    </>
   );
 };
 

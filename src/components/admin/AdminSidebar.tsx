@@ -48,6 +48,17 @@ const DesktopAdminSidebar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  // Dynamic TopBar offset (including banner)
+  const [topBarHeight, setTopBarHeight] = useState<number>(0);
+  useEffect(() => {
+    const onTopbarHeight = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { height?: number };
+      if (detail && typeof detail.height === 'number') setTopBarHeight(detail.height);
+    };
+    window.addEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+    window.dispatchEvent(new CustomEvent('request-admin-topbar-height'));
+    return () => window.removeEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+  }, []);
 
   // Use the enhanced sidebar state persistence hook
   const {
@@ -172,9 +183,10 @@ const DesktopAdminSidebar = () => {
       <div
         ref={sidebarRef}
         className={cn(
-          "fixed left-0 top-14 h-[calc(100vh-56px)] bg-card border-r border-border shadow-sm transition-all duration-300 z-40 overflow-y-auto", // top-14 and calculated height ensures proper positioning below TopBar
+          "fixed left-0 bg-card border-r border-border shadow-sm transition-all duration-300 z-40 overflow-y-auto",
           currentWidth === 64 ? "w-16" : "w-64"
         )}
+        style={{ top: topBarHeight, height: `calc(100vh - ${topBarHeight}px)` }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -289,7 +301,8 @@ const DesktopAdminSidebar = () => {
       {isOverlay && (
         <div
           ref={overlayRef}
-          className="fixed left-0 top-14 h-[calc(100vh-56px)] w-64 bg-card border-r border-border shadow-xl z-50 transition-all duration-300 overflow-y-auto"
+          className="fixed left-0 w-64 bg-card border-r border-border shadow-xl z-50 transition-all duration-300 overflow-y-auto"
+          style={{ top: topBarHeight, height: `calc(100vh - ${topBarHeight}px)` }}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >

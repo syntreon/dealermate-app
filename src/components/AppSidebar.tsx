@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Phone, Settings, LogOut, FileText, BarChart, User, Shield, Bot, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,18 @@ const DesktopSidebar = () => {
   const { isMobile } = useSidebar();
   const location = useLocation();
 
+  // Dynamic offset for fixed TopBar + optional banner
+  const [topBarHeight, setTopBarHeight] = useState<number>(0);
+  useEffect(() => {
+    const onTopbarHeight = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { height?: number };
+      if (detail && typeof detail.height === 'number') setTopBarHeight(detail.height);
+    };
+    window.addEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+    window.dispatchEvent(new CustomEvent('request-admin-topbar-height'));
+    return () => window.removeEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+  }, []);
+
   // Check user privileges
   const isAdmin = canAccessAdminPanel(user);
   const hasClientAdmin = hasClientAdminAccess(user);
@@ -51,7 +63,10 @@ const DesktopSidebar = () => {
   );
 
   return (
-    <Sidebar className="border-r border-border bg-card shadow-sm fixed top-14 h-[calc(100vh-56px)] overflow-y-auto"> {/* top-14 and calculated height ensures proper positioning below TopBar */}
+    <Sidebar
+      className="border-r border-border bg-card shadow-sm fixed overflow-y-auto"
+      style={{ top: topBarHeight, height: `calc(100vh - ${topBarHeight}px)` }}
+    > {/* Positioned dynamically below TopBar/banner */}
       <SidebarContent className="pt-3"> {/* Added top padding to prevent first item obstruction */}
         {/* Increased spacing between menu items */}
         <SidebarMenu className="space-y-2.5 px-2">

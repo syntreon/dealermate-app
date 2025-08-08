@@ -20,6 +20,24 @@ const AdminLayout = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
 
+  // Track TopBar height (including banner) broadcast from TopBar
+  const [topBarHeight, setTopBarHeight] = useState<number>(0);
+
+  useEffect(() => {
+    const onTopbarHeight = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { height?: number };
+      if (detail && typeof detail.height === 'number') {
+        setTopBarHeight(detail.height);
+      }
+    };
+    window.addEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+    // Ask TopBar to send current height once we mount
+    window.dispatchEvent(new CustomEvent('request-admin-topbar-height'));
+    return () => {
+      window.removeEventListener('admin-topbar-height', onTopbarHeight as EventListener);
+    };
+  }, []);
+
   // IMPORTANT: Always declare all hooks at the top level, before any conditional logic
   // Calculate sidebar width for proper main content positioning
   const [mainSidebarWidth, setMainSidebarWidth] = useState(() => {
@@ -130,8 +148,8 @@ const AdminLayout = () => {
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
       <ClientProvider>
         <SidebarProvider defaultOpen={!isMobile}>
-          {/* Fixed container for the entire layout - no page scroll */}
-          <div className="flex h-screen bg-background text-foreground overflow-hidden">
+          {/* Fixed container for the entire layout - no page scroll; offset by TopBar height */}
+          <div className="flex h-screen bg-background text-foreground overflow-hidden" style={{ paddingTop: topBarHeight }}>
             {/* Sidebar - fixed position */}
             <div className="flex-shrink-0 h-full">
               <AdminSidebar />
@@ -151,7 +169,9 @@ const AdminLayout = () => {
               </div>
               
               {/* Scrollable content area - ONLY this area scrolls */}
-              <div className="flex-1 overflow-hidden flex flex-col h-full">
+              <div
+                className="flex-1 overflow-hidden flex flex-col h-full"
+              >
                 {/* Page content with proper responsive behavior and guaranteed height flow */}
                 <main className={cn(
                   "w-full transition-all duration-300 flex-1 flex flex-col h-full",
