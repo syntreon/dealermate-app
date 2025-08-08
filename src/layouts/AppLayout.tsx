@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import AppSidebar from '../components/AppSidebar';
-import TopBar from '../components/TopBar';
 import { Toaster } from '@/components/ui/sonner';
 
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -13,7 +12,6 @@ import { SidebarTrigger, SidebarInset, SidebarProvider } from '@/components/ui/s
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
-import { ClientProvider } from '@/context/ClientContext';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { NotificationModal } from '@/components/NotificationModal';
 import { useState as useLocalState } from 'react';
@@ -93,7 +91,6 @@ const AppLayout = () => {
   }
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <ClientProvider>
         <SidebarProvider defaultOpen={!isMobile}>
 
 
@@ -104,8 +101,7 @@ const AppLayout = () => {
 
             {/* Main content area */}
             <div className="flex flex-col flex-1">
-              {/* Top Bar - Always show on main page, including mobile. */}
-              <TopBar />
+              {/* TopBar is mounted globally via GlobalHeader */}
 
               {/* Page content */}
               <SidebarInset className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-2 pb-24 md:p-3">
@@ -122,7 +118,6 @@ const AppLayout = () => {
             />
           </div>
         </SidebarProvider>
-      </ClientProvider>
     </ThemeProvider>
   );
 };

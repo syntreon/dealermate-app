@@ -14,13 +14,13 @@ interface LazyRouteOptions {
 /**
  * Creates a lazy-loaded component with enhanced error handling and retry logic
  */
-export const createLazyRoute = (
-  importFn: () => Promise<{ default: ComponentType<unknown> }>,
+export const createLazyRoute = <P = any>(
+  importFn: () => Promise<{ default: ComponentType<P> }>,
   options: LazyRouteOptions = {}
 ) => {
   const { retryCount = 3 } = options;
   
-  const retryImport = async (attempt = 1): Promise<{ default: ComponentType<unknown> }> => {
+  const retryImport = async (attempt = 1): Promise<{ default: ComponentType<P> }> => {
     try {
       return await importFn();
     } catch (error) {
@@ -33,7 +33,7 @@ export const createLazyRoute = (
     }
   };
 
-  const LazyComponent = lazy(() => retryImport());
+  const LazyComponent = lazy(() => retryImport()) as unknown as ComponentType<P>;
   
   // Add preloading capability
   if (options.preload) {
@@ -112,7 +112,6 @@ export const RouteGroups = {
   errorBoundary: {
     SectionErrorBoundary: createLazyRoute(() => import('../components/admin/layout/SectionErrorBoundary')),
     SectionLoadingFallback: createLazyRoute(() => import('../components/admin/layout/SectionLoadingFallback')),
-    ErrorFallbackComponents: createLazyRoute(() => import('../components/admin/layout/ErrorFallbackComponents')),
   },
 
   // Utility components
@@ -246,7 +245,7 @@ export const BundleOptimization = {
    * Preload admin layouts based on user role and current section
    */
   preloadAdminLayouts: (currentSection?: string) => {
-    const layoutsToPreload = [
+    const layoutsToPreload: Array<() => Promise<any>> = [
       () => import('../layouts/admin/AdminLayout'),
     ];
 

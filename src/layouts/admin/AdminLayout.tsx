@@ -3,7 +3,6 @@ import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { canAccessAdminPanel, hasClientAdminAccess, hasSystemWideAccess } from '@/utils/clientDataIsolation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
-import TopBar from '@/components/TopBar';
 import { Toaster } from '@/components/ui/sonner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Shield } from 'lucide-react';
@@ -13,7 +12,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ThemeProvider } from 'next-themes';
 import { mainNavItems, hasRequiredAccess } from '@/config/adminNav';
 import { cn } from '@/lib/utils';
-import { ClientProvider } from '@/context/ClientContext';
 
 const AdminLayout = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -146,7 +144,6 @@ const AdminLayout = () => {
 
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
-      <ClientProvider>
         <SidebarProvider defaultOpen={!isMobile}>
           {/* Fixed container for the entire layout - no page scroll; offset by TopBar height */}
           <div className="flex h-screen bg-background text-foreground overflow-hidden" style={{ paddingTop: topBarHeight }}>
@@ -163,10 +160,7 @@ const AdminLayout = () => {
                 width: isMobile ? '100%' : `calc(100vw - ${totalLeftMargin}px)`
               }}
             >
-              {/* Top Bar - fixed height, no scroll */}
-              <div className="flex-shrink-0">
-                <TopBar />
-              </div>
+              {/* TopBar is mounted globally via GlobalHeader */}
               
               {/* Scrollable content area - ONLY this area scrolls */}
               <div
@@ -192,8 +186,7 @@ const AdminLayout = () => {
             <Toaster position="top-right" />
           </div>
         </SidebarProvider>
-      </ClientProvider>
-    </ThemeProvider>
+      </ThemeProvider>
   );
 };
 

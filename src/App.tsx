@@ -16,6 +16,9 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
 // Emergency egress controls are loaded via main.tsx import
 
+import GlobalHeader from '@/components/global/GlobalHeader';
+import { ClientProvider } from '@/context/ClientContext';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -48,10 +51,13 @@ const App = () => {
             <CallsProvider>
               <LeadProvider>
                 <CallTypeProvider>
-                  <SpeedInsights />
-                  <Analytics />
-                  <Suspense fallback={<LoadingSpinner text="Loading application..." />}>
-                    <Routes>
+                  <ClientProvider>
+                    <SpeedInsights />
+                    <Analytics />
+                    {/* Global header (TopBar + Banner via portal) mounted once for entire app */}
+                    <GlobalHeader />
+                    <Suspense fallback={<LoadingSpinner text="Loading application..." />}>
+                      <Routes>
                     <Route path="/login" element={
                       <Suspense fallback={<LoadingSpinner text="Loading login..." />}>
                         <RouteGroups.auth.Login />
@@ -317,11 +323,12 @@ const App = () => {
                     } />
                   </Routes>
                 </Suspense>
-                </CallTypeProvider>
-              </LeadProvider>
-            </CallsProvider>
-          </ThemeInitProvider>
-        </AuthProvider>
+                </ClientProvider>
+              </CallTypeProvider>
+            </LeadProvider>
+          </CallsProvider>
+        </ThemeInitProvider>
+      </AuthProvider>
       </BrowserRouter>
       <Toaster />
       <Sonner />
