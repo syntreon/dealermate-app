@@ -236,9 +236,11 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden mx-auto">
       {/* Table filters */}
       <div className="p-3 border-b border-border bg-secondary/30">
-        <div className="flex flex-row gap-3 items-center flex-wrap">
+        {/* Allow wrapping and responsive widths to avoid horizontal overflow on mobile */}
+        <div className="flex flex-row gap-3 items-center flex-wrap w-full min-w-0">
           {/* Search Input */}
-          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '300px' }}>
+          {/* Responsive width: full on mobile, fixed on sm+ */}
+          <div className="relative w-full sm:w-[300px] min-w-0 flex-shrink">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-foreground/50" />
             </div>
@@ -252,7 +254,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
           </div>
 
           {/* Status Filter */}
-          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '180px' }}>
+          {/* Responsive width: full on mobile, fixed on sm+ */}
+          <div className="relative w-full sm:w-[180px] min-w-0 flex-shrink">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter className="h-4 w-4 text-foreground/50" />
             </div>
@@ -272,7 +275,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
           </div>
 
           {/* Source Filter */}
-          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '180px' }}>
+          {/* Responsive width: full on mobile, fixed on sm+ */}
+          <div className="relative w-full sm:w-[180px] min-w-0 flex-shrink">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter className="h-4 w-4 text-foreground/50" />
             </div>
@@ -290,7 +294,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
               <option value="other">Other</option>
             </select>
           </div>
-          
+
           {/* Spacer */}
           <div className="flex-grow"></div>
         </div>

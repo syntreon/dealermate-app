@@ -64,12 +64,12 @@ const Analytics = () => {
   };
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-4 pb-8 w-full max-w-full overflow-x-hidden px-3 sm:px-0">
       {/* Mobile-first compact header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Analytics</h1>
-          <p className="text-sm text-muted-foreground">Detailed analytics and insights for your call system</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Analytics</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Detailed analytics and insights for your call system</p>
         </div>
       </div>
       

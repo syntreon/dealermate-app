@@ -95,7 +95,7 @@ const AppLayout = () => {
               <TopBar />
 
               {/* Page content */}
-              <SidebarInset className="flex-1 overflow-auto p-2 pb-24 md:p-3">
+              <SidebarInset className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-2 pb-24 md:p-3">
                 <div className="w-full animate-in">
                   <Outlet />
                 </div>

@@ -19,6 +19,8 @@ import {
 } from 'recharts';
 import { Phone, Clock, TrendingUp, TrendingDown, Users, PhoneCall } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 import { AnalyticsService } from '@/services/analyticsService';
 import { CallIntelligenceService } from '@/services/callIntelligenceService';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +52,8 @@ interface CallAnalyticsData {
 
 const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clientId, callType = 'live' }) => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+
   const [data, setData] = useState<CallAnalyticsData | null>(null);
   const [processedCallVolume, setProcessedCallVolume] = useState<any[]>([]);
   const [processedCallDuration, setProcessedCallDuration] = useState<any[]>([]);
@@ -355,11 +359,12 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      // Clamp width during loading as well to avoid page-level horizontal scroll
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden px-3 sm:px-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i}>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <Skeleton className="h-4 w-20 mb-2" />
                 <Skeleton className="h-8 w-16 mb-1" />
                 <Skeleton className="h-3 w-24" />
@@ -367,13 +372,13 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
             </Card>
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
           <Card>
             <CardHeader>
               <Skeleton className="h-6 w-32" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-[300px] w-full" />
+              <Skeleton className="h-[220px] sm:h-[300px] w-full" />
             </CardContent>
           </Card>
           <Card>
@@ -381,7 +386,7 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
               <Skeleton className="h-6 w-32" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-[300px] w-full" />
+              <Skeleton className="h-[220px] sm:h-[300px] w-full" />
             </CardContent>
           </Card>
         </div>
@@ -431,11 +436,12 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
 
 
   return (
-    <div className="space-y-6">
+    // Clamp analytics section to viewport to ensure only inner components scroll
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden px-3 sm:px-0">
       {/* Performance Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 min-w-0">
+        <Card className="w-full max-w-full overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Calls</p>
@@ -454,8 +460,8 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="w-full max-w-full overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Duration</p>
@@ -468,8 +474,8 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="w-full max-w-full overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Completion Rate</p>
@@ -492,8 +498,8 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="w-full max-w-full overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Transfer Rate</p>
@@ -514,18 +520,19 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
       {/* Call Volume Heatmap */}
       {data && <CallVolumeHeatmap data={heatmapData} dateRange={formatDateRange} />}
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-0">
         {/* Call Volume Over Time */}
         <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Call Volume Over Time</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
-          <CardContent className="w-full max-w-full overflow-hidden">
-            <div className="h-[300px] w-full overflow-hidden">
+          {/* Ensure charts do not cause page-level horizontal scroll on mobile Safari */}
+          <CardContent className="w-full max-w-full overflow-hidden px-3 sm:px-6">
+            <div className="h-[220px] sm:h-[300px] w-full min-w-0 overflow-hidden">
               {processedCallVolume && processedCallVolume.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={processedCallVolume}>
+                  <LineChart data={processedCallVolume} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis 
                       dataKey="date" 
@@ -564,26 +571,27 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
         </Card>
 
         {/* Call Inquiry Types */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Call Inquiry Types</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
+          <CardContent className="w-full max-w-full overflow-hidden px-3 sm:px-6">
+            <div className="h-[220px] sm:h-[300px] w-full min-w-0 overflow-hidden">
               {data.callInquiries && data.callInquiries.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
                     <Pie
                       data={data.callInquiries}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={100}
+                      outerRadius={isMobile ? 90 : 100}
                       paddingAngle={5}
                       dataKey="count"
                       nameKey="type"
-                      label={({ type, percentage }) => `${type} (${percentage}%)`}
+                      // Disable in-arc labels to avoid crowding/overflow on small screens
+                      labelLine={false}
                     >
                       {data.callInquiries.map((entry, index) => (
                         <Cell 
@@ -596,7 +604,10 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
                       formatter={(value, name, props) => [`${value}%`, `${props.payload.type} inquiries`]} 
                       labelFormatter={() => ''}
                     />
-                    <Legend />
+                    {/* Constrain legend or hide on mobile to prevent horizontal overflow */}
+                    {!isMobile && (
+                      <Legend align="center" verticalAlign="bottom" wrapperStyle={{ width: '100%', overflow: 'hidden' }} />
+                    )}
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
@@ -609,16 +620,16 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
         </Card>
 
         {/* Hourly Distribution */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Calls by Hour of Day</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
+          <CardContent className="w-full max-w-full overflow-hidden px-3 sm:px-6">
+            <div className="h-[220px] sm:h-[300px] w-full min-w-0 overflow-hidden">
               {data.hourlyDistribution && data.hourlyDistribution.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.hourlyDistribution}>
+                  <BarChart data={data.hourlyDistribution} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="hour" 
@@ -643,16 +654,16 @@ const CallAnalytics: React.FC<CallAnalyticsProps> = ({ startDate, endDate, clien
         </Card>
 
         {/* Average Duration Over Time */}
-        <Card>
+        <Card className="w-full max-w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Average Call Duration</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{formatDateRange}</p>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
+          <CardContent className="w-full max-w-full overflow-hidden px-3 sm:px-6">
+            <div className="h-[220px] sm:h-[300px] w-full min-w-0 overflow-hidden">
               {processedCallDuration && processedCallDuration.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={processedCallDuration}>
+                  <LineChart data={processedCallDuration} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis 
                       dataKey="date" 

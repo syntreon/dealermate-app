@@ -284,9 +284,11 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
     <div className="bg-card rounded-lg shadow-sm md:shadow border border-border overflow-hidden w-full mx-auto">
       {/* Table filters */}
       <div className="p-3 border-b border-border bg-secondary/30">
-        <div className="flex flex-row gap-3 items-center">
+        {/* Allow wrapping on small screens to prevent page-level overflow */}
+        <div className="flex flex-row flex-wrap gap-3 items-center w-full min-w-0">
           {/* Search Input */}
-          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '300px' }}>
+          {/* Responsive width: full on mobile, fixed on sm+ */}
+          <div className="relative w-full sm:w-[300px] min-w-0 flex-shrink">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-foreground/50" />
             </div>
@@ -300,7 +302,8 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
           </div>
 
           {/* Call Type Filter */}
-          <div className="relative w-auto max-w-xs flex-grow-0 flex-shrink-0" style={{ width: '200px' }}>
+          {/* Responsive width: full on mobile, fixed on sm+ */}
+          <div className="relative w-full sm:w-[200px] min-w-0 flex-shrink">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter className="h-4 w-4 text-foreground/50" />
             </div>
@@ -332,7 +335,8 @@ const CallLogsTable: React.FC<CallLogsTableProps> = ({
         <Table className="w-full ">
           <TableHeader>
             <TableRow>
-              <SortableHeader field="caller_full_name" label="Caller" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap w-[220px]" />
+              {/* Make caller column width responsive to reduce overflow on small screens */}
+              <SortableHeader field="caller_full_name" label="Caller" className="px-3 sm:px-4 py-3 text-xs whitespace-nowrap w-[180px] sm:w-[220px]" />
               {/* Phone Number column (desktop only) - shows caller's phone number */}
               <TableHead className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider hidden md:table-cell whitespace-nowrap">Phone Number</TableHead>
               {/* Reduce Lead column width */}

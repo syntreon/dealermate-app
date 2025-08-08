@@ -68,14 +68,20 @@ const CallVolumeHeatmap: React.FC<CallVolumeHeatmapProps> = ({ data, maxCount: p
   ];
 
   return (
-    <Card>
+    <Card className="w-full max-w-full overflow-hidden">
       <CardHeader>
         <CardTitle>Call Volume by Hour/Day</CardTitle>
         {dateRange && <p className="text-sm text-muted-foreground mt-1">{dateRange}</p>}
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <div className="min-w-[700px]">
+      <CardContent className="w-full max-w-full overflow-hidden">
+        <div 
+          className="overflow-x-auto w-full overscroll-x-contain touch-pan-x"
+          role="region"
+          aria-label="Call volume heatmap horizontal scroll area"
+          tabIndex={0}
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="inline-block min-w-[560px] sm:min-w-[700px] align-top">
             {/* Legend */}
             <div className="flex justify-end mb-2 gap-2">
               <div className="flex items-center text-xs">

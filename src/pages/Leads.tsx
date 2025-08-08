@@ -115,12 +115,14 @@ const Leads: React.FC = () => {
   // No need to adapt leads anymore since LeadsTable now accepts Supabase lead format directly
 
   return (
-    <div className="space-y-4 pb-8">
+    // Clamp page width to viewport to avoid page-level horizontal scroll on mobile.
+    // Individual wide components (e.g., tables) will manage their own overflow.
+    <div className="space-y-4 pb-8 w-full max-w-full overflow-x-hidden">
       {/* Mobile-first compact header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Leads</h1>
-          <p className="text-sm text-muted-foreground">Manage and track leads generated from calls</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Leads</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Manage and track leads generated from calls</p>
         </div>
         
         <div className="flex gap-2">
