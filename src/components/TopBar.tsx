@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { Moon, Sun, Settings, Building2, AlertTriangle, Info, AlertCircle, CheckCircle, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -175,7 +176,9 @@ const TopBar = () => {
     };
   }, [isLoading, status, broadcastMessage]);
 
-  return (
+  // Render the fixed TopBar + optional banner at document.body level to decouple from layout hierarchy
+  if (typeof document === 'undefined') return null;
+  return createPortal(
       <div className={cn("fixed top-0 left-0 z-50 w-full bg-background")}> 
         {/* Fixed wrapper across the app */}
         {/* System Status Banner - inside the same container so it pushes the bar below */}
@@ -372,7 +375,8 @@ const TopBar = () => {
         </DropdownMenu>
         </div>
         </div>
-      </div>
+      </div>,
+      document.body
   );
 };
 
